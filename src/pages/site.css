@@ -1451,3 +1451,68 @@
   border-color: rgba(255, 141, 122, 0.45);
   color: var(--nogo);
 }
+
+/* ---------- mission-control accents: verdict panel and telemetry readouts only ----------
+   Thin cyan hairlines, a faint grid and scanlines behind the numbers, mono figures.
+   Backgrounds stay at a few percent so the text keeps its full contrast. */
+.vp-head {
+  position: relative;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: var(--r-2);
+  background:
+    linear-gradient(rgba(0, 229, 255, 0.035) 1px, transparent 1px) 0 0 / 100% 14px,
+    rgba(0, 229, 255, 0.025);
+}
+
+/* corner ticks, like a console readout */
+.vp-head::before,
+.vp-head::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 0 solid var(--hud);
+  pointer-events: none;
+}
+
+.vp-head::before { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: var(--r-2); }
+.vp-head::after { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: var(--r-2); }
+
+.vp-key,
+.follow-hud {
+  background-image:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px),
+    linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+  background-size: auto, 20px 20px, 20px 20px;
+}
+
+.vp-key {
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: var(--r-2);
+}
+
+.vp-key dt,
+.vp-air-top .micro {
+  font: 400 10.5px / 1.3 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8fdcec;
+}
+
+.vp-key dd {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* tick marks every 10% on the air gauge */
+.vp-bar {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(255, 255, 255, 0.16) calc(10% - 1px) 10%),
+    rgba(255, 255, 255, 0.06);
+}
