@@ -1434,3 +1434,8 @@
   opacity: 0.85;
   cursor: progress;
 }
+
+.ab-risky {
+  border-color: rgba(255, 141, 122, 0.45);
+  color: var(--nogo);
+}

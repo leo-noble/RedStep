@@ -87,3 +87,17 @@ describe.skipIf(!hasData)('Jezero', () => {
     expect(distance(g, r.line[0], [HABITAT.lon, HABITAT.lat])).toBeLessThan(1)
   }, 30000)
 })
+
+describe.skipIf(!hasData)('Jezero risky walk', () => {
+  it('finds a straight walk from the terrain that is NO-GO for steep ground', async () => {
+    const meta = JSON.parse(fs.readFileSync(new URL('meta.json', base)))
+    const g = makeGrid(meta.grid, i16(fs.readFileSync(new URL('elevation.i16', base))), new Uint8Array(fs.readFileSync(new URL('themis-night.u8', base))))
+    const { STOPS, HABITAT } = await import('../content/science.js')
+    const { instantAtLocalTime } = await import('../lib/mars24.js')
+    const site = { lat: HABITAT.lat, lon: HABITAT.lon }
+    const r = createPlanner(g).risky({ habitat: [HABITAT.lon, HABITAT.lat], stops: STOPS.jezero, settings, facts, site, startMs: instantAtLocalTime(Date.UTC(2026, 9, 24), site.lon, 9) })
+    expect(r.analysis.status).toBe('nogo')
+    expect(r.why).toBe('steep')
+    expect(r.analysis.maxSlope).toBeGreaterThan(settings.redSlope)
+  }, 30000)
+})

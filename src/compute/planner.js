@@ -146,5 +146,38 @@ export function createPlanner(g) {
     }
   }
 
-  return { plan, suggest, costsFor, toLonLat: (i, j) => toLonLat(g, i, j) }
+  /**
+   * A deliberately risky walk, chosen from the terrain itself: the nearest science stop whose
+   * straight line from the habitat crosses ground steeper than the limit. If no stop does, scan
+   * straight lines in 36 directions (1-6 km) for the shortest one that does. Last resort: the
+   * farthest stop in a straight line, which breaks the air budget.
+   */
+  function risky({ habitat, stops, settings: s, startMs, site, facts }) {
+    const tryLine = (to, stop) => {
+      const line = [habitat, to]
+      const analysis = analyze(g, { line, stops: stop ? [stop] : [], settings: s, startMs, site, habitat, facts })
+      return { line, analysis, stop }
+    }
+    const byDist = [...stops].sort((a, b) => distance(g, habitat, [a.lon, a.lat]) - distance(g, habitat, [b.lon, b.lat]))
+    for (const st of byDist) {
+      const r = tryLine([st.lon, st.lat], st)
+      if (r.analysis.reasons.some((x) => x.code === 'steep')) return { ...r, why: 'steep' }
+    }
+    const R = g.radius, D = Math.PI / 180
+    for (let km = 1; km <= 6; km += 0.5) {
+      for (let b = 0; b < 360; b += 10) {
+        const ang = (km * 1000) / R, la = habitat[1] * D, lo = habitat[0] * D, br = b * D
+        const la2 = Math.asin(Math.sin(la) * Math.cos(ang) + Math.cos(la) * Math.sin(ang) * Math.cos(br))
+        const lo2 = lo + Math.atan2(Math.sin(br) * Math.sin(ang) * Math.cos(la), Math.cos(ang) - Math.sin(la) * Math.sin(la2))
+        const to = [lo2 / D, la2 / D]
+        if (to[0] <= g.west || to[0] >= g.east || to[1] <= g.south || to[1] >= g.north) continue
+        const r = tryLine(to, null)
+        if (r.analysis.reasons.some((x) => x.code === 'steep')) return { ...r, why: 'steep' }
+      }
+    }
+    const far = byDist[byDist.length - 1]
+    return { ...tryLine([far.lon, far.lat], far), why: 'far' }
+  }
+
+  return { plan, suggest, risky, costsFor, toLonLat: (i, j) => toLonLat(g, i, j) }
 }

@@ -54,6 +54,10 @@ self.onmessage = async ({ data: msg }) => {
     if (!planner) throw new Error('Planner not ready')
     if (msg.type === 'plan') self.postMessage({ type: 'plan', id: msg.id, ...planner.plan(msg) })
     if (msg.type === 'suggest') self.postMessage({ type: 'suggest', id: msg.id, ...planner.suggest(msg) })
+    if (msg.type === 'risky') {
+      const r = planner.risky(msg)
+      self.postMessage({ type: 'risky', id: msg.id, line: r.line, analysis: r.analysis, why: r.why, stopId: r.stop?.id || null })
+    }
   } catch (err) {
     self.postMessage({ type: 'error', id: msg.id, init: msg.type === 'init', message: String(err && err.message ? err.message : err) })
   }

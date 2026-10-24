@@ -123,13 +123,23 @@ function Planner({ site }) {
   const handleResult = useCallback((data) => {
     setBusy(false)
     if (data.type === 'suggest') {
-      if (!data.line) { setSuggestNote('No stop fits the air and daylight with these settings. Try "Bold", an earlier start, or a smaller reserve.'); return }
+      if (!data.line) { setSuggestNote('No stop fits the air and daylight with these settings. Try "Long", an earlier start, or a smaller reserve in Settings.'); return }
       setSuggestNote(null)
       setStopIds(data.chosen)
       setSnap(true)
       setWaypoints(data.waypoints)
       setResult({ line: data.line, analysis: data.analysis })
       animateRoute(data.line, data.waypoints)
+      mapRef.current?.fitRoute(data.line)
+    } else if (data.type === 'risky') {
+      setSnap(false)
+      setStopIds(data.stopId ? [data.stopId] : [])
+      setWaypoints(data.line)
+      setResult({ line: data.line, analysis: data.analysis })
+      setSuggestNote(data.why === 'steep'
+        ? 'Risky walk: a straight line that the planner did not route. It crosses ground steeper than your limit, so the answer is NO-GO. Press “Fix it” to see the safe way.'
+        : 'Risky walk: a straight line to the farthest stop. It needs more suit air than you may use, so the answer is NO-GO.')
+      animateRoute(data.line, data.line)
       mapRef.current?.fitRoute(data.line)
     } else {
       setResult({ line: data.line, analysis: data.analysis })
@@ -232,6 +242,14 @@ function Planner({ site }) {
     worker.current.postMessage({ type: 'suggest', id, habitat, stops, settings, startMs, site, facts: FACT_VALUES, appetite: APPETITE.find((a) => a.id === which).value })
   }, [grid, appetite, habitat, stops, settings, startMs, site])
 
+  const tryRisky = useCallback(() => {
+    if (!grid) return
+    setDrawing(false)
+    const id = ++reqId.current
+    setBusy(true)
+    worker.current.postMessage({ type: 'risky', id, habitat, stops, settings, startMs, site, facts: FACT_VALUES })
+  }, [grid, habitat, stops, settings, startMs, site])
+
   // First visit without a walk in the URL: show the Medium suggestion straight away,
   // so the answer card is visible without pressing anything.
   const autoRan = useRef(!!params.get('w'))
@@ -266,6 +284,7 @@ function Planner({ site }) {
   const undo = () => setWaypoints((w) => (w.length > 1 ? w.slice(0, -1) : w))
 
   const onFix = (what) => {
+    setSuggestNote(null)
     if (what === 'snap') setSnap(true)
     if (what === 'early') setSettings((s) => ({ ...s, startHour: 8 }))
     if (what === 'trim' && result) {
@@ -371,6 +390,7 @@ function Planner({ site }) {
             <button type="button" className="btn btn-small ab-icon" onClick={clear} disabled={waypoints.length < 2} aria-label="Start over" title="Start over">×</button>
           </>
         )}
+        <button type="button" className="btn btn-small ab-risky" onClick={tryRisky} disabled={!grid || busy} title="Draws a straight walk across steep ground so you can see a NO-GO and why">Try a risky walk</button>
         {a && (
           <span className="ab-after">
             <button type="button" className="btn btn-small" onClick={follow}>Fly along in 3D</button>
