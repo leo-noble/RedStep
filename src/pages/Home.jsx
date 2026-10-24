@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { SITE } from '../content/site.js'
+import { globeTexture } from '../data/index.js'
 import { useReducedMotion } from '../lib/hooks.js'
 import Explorer from '../components/Explorer.jsx'
 import Orbits from '../components/Orbits.jsx'
@@ -25,7 +26,7 @@ export default function Home() {
       if (!alive || !canvas.current) return
       try {
         api = createSpace(canvas.current, {
-          base: import.meta.env.BASE_URL,
+          texture: globeTexture,
           reducedMotion: reduced,
           onPhase: (p) => { setPhase(p); if (p === 'globe') seen.intro = true },
           onFrame: ({ phase: p, progress }) => {

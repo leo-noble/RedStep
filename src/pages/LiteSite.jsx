@@ -4,11 +4,11 @@ import { Link } from 'react-router'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { corners, marsMetresPerPixel } from '../lib/marsmap.js'
+import { siteMeta, siteTraverse } from '../data/index.js'
 import { LayerPanel } from '../components/planner/Panels.jsx'
 import { Badge, Source } from '../components/Atoms.jsx'
 import './site.css'
 
-const BASE = import.meta.env.BASE_URL
 
 const LITE_GROUPS = [
   { id: 'photos', name: 'Maps from orbit', layers: [
@@ -36,7 +36,7 @@ export default function LiteSite({ site }) {
   const [ready, setReady] = useState(false)
   const [layers, setLayers] = useState(() => Object.fromEntries(LITE_GROUPS.flatMap((g) => g.layers).map((l) => [l.id, { on: l.on, opacity: l.opacity }])))
 
-  useEffect(() => { fetch(`${BASE}data/${site.id}/meta.json`).then((r) => r.json()).then(setMeta).catch(() => setMeta(false)) }, [site.id])
+  useEffect(() => { siteMeta(site.id).then(setMeta).catch(() => setMeta(false)) }, [site.id])
 
   useEffect(() => {
     if (!meta) return
@@ -54,11 +54,12 @@ export default function LiteSite({ site }) {
     m.on('load', async () => {
       for (const id of ['viking', 'relief', 'themis-day', 'themis-night']) {
         const L = meta.layers[id]
-        m.addSource(`src-${id}`, { type: 'image', url: `${BASE}data/${site.id}/${L.file}`, coordinates: corners(L.bbox) })
+        m.addSource(`src-${id}`, { type: 'image', url: L.url, coordinates: corners(L.bbox) })
         m.addLayer({ id, type: 'raster', source: `src-${id}`, paint: { 'raster-opacity': layers[id].opacity, 'raster-fade-duration': 0 }, layout: { visibility: layers[id].on ? 'visible' : 'none' } })
       }
-      if (meta.traverse) {
-        const line = await (await fetch(`${BASE}data/${site.id}/${meta.traverse.file}`)).json()
+      const trav = await siteTraverse(site.id).catch(() => null)
+      if (trav) {
+        const line = trav.line
         m.addSource('trav', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: line } } })
         m.addLayer({ id: 'trav', type: 'line', source: 'trav', paint: { 'line-color': '#ffb25b', 'line-width': 2 } })
       }

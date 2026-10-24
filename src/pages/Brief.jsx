@@ -1,9 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { SITE } from '../content/site.js'
-import { siteById } from '../content/sites.js'
-import { STOPS } from '../content/science.js'
-import { WALK } from '../content/assumptions.js'
+import { siteById, sitePlaces, WALK } from '../data/index.js'
 import { DATA } from '../content/sources.js'
 import { PRIORITY, PRIORITY_LABEL } from '../content/survival.js'
 import { fmtH, pct } from '../compute/walk.js'
@@ -35,8 +33,9 @@ export default function Brief() {
   const site = siteById(b.site)
   const a = b.result.analysis
   const s = b.settings
-  const stops = (STOPS[b.site] || []).filter((p) => b.stopIds.includes(p.id))
-  const tips = advise(a, { settings: s, stops: STOPS[b.site] || [], startMs: b.startMs, site, visitedIds: b.stopIds })
+  const allStops = sitePlaces(b.site).stops
+  const stops = allStops.filter((p) => b.stopIds.includes(p.id))
+  const tips = advise(a, { settings: s, stops: allStops, startMs: b.startMs, site, visitedIds: b.stopIds })
   const checklist = store.get('mw-checklist', [])
   const ready = checklist.filter(Boolean).length
 

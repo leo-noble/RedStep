@@ -8,7 +8,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { corners, marsMetresPerPixel, R_MARS } from '../lib/marsmap.js'
 import { marsTime, sunAt, fmtHours } from '../lib/mars24.js'
 import { earthMars } from '../lib/ephem.js'
-import { SITES } from '../content/sites.js'
+import { SITES, siteMeta, siteTraverse, placeNames, basemapTiles } from '../data/index.js'
 import { FAMOUS, famousByName } from '../content/places.js'
 import { MANUAL } from '../content/manual.js'
 import { SITE } from '../content/site.js'
@@ -17,7 +17,7 @@ import { Badge, Source } from './Atoms.jsx'
 import { prefersReducedMotion, useNarrow } from '../lib/hooks.js'
 import './explorer.css'
 
-const BASE = import.meta.env.BASE_URL
+const thumb = (id) => basemapTiles(id).replace('{z}/{x}/{y}', '0/0/0')
 const D = Math.PI / 180
 const BASEMAPS = [
   { id: 'viking', name: 'Colour', by: 'Viking orbiters', maxzoom: 5 },
@@ -83,7 +83,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t) }, [])
-  useEffect(() => { fetch(`${BASE}data/names.json`).then((r) => r.json()).then((d) => setNames(d.names)).catch(() => {}) }, [])
+  useEffect(() => { placeNames().then(setNames).catch(() => {}) }, [])
 
   // ---------- map ----------
   useEffect(() => {
@@ -112,26 +112,26 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
 
     m.on('load', async () => {
       for (const b of BASEMAPS) {
-        m.addSource(`base-${b.id}`, { type: 'raster', tiles: [`${BASE}data/tiles/${b.id}/{z}/{x}/{y}.jpg`], tileSize: 256, maxzoom: b.maxzoom })
+        m.addSource(`base-${b.id}`, { type: 'raster', tiles: [basemapTiles(b.id)], tileSize: 256, maxzoom: b.maxzoom })
         m.addLayer({ id: `base-${b.id}`, type: 'raster', source: `base-${b.id}`, paint: { 'raster-fade-duration': 0, 'raster-resampling': 'linear' }, layout: { visibility: b.id === 'viking' ? 'visible' : 'none' } })
       }
       // sharper regional maps at the mission sites
       for (const s of SITES) {
         try {
-          const meta = await (await fetch(`${BASE}data/${s.id}/meta.json`)).json()
+          const meta = await siteMeta(s.id)
           const L = meta.layers
           if (L.viking) {
-            m.addSource(`det-viking-${s.id}`, { type: 'image', url: `${BASE}data/${s.id}/${L.viking.file}`, coordinates: corners(L.viking.bbox) })
+            m.addSource(`det-viking-${s.id}`, { type: 'image', url: L.viking.url, coordinates: corners(L.viking.bbox) })
             m.addLayer({ id: `det-viking-${s.id}`, type: 'raster', source: `det-viking-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: { visibility: 'visible' } }, 'base-mola')
           }
           if (L.relief) {
-            m.addSource(`det-mola-${s.id}`, { type: 'image', url: `${BASE}data/${s.id}/${L.relief.file}`, coordinates: corners(L.relief.bbox) })
+            m.addSource(`det-mola-${s.id}`, { type: 'image', url: L.relief.url, coordinates: corners(L.relief.bbox) })
             m.addLayer({ id: `det-mola-${s.id}`, type: 'raster', source: `det-mola-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: { visibility: 'none' } })
           }
           if (s.id === 'jezero') {
-            m.addSource('det-ctx', { type: 'image', url: `${BASE}data/jezero/${meta.photo.file}`, coordinates: corners(meta.photo.bbox) })
+            m.addSource('det-ctx', { type: 'image', url: meta.photo.url, coordinates: corners(meta.photo.bbox) })
             m.addLayer({ id: 'det-ctx', type: 'raster', source: 'det-ctx', minzoom: 8.5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 8.5, 0, 9.5, 1] } })
-            m.addSource('det-hirise', { type: 'image', url: `${BASE}data/jezero/${L.hirise.file}`, coordinates: corners(L.hirise.bbox) })
+            m.addSource('det-hirise', { type: 'image', url: L.hirise.url, coordinates: corners(L.hirise.bbox) })
             m.addLayer({ id: 'det-hirise', type: 'raster', source: 'det-hirise', minzoom: 11, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 1] } })
           }
         } catch { /* site data missing: the global map still works */ }
@@ -148,10 +148,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
       m.addLayer({ id: 'pin', type: 'circle', source: 'pin', paint: { 'circle-radius': 7, 'circle-color': '#00e5ff', 'circle-stroke-color': '#000', 'circle-stroke-width': 2 } })
 
       // rover paths (drawn on when shown)
-      Promise.all([
-        fetch(`${BASE}data/jezero/perseverance.json`).then((r) => r.json()).then((p) => p.line).catch(() => null),
-        fetch(`${BASE}data/gale/traverse.json`).then((r) => r.json()).catch(() => null),
-      ]).then((lines) => {
+      Promise.all(SITES.map((s) => siteTraverse(s.id).then((t) => t?.line).catch(() => null))).then((lines) => {
         const feats = lines.filter(Boolean).map((c) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } }))
         m.getSource('rovers')?.setData({ type: 'FeatureCollection', features: feats })
       })
@@ -400,7 +397,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
 
       <div className={`xp-layers ${layersOpen ? 'open' : ''}`}>
         <button type="button" className="xp-layers-btn" aria-expanded={layersOpen} onClick={() => setLayersOpen((o) => !o)}>
-          <img src={`${BASE}data/tiles/${basemap === 'viking' ? 'mola' : 'viking'}/0/0/0.jpg`} alt="" />
+          <img src={thumb(basemap === 'viking' ? 'mola' : 'viking')} alt="" />
           <span>Layers</span>
         </button>
         {layersOpen && (
@@ -409,7 +406,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
             <div className="xp-types">
               {BASEMAPS.map((b) => (
                 <button key={b.id} type="button" className={basemap === b.id ? 'on' : ''} aria-pressed={basemap === b.id} onClick={() => setBasemap(b.id)}>
-                  <img src={`${BASE}data/tiles/${b.id}/0/0/0.jpg`} alt="" />
+                  <img src={thumb(b.id)} alt="" />
                   <span>{b.name}</span>
                   <small>{b.by}</small>
                 </button>

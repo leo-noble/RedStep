@@ -4,8 +4,8 @@
 const DEG = Math.PI / 180
 
 /**
- * @param {object} meta   meta.grid from public/data/<site>/meta.json
- * @param {Int16Array} dm elevation in decimetres, row 0 = north edge
+ * @param {object} meta   the site's grid description (src/data/schema.js TerrainGrid)
+ * @param {Int16Array} dm elevation in meta.unit (decimetres or metres), row 0 = north edge
  * @param {Uint8Array} [ground] THEMIS night IR brightness per cell (0 dark/cold .. 255 bright/warm)
  */
 export function makeGrid(meta, dm, ground) {
@@ -13,8 +13,9 @@ export function makeGrid(meta, dm, ground) {
   const [west, south, east, north] = bbox
   const dLon = (east - west) / w, dLat = (north - south) / h
   const midLat = (north + south) / 2
+  const k = meta.unit === 'metres' ? 1 : 0.1
   const elev = new Float32Array(w * h)
-  for (let i = 0; i < elev.length; i++) elev[i] = dm[i] === nodata ? NaN : dm[i] / 10
+  for (let i = 0; i < elev.length; i++) elev[i] = dm[i] === nodata ? NaN : dm[i] * k
   return {
     w, h, west, south, east, north, dLon, dLat, radius,
     dx: radius * Math.cos(midLat * DEG) * dLon * DEG, // metres per cell east-west

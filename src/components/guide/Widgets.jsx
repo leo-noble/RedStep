@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { Badge, Slider, Source } from '../Atoms.jsx'
-import { FACTS } from '../../content/assumptions.js'
+import { FACTS } from '../../data/index.js'
 import { CHECKLIST, EMERGENCIES, PRIORITY, PRIORITY_LABEL, STEPS } from '../../content/survival.js'
 import { earthMars } from '../../lib/ephem.js'
 import { prefersReducedMotion, useStored } from '../../lib/hooks.js'

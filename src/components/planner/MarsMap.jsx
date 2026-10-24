@@ -14,7 +14,7 @@ const line = (coords, props = {}) => ({ type: 'Feature', properties: props, geom
  *   setLayer(id, on, opacity) · setImage(id, url) · setRoute(line, waypoints) · setStops(stops, visited)
  *   setMarkers({ habitat, turnBack }) · setRadius(lon, lat, m) · setHover(lon, lat) · follow(profile, hud) · snapshot()
  */
-const MarsMap = forwardRef(function MarsMap({ base, meta, grid, layers, onMapClick, onWaypointDrag, onStopClick, onReady, drawing }, ref) {
+const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, onWaypointDrag, onStopClick, onReady, drawing }, ref) {
   const el = useRef(null)
   const map = useRef(null)
   const ready = useRef(false)
@@ -49,8 +49,8 @@ const MarsMap = forwardRef(function MarsMap({ base, meta, grid, layers, onMapCli
 
     m.on('load', () => {
       const img = (id, url, bbox) => m.addSource(id, { type: 'image', url, coordinates: corners(bbox) })
-      for (const [id, L] of Object.entries(meta.layers)) img(`src-${id}`, `${base}data/${meta.id}/${L.file}`, L.bbox)
-      img('src-photo', `${base}data/${meta.id}/${meta.photo.file}`, meta.photo.bbox)
+      for (const [id, L] of Object.entries(meta.layers)) img(`src-${id}`, L.url, L.bbox)
+      img('src-photo', meta.photo.url, meta.photo.bbox)
       // placeholders until the worker sends the grid
       const blank = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
       img('src-elevation', blank, meta.grid.bbox)
@@ -137,7 +137,7 @@ const MarsMap = forwardRef(function MarsMap({ base, meta, grid, layers, onMapCli
     m.on('move', updateScale)
     m.on('load', updateScale)
     return () => { ready.current = false; m.remove(); map.current = null }
-  }, [base, meta]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [meta]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 3D terrain from the grid
   useEffect(() => {

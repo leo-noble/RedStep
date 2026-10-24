@@ -29,6 +29,12 @@
   vertical-align: 2px;
 }
 
+.src-data-source {
+  margin-top: var(--s-3);
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
 .page-cta {
   display: flex;
   justify-content: space-between;

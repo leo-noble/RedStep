@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { siteById } from '../content/sites.js'
-import { STOPS, HABITAT } from '../content/science.js'
-import { WALK, FACTS } from '../content/assumptions.js'
+import { siteById, sitePlaces, siteMeta, siteTraverse, WALK, FACTS } from '../data/index.js'
 import { LAYER_GROUPS } from '../content/layers.js'
 import { instantAtLocalTime, marsTime } from '../lib/mars24.js'
 import { paintElevation, paintSlope } from '../lib/marsmap.js'
@@ -20,7 +18,6 @@ import LiteSite from './LiteSite.jsx'
 import NotFound from './NotFound.jsx'
 import './site.css'
 
-const BASE = import.meta.env.BASE_URL
 const DEFAULTS = Object.fromEntries(Object.entries(WALK).map(([k, v]) => [k, v.value]))
 const FACT_VALUES = Object.fromEntries(Object.entries(FACTS).map(([k, v]) => [k, v.value]))
 const ALL_LAYERS = LAYER_GROUPS.flatMap((g) => g.layers)
@@ -51,8 +48,9 @@ function Planner({ site }) {
   const mapRef = useRef(null)
   const worker = useRef(null)
   const reqId = useRef(0)
-  const habitat = useMemo(() => [HABITAT.lon, HABITAT.lat], [])
-  const stops = STOPS[site.id] || []
+  const places = useMemo(() => sitePlaces(site.id), [site.id])
+  const habitat = useMemo(() => [places.home.lon, places.home.lat], [places])
+  const stops = places.stops
 
   const [meta, setMeta] = useState(null)
   const [grid, setGrid] = useState(null)
@@ -126,8 +124,8 @@ function Planner({ site }) {
       else if (data.id === reqId.current) handleResult(data)
     }
     w.onerror = (e) => setError(`Couldn\u2019t start the route calculator${e.message ? `: ${e.message}` : ''}.`)
-    w.postMessage({ type: 'init', site: site.id, base: new URL(BASE, location.href).href })
-    fetch(`${BASE}data/${site.id}/meta.json`).then((r) => r.json()).then((d) => setMeta((m) => m || d)).catch(() => setError('Couldn\u2019t load the map data. Check your connection and try again.'))
+    w.postMessage({ type: 'init', site: site.id })
+    siteMeta(site.id).then((d) => setMeta((m) => m || d)).catch(() => setError('Couldn\u2019t load the map data. Check your connection and try again.'))
     return () => w.terminate()
   }, [site.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -229,7 +227,7 @@ function Planner({ site }) {
   // static overlays
   useEffect(() => {
     if (!mapReady) return
-    fetch(`${BASE}data/${site.id}/perseverance.json`).then((r) => r.json()).then((p) => mapRef.current?.setTraverse(p.line)).catch(() => {})
+    siteTraverse(site.id).then((t) => t && mapRef.current?.setTraverse(t.line)).catch(() => {})
   }, [mapReady, site.id])
   const visited = result?.analysis?.visited.map((v) => v.id) || []
   useEffect(() => { if (mapReady) mapRef.current.setStops(stops, visited) }, [mapReady, stops, visited.join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -375,7 +373,7 @@ function Planner({ site }) {
 
   return (
     <div className={`planner ${following ? 'following' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
-      {meta && <MarsMap ref={mapRef} base={BASE} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
+      {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
       {!grid && (
         <div className="planner-loading" role="status" aria-live="polite">
           <span><i className="spinner" aria-hidden="true" />{loadStage === 'slopes' ? 'Working out slopes…' : `Loading terrain… ${loadPct}%`}{slowLoad && <small>Slow connection: the Jezero height map is about 1.8 MB.</small>}</span>

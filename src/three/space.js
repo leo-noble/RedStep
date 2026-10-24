@@ -81,7 +81,7 @@ function ring(center, r, opacity, segments = 512, color = 0xffffff) {
   return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }))
 }
 
-export function createSpace(canvas, { base = '/', reducedMotion = false, onPhase = () => {}, onFrame = () => {} } = {}) {
+export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`, reducedMotion = false, onPhase = () => {}, onFrame = () => {} } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -91,7 +91,7 @@ export function createSpace(canvas, { base = '/', reducedMotion = false, onPhase
   const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 4000)
   const loader = new THREE.TextureLoader()
   const tex = (file, srgb = true) => {
-    const t = loader.load(`${base}data/globe/${file}`)
+    const t = loader.load(texture(file))
     t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace
     t.anisotropy = renderer.capabilities.getMaxAnisotropy()
     return t
