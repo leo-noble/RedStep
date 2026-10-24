@@ -11,6 +11,9 @@ const MAP = [
   ['New science along the way', 'Nine science stops at real Perseverance sample sites. Each says what it is, why it matters and which mission data backs it. The planner balances safety and science openly.'],
 ]
 
+// Only real entries: skip blanks and unfilled template text.
+const team = SITE.team.filter((m) => m && m.name && !/fill in/i.test(m.name))
+
 export default function About() {
   return (
     <div className="page">
@@ -57,11 +60,13 @@ export default function About() {
       <section className="about-team">
         <Orbits className="about-orbits" label />
         <div>
-          <h2 className="micro">Team</h2>
-          {SITE.team.length ? (
-            <ul>{SITE.team.map((m) => <li key={m.name}><b>{m.name}</b> · {m.role}</li>)}</ul>
-          ) : (
-            <p className="page-lead">{SITE.by}. Team names go in <code>src/content/site.js</code>.</p>
+          {team.length > 0 && (
+            <>
+              <h2 className="micro">Team</h2>
+              <ul className="about-members">
+                {team.map((m) => <li key={m.name}><b>{m.name}</b>{m.role && <span>{m.role}</span>}</li>)}
+              </ul>
+            </>
           )}
           <p className="about-legal">{SITE.disclaimer}</p>
           <div className="about-cta">

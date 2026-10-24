@@ -7,9 +7,9 @@ export const SITE = {
   pitchShort: 'Pick a place on Mars, draw a walk, and get a clear answer: safe or not, and why. Built from real NASA mission data.',
   challenge: 'NASA Space Apps Challenge 2026 · Interplanetary Survival Guide: Martian Map',
   disclaimer: 'Independent student project for the NASA Space Apps Challenge 2026. Not affiliated with or endorsed by NASA.',
-  team: [
-    // { name: 'Your name', role: 'Role' },
-  ],
+  // [FILL IN: names + roles] e.g. { name: 'Ada Lovelace', role: 'Data and science' }.
+  // The About page shows the team block only when at least one real entry is here.
+  team: [],
 }
 
 // Top menu: kept to four plain choices. Everything else is linked from the footer.

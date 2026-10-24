@@ -343,3 +343,23 @@ code {
 @media (max-width: 520px) {
   .about-map ol { grid-template-columns: 1fr; }
 }
+
+.about-members {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: var(--t-5);
+}
+
+.about-members li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+.about-members span {
+  font-size: 14px;
+  color: var(--ink-3);
+}
