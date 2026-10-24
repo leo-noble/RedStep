@@ -42,6 +42,12 @@ const router = createBrowserRouter([
   },
 ])
 
+// Offline support: the service worker (dist/sw.js, built by vite.config.js) keeps the app and
+// the Jezero data after the first visit. Production only, so development always sees fresh files.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RouterProvider router={router} />

@@ -1,8 +1,48 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'node:fs'
+import path from 'node:path'
+import crypto from 'node:crypto'
+
+// Writes dist/sw.js with a precache list of the app shell and the Jezero data.
+// Kept small on purpose: world-map tiles beyond zoom 2, other sites and the 4K texture are
+// cached at runtime, the first time they are viewed.
+function offline() {
+  let outDir = 'dist'
+  return {
+    name: 'marswalk-offline',
+    apply: 'build',
+    configResolved(c) { outDir = c.build.outDir },
+    closeBundle() {
+      const root = path.resolve(outDir)
+      const files = []
+      const walk = (dir) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name)
+          if (e.isDirectory()) walk(p)
+          else files.push('/' + path.relative(root, p).split(path.sep).join('/'))
+        }
+      }
+      walk(root)
+      const keep = (f) =>
+        f === '/index.html' || f === '/favicon.svg' || f === '/manifest.webmanifest' || /^\/icons\//.test(f) ||
+        (/^\/assets\//.test(f) && !/\.woff$/.test(f) && !/(cyrillic|greek|vietnamese)/.test(f)) ||
+        /^\/data\/jezero\//.test(f) ||
+        /^\/data\/names\.json$/.test(f) ||
+        (/^\/data\/globe\//.test(f) && !/4k/.test(f)) ||
+        /^\/data\/tiles\/[^/]+\/[0-2]\//.test(f)
+      const precache = files.filter(keep).sort()
+      const hash = crypto.createHash('sha1').update(precache.join('\n')).update(String(fs.statSync(path.join(root, 'index.html')).mtimeMs)).digest('hex').slice(0, 10)
+      const tpl = fs.readFileSync(path.resolve('scripts/sw-template.js'), 'utf8')
+      fs.writeFileSync(path.join(root, 'sw.js'), tpl.replace('__VERSION__', hash).replace('__PRECACHE__', JSON.stringify(precache)))
+      const bytes = precache.reduce((s, f) => s + fs.statSync(path.join(root, f)).size, 0)
+      console.log(`sw.js: ${precache.length} files precached (${(bytes / 1048576).toFixed(1)} MB), version ${hash}`)
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), offline()],
   worker: { format: 'es' },
   build: {
     target: 'es2022',

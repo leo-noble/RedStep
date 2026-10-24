@@ -37,7 +37,7 @@ npm install
 npm run dev
 ```
 
-Offline demo (no network needed after the build):
+Offline demo: serve the build locally (below), or open the live site once; after the first visit the service worker keeps the app and the Jezero data, so the planner works with no connection:
 
 ```bash
 npm run build && npm run preview
