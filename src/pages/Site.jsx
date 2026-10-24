@@ -12,6 +12,7 @@ import Profile from '../components/planner/Profile.jsx'
 import Minimap from '../components/planner/Minimap.jsx'
 import StreetView from '../components/StreetView.jsx'
 import StreetPicker from '../components/StreetPicker.jsx'
+import Ambient from '../components/Ambient.jsx'
 import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, VerdictPanel } from '../components/planner/Panels.jsx'
 import { Sidebar } from '../components/Sidebar.jsx'
 import { MANUAL } from '../content/manual.js'
@@ -416,6 +417,7 @@ function Planner({ site }) {
       {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
       {!grid && (
         <div className="planner-loading" role="status" aria-live="polite">
+          <Ambient className="ambient-fill" />
           <span><i className="spinner" aria-hidden="true" />{loadStage === 'slopes' ? 'Working out slopes…' : `Loading terrain… ${loadPct}%`}{slowLoad && <small>Slow connection: the Jezero height map is about 1.8 MB.</small>}</span>
         </div>
       )}

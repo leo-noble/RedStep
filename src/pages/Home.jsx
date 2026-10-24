@@ -66,6 +66,27 @@ export default function Home() {
     return () => { window.removeEventListener('wheel', go); window.removeEventListener('touchmove', go); window.removeEventListener('keydown', go) }
   }, [phase])
 
+  // The flight never blocks: any click, key or scroll lands straight on the map.
+  useEffect(() => {
+    if (phase !== 'flight') return
+    const land = (e) => {
+      if (e.type === 'keydown' && ['Tab', 'Shift', 'Alt', 'Control', 'Meta'].includes(e.key)) return
+      space.current?.skip()
+    }
+    // armed a moment later, so the click that pressed Begin doesn't count
+    const t = setTimeout(() => {
+      window.addEventListener('pointerdown', land)
+      window.addEventListener('keydown', land)
+      window.addEventListener('wheel', land, { passive: true })
+    }, 300)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('pointerdown', land)
+      window.removeEventListener('keydown', land)
+      window.removeEventListener('wheel', land)
+    }
+  }, [phase])
+
   const begin = () => (space.current ? space.current.begin() : setPhase('globe'))
   const skip = () => (space.current ? space.current.skip() : setPhase('globe'))
 
@@ -88,9 +109,14 @@ export default function Home() {
         </div>
       </section>
 
-      {phase === 'flight' && <button type="button" className="btn btn-small flight-skip" onClick={skip}>Skip</button>}
+      {/* the map loads underneath during the flight, so it is ready on arrival */}
+      {phase !== 'earth' && (
+        <div className="home-map" inert={phase !== 'globe'}>
+          <Explorer visible={phase === 'globe'} onReady={() => setMapReady(true)} />
+        </div>
+      )}
 
-      {phase === 'globe' && <Explorer visible onReady={() => setMapReady(true)} />}
+      {phase === 'flight' && <button type="button" className="btn btn-small flight-skip" onClick={skip}>Skip to the map</button>}
     </div>
   )
 }

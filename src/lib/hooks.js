@@ -29,6 +29,21 @@ export const store = {
   },
 }
 
+// Background motion (the ambient dust and sky): on unless the system asks for reduced motion
+// or the viewer switched it off in the footer. Shared by every component that shows it.
+const motionSubs = new Set()
+export const ambientMotion = {
+  get: () => !prefersReducedMotion() && store.get('mw-ambient', true) !== false,
+  set(on) { store.set('mw-ambient', on); motionSubs.forEach((f) => f()) },
+}
+export function useAmbientMotion() {
+  return useSyncExternalStore(
+    (cb) => { motionSubs.add(cb); rm?.addEventListener('change', cb); return () => { motionSubs.delete(cb); rm?.removeEventListener('change', cb) } },
+    ambientMotion.get,
+    () => false,
+  )
+}
+
 export function useStored(key, fallback) {
   const [v, setV] = useState(() => store.get(key, fallback))
   useEffect(() => { store.set(key, v) }, [key, v])

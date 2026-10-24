@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router'
 import Nav from './Nav.jsx'
 import Footer from './Footer.jsx'
 import EmergencyDrawer from './EmergencyDrawer.jsx'
+import Ambient from './Ambient.jsx'
 
 const EmergencyCtx = createContext({ open: () => {} })
 export const useEmergency = () => useContext(EmergencyCtx)
@@ -21,7 +22,8 @@ export default function Layout() {
     <EmergencyCtx.Provider value={ctx}>
       <a className="skip" href="#main">Skip to content</a>
       {pathname !== '/brief' && <Nav overlay={immersive} onEmergency={() => open()} />}
-      <main id="main" tabIndex={-1}>
+      <main id="main" tabIndex={-1} className={immersive ? '' : 'has-ambient'}>
+        {!immersive && <Ambient />}
         <Outlet />
       </main>
       {!immersive && <Footer />}

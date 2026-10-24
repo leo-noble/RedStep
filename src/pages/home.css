@@ -132,6 +132,14 @@
   border-color: rgba(255, 255, 255, 0.16);
 }
 
+.home-map {
+  display: contents;
+}
+
+.home-map[inert] .xp {
+  pointer-events: none;
+}
+
 .flight-skip {
   position: absolute;
   right: var(--pad);

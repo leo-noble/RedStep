@@ -1,0 +1,32 @@
+.ambient {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto 0;
+  width: 100%;
+  height: min(86vh, 820px);
+  pointer-events: none;
+  /* fade out towards the content below so text keeps full contrast */
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+.ambient-fill {
+  height: 100%;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* content sits above the ambient layer */
+.has-ambient {
+  position: relative;
+}
+
+.has-ambient > :not(.ambient) {
+  position: relative;
+  z-index: 1;
+}
+
+.planner-loading .ambient + span {
+  position: relative;
+  z-index: 1;
+}
