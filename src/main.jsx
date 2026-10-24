@@ -22,22 +22,25 @@ import './styles/base.css'
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 
-const page = (load) => async () => ({ Component: (await load()).default })
+// Shown inside the layout while a page's code downloads on the first visit, so the nav appears
+// straight away instead of a blank screen.
+const PageLoading = () => <div className="page-loading" aria-busy="true" />
+const page = (load) => ({ lazy: async () => ({ Component: (await load()).default }), HydrateFallback: PageLoading })
 
 const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'site/:id', lazy: page(() => import('./pages/Site.jsx')) },
-      { path: 'guide', lazy: page(() => import('./pages/Guide.jsx')) },
-      { path: 'guide/:step', lazy: page(() => import('./pages/Guide.jsx')) },
-      { path: 'survival', lazy: page(() => import('./pages/Guide.jsx')) },
-      { path: 'habitat', lazy: page(() => import('./pages/Habitat.jsx')) },
-      { path: 'sources', lazy: page(() => import('./pages/Sources.jsx')) },
-      { path: 'about', lazy: page(() => import('./pages/About.jsx')) },
-      { path: 'brief', lazy: page(() => import('./pages/Brief.jsx')) },
-      { path: '*', lazy: page(() => import('./pages/NotFound.jsx')) },
+      { path: 'site/:id', ...page(() => import('./pages/Site.jsx')) },
+      { path: 'guide', ...page(() => import('./pages/Guide.jsx')) },
+      { path: 'guide/:step', ...page(() => import('./pages/Guide.jsx')) },
+      { path: 'survival', ...page(() => import('./pages/Guide.jsx')) },
+      { path: 'habitat', ...page(() => import('./pages/Habitat.jsx')) },
+      { path: 'sources', ...page(() => import('./pages/Sources.jsx')) },
+      { path: 'about', ...page(() => import('./pages/About.jsx')) },
+      { path: 'brief', ...page(() => import('./pages/Brief.jsx')) },
+      { path: '*', ...page(() => import('./pages/NotFound.jsx')) },
     ],
   },
 ])

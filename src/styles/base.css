@@ -101,6 +101,11 @@ canvas {
   top: var(--s-3);
 }
 
+/* holds the space while a page's code loads, so the footer doesn't jump up */
+.page-loading {
+  min-height: 100vh;
+}
+
 /* -------- shared atoms -------- */
 
 .micro {
