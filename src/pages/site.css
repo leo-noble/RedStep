@@ -1036,10 +1036,10 @@
   .ab-tools { padding-top: 8px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
   .ab-tools .btn { flex: none; }
   .ab-snap { flex: none; padding: 0 6px; }
-  .draw-hint { top: calc(var(--nav-h) + 176px); }
-  .mars-map .maplibregl-ctrl-bottom-right { right: 10px; bottom: auto; top: calc(var(--nav-h) + 180px); }
+  .draw-hint { top: calc(var(--ab-bottom, var(--nav-h) + 168px) + 8px); }
+  .mars-map .maplibregl-ctrl-bottom-right { right: 10px; bottom: auto; top: calc(var(--ab-bottom, var(--nav-h) + 168px) + 12px); }
   .mars-map .maplibregl-ctrl-bottom-left { left: 10px; bottom: 120px; }
-  .mars-scale { left: 14px; bottom: auto; top: calc(var(--nav-h) + 196px); }
+  .mars-scale { left: 14px; bottom: auto; top: calc(var(--ab-bottom, var(--nav-h) + 168px) + 16px); }
   .sheet {
     position: absolute;
     z-index: 6;

@@ -83,6 +83,17 @@ function Planner({ site }) {
   const hud = useRef(null)
   const stopFollow = useRef(null)
 
+  // On phones the zoom buttons, scale and draw hint sit just under the action bar, whose height
+  // changes as its buttons wrap, so its bottom edge is kept in --ab-bottom on the planner.
+  const abObserver = useRef(null)
+  const actionbarRef = useCallback((ab) => {
+    abObserver.current?.disconnect()
+    if (!ab || typeof ResizeObserver === 'undefined') return
+    const root = ab.parentElement
+    abObserver.current = new ResizeObserver(() => root.style.setProperty('--ab-bottom', `${Math.round(ab.getBoundingClientRect().bottom - root.getBoundingClientRect().top)}px`))
+    abObserver.current.observe(ab)
+  }, [])
+
   useEffect(() => {
     if (!drawing) return
     setHint(true)
@@ -372,7 +383,7 @@ function Planner({ site }) {
       )}
 
       {/* action bar */}
-      <div className="actionbar glass" role="toolbar" aria-label="Walk tools">
+      <div ref={actionbarRef} className="actionbar glass" role="toolbar" aria-label="Walk tools">
         <button type="button" className="btn btn-primary ab-main" onClick={() => suggest()} disabled={!grid || busy} aria-busy={!grid || busy}>
           {(!grid || busy) && <i className="spinner spinner-dark" aria-hidden="true" />}
           {!grid ? 'Loading terrain…' : busy ? 'Finding a safe path…' : a ? 'Suggest another walk' : 'Suggest a safe walk'}

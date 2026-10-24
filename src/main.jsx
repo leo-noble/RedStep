@@ -19,6 +19,7 @@ import '@fontsource/space-mono/700.css'
 import '@fontsource/instrument-serif/400-italic.css'
 import './styles/tokens.css'
 import './styles/base.css'
+import './styles/touch.css'
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 

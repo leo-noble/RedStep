@@ -1,0 +1,56 @@
+/* Touch targets: on phones and touch screens every control is at least 44 × 44 px (Apple's
+   guideline; WCAG 2.5.5). Desktop with a mouse keeps the compact sizes. Selectors start with
+   :root so they outrank the per-page rules that set smaller sizes. Links inside running text
+   are left alone (WCAG's inline exception). */
+@media (max-width: 767px), (pointer: coarse) {
+  :root :is(button, summary, select, .btn):not(.pop-btn) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  :root input[type='range'] {
+    height: 44px;
+  }
+
+  :root :is(.skip, .footer-links a, .src-facts a, .src-row a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  :root .g-steps a {
+    min-height: 44px;
+  }
+
+  :root .src-facts li {
+    padding: 0;
+  }
+
+  /* keep the burger lines centred in the taller button */
+  :root .nav-burger span[aria-hidden]:nth-of-type(2) { top: 18px; }
+  :root .nav-burger span[aria-hidden]:nth-of-type(3) { top: 25px; }
+
+  /* the small "i" buttons keep their look; the invisible hit area around them grows to 44 px */
+  :root .pop-btn::after {
+    inset: -13px;
+  }
+
+  /* map attribution: a 44 px round button with the same icon */
+  :root .maplibregl-ctrl-attrib.maplibregl-compact {
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 22px;
+  }
+
+  :root .maplibregl-ctrl-attrib.maplibregl-compact-show {
+    padding-right: 48px;
+  }
+
+  :root .maplibregl-ctrl-attrib-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+}
