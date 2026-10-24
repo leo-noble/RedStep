@@ -1,0 +1,168 @@
+/* Minimap: a small mission-control style overlay (mono labels, faint grid and scanlines). */
+.mm {
+  --mm-line: rgba(0, 229, 255, 0.28);
+  position: absolute;
+  z-index: 7;
+  top: calc(var(--nav-h) + 12px);
+  right: 16px;
+  width: 232px;
+  border-radius: var(--r-2);
+  background: rgba(3, 9, 12, 0.86);
+  border: 1px solid var(--mm-line);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  font-family: var(--mono);
+  overflow: hidden;
+}
+
+.mm-head,
+.mm-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 4px 0 0;
+  border-bottom: 1px solid var(--mm-line);
+}
+
+.mm:not(.mm-open) .mm-head {
+  border-bottom: 0;
+}
+
+.mm-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.mm-title {
+  font: 700 11px / 1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7fe9ff;
+}
+
+.mm-expand,
+.mm-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--mm-line);
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.mm-expand:hover,
+.mm-close:hover,
+.mm-toggle:hover {
+  background: rgba(0, 229, 255, 0.08);
+}
+
+.mm-canvas {
+  display: block;
+  width: 100%;
+  height: 176px;
+}
+
+/* scanlines over the map area only; never over the legend text */
+.mm-screen {
+  position: relative;
+}
+
+.mm-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px);
+}
+
+.mm-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin: 0;
+  padding: 6px 8px 8px;
+  list-style: none;
+  border-top: 1px solid var(--mm-line);
+  font-size: 10.5px;
+  color: var(--ink-2);
+}
+
+.mm-key li,
+.mm-legend li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mm-glyph {
+  width: 28px;
+  height: 16px;
+  flex: none;
+}
+
+/* the larger pop-up */
+.mm-dialog {
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100svh - 24px);
+  padding: 0;
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  border-radius: var(--r-3);
+  background: #03090c;
+  color: var(--ink);
+  font-family: var(--mono);
+}
+
+.mm-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.mm-dialog-head {
+  padding: 6px 6px 6px 14px;
+}
+
+.mm-dialog-head h2 {
+  margin: 0;
+}
+
+.mm-canvas-big {
+  height: min(440px, 52svh);
+}
+
+.mm-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 16px;
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  border-top: 1px solid rgba(0, 229, 255, 0.28);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.mm-note {
+  margin: 0;
+  padding: 0 14px 14px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 820px) {
+  .mm { top: calc(var(--nav-h) + 8px); right: 10px; width: 168px; }
+  .mm-canvas { height: 128px; }
+  .mm-canvas-big { height: min(440px, 52svh); }
+  .mm-key { display: none; }
+}

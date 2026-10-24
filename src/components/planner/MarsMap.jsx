@@ -203,7 +203,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       const pad = window.innerWidth < 820 ? { top: 90, bottom: window.innerHeight * 0.5, left: 30, right: 30 } : { top: 110, bottom: 260, left: 400, right: 440 }
       m.fitBounds(b, { padding: pad, duration: prefersReducedMotion() ? 0 : 1400, maxZoom: 13.4 })
     },
-    /** Fly along the walk in 3D. hud(i) is called each frame with the profile index. Returns a stop function. */
+    /** Fly along the walk in 3D. hud(i, d, {lon, lat, bearing}) is called each frame. Returns a stop function. */
     follow(profile, hud, done) {
       const m = map.current
       if (!m || !profile?.length) return () => {}
@@ -230,7 +230,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
         let diff = ((want - bearing + 540) % 360) - 180
         bearing += diff * 0.04
         m.jumpTo({ center: [p.lon, p.lat], bearing, pitch: 68, zoom: 14.6 })
-        hud(p.i, d)
+        hud(p.i, d, { lon: p.lon, lat: p.lat, bearing })
         if (k < 1) raf = requestAnimationFrame(tick)
         else done?.()
       }

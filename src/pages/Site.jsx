@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { siteById, sitePlaces, siteMeta, siteTraverse, WALK, FACTS } from '../data/index.js'
+import { siteById, sitePlaces, siteMeta, siteTraverse, siteHazards, WALK, FACTS } from '../data/index.js'
 import { LAYER_GROUPS } from '../content/layers.js'
 import { instantAtLocalTime, marsTime } from '../lib/mars24.js'
 import { paintElevation, paintSlope } from '../lib/marsmap.js'
@@ -9,6 +9,7 @@ import { useNarrow, prefersReducedMotion, store } from '../lib/hooks.js'
 import { useEmergency } from '../components/Layout.jsx'
 import MarsMap from '../components/planner/MarsMap.jsx'
 import Profile from '../components/planner/Profile.jsx'
+import Minimap from '../components/planner/Minimap.jsx'
 import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, VerdictPanel } from '../components/planner/Panels.jsx'
 import { Sidebar } from '../components/Sidebar.jsx'
 import { MANUAL } from '../content/manual.js'
@@ -79,7 +80,10 @@ function Planner({ site }) {
   const [following, setFollowing] = useState(false)
   const [suggestNote, setSuggestNote] = useState(null)
   const hud = useRef(null)
+  const minimap = useRef(null)
   const stopFollow = useRef(null)
+  const [hazards, setHazards] = useState([])
+  useEffect(() => { siteHazards(site.id).then(setHazards).catch(() => setHazards([])) }, [site.id])
 
   // On phones the zoom buttons, scale and draw hint sit just under the action bar, whose height
   // changes as its buttons wrap, so its bottom edge is kept in --ab-bottom on the planner.
@@ -319,7 +323,8 @@ function Planner({ site }) {
     setSheetOpen(false)
     mapRef.current.setLayer('slope', layers.slope.on, Math.min(layers.slope.opacity, 0.22))
     const prof = result.analysis.profile
-    stopFollow.current = mapRef.current.follow(prof, (i, d) => {
+    stopFollow.current = mapRef.current.follow(prof, (i, d, pos) => {
+      minimap.current?.setPlayer(pos.lon, pos.lat, pos.bearing)
       const el = hud.current
       if (!el) return
       const p = prof[i]
@@ -468,6 +473,9 @@ function Planner({ site }) {
         </div>
       )}
 
+      {following && a && (
+        <Minimap ref={minimap} profile={a.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
+      )}
       {following && a && (
         <div className="follow-hud" ref={hud} aria-live="off">
           <div><span className="micro">Distance</span><b data-k="d">0.00 km</b></div>
