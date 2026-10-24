@@ -1,0 +1,74 @@
+:root {
+  /* base */
+  --void: #000;
+  --ink: #f5f7fb;
+  --ink-2: rgba(245, 247, 251, 0.68);
+  --ink-3: rgba(245, 247, 251, 0.46);
+  --ink-4: rgba(245, 247, 251, 0.28);
+  --rule: rgba(255, 255, 255, 0.14);
+  --rule-soft: rgba(255, 255, 255, 0.08);
+
+  /* Mars ramp: elevation, route, calls to action */
+  --rust-900: #2a130b;
+  --rust-700: #6e2f17;
+  --rust-500: #c8592e;
+  --rust: #ec7d45;
+  --ember: #ffb25b;
+
+  /* data, water, ice */
+  --ice: #7fb0ff;
+  --ice-dim: rgba(127, 176, 255, 0.16);
+  /* live HUD readouts only */
+  --hud: #00e5ff;
+
+  /* verdicts */
+  --go: #7fe0a8;
+  --caution: #ffd37a;
+  --nogo: #ff8d7a;
+
+  /* glass */
+  --glass: rgba(10, 14, 24, 0.5);
+  --glass-strong: rgba(8, 11, 19, 0.78);
+  --glass-edge: rgba(255, 255, 255, 0.16);
+  --blur: 20px;
+
+  /* type */
+  --font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --serif: 'Instrument Serif', Georgia, serif;
+
+  --t-hero: clamp(56px, 11vw, 176px);
+  --t-1: clamp(40px, 7vw, 112px);
+  --t-2: clamp(32px, 4.6vw, 64px);
+  --t-3: clamp(26px, 2.8vw, 40px);
+  --t-4: clamp(21px, 1.9vw, 28px);
+  --t-5: 18px;
+  --t-body: 16px;
+  --t-small: 14px;
+  --t-micro: 11px;
+
+  /* space (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 40px;
+  --s-7: 64px;
+  --s-8: 104px;
+  --s-9: 168px;
+  --pad: clamp(16px, 5vw, 72px);
+  --nav-h: 60px;
+
+  --r-1: 2px;
+  --r-2: 8px;
+  --r-3: 14px;
+  --r-pill: 999px;
+
+  /* motion */
+  --ease: cubic-bezier(0.22, 0.7, 0.2, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1); /* for lines that draw on */
+  --d-ui: 240ms;
+  --d-panel: 700ms;
+  --d-camera: 2000ms;
+}

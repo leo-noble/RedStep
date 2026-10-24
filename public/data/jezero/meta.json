@@ -1,0 +1,89 @@
+{
+ "id": "jezero",
+ "grid": {
+  "w": 798,
+  "h": 756,
+  "bbox": [
+   77.16046545922366,
+   18.211027390963398,
+   77.69897516629472,
+   18.721194481872804
+  ],
+  "cellDeg": [
+   0.0006748241943246331,
+   0.0006748241943246103
+  ],
+  "unit": "decimetres",
+  "nodata": -32768,
+  "min": -2710.6336669921875,
+  "max": -1515.8949890136719,
+  "radius": 3396190
+ },
+ "photo": {
+  "file": "ctx-photo.webp",
+  "bbox": [
+   77.16046545922366,
+   18.211027390963398,
+   77.69897516629472,
+   18.721194481872804
+  ]
+ },
+ "layers": {
+  "relief": {
+   "file": "relief.webp",
+   "bbox": [
+    76.55,
+    17.75,
+    78.35,
+    19.15
+   ],
+   "trekLayer": "Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw",
+   "zoom": 8
+  },
+  "viking": {
+   "file": "viking.webp",
+   "bbox": [
+    76.55,
+    17.75,
+    78.35,
+    19.15
+   ],
+   "trekLayer": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
+   "zoom": 7
+  },
+  "themis-day": {
+   "file": "themis-day.webp",
+   "bbox": [
+    76.55,
+    17.75,
+    78.35,
+    19.15
+   ],
+   "trekLayer": "THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018",
+   "zoom": 9
+  },
+  "themis-night": {
+   "file": "themis-night.webp",
+   "bbox": [
+    76.55,
+    17.75,
+    78.35,
+    19.15
+   ],
+   "trekLayer": "THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018",
+   "zoom": 9
+  },
+  "hirise": {
+   "file": "hirise.webp",
+   "bbox": [
+    77.37,
+    18.415,
+    77.47,
+    18.478
+   ],
+   "trekLayer": "JEZ_hirise_soc_006_orthoMosaic_25cm",
+   "zoom": 15
+  }
+ },
+ "built": "2026-10-24"
+}

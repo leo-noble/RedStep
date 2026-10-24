@@ -1,0 +1,55 @@
+.footer {
+  position: relative;
+  overflow: hidden;
+  padding: var(--s-8) var(--pad) var(--s-6);
+  border-top: 1px solid var(--rule-soft);
+}
+
+.footer-orbits {
+  position: absolute;
+  right: -120px;
+  top: -80px;
+  width: 520px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.footer-top {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-6);
+}
+
+.footer-name {
+  font-size: var(--t-3);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: var(--s-2);
+}
+
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: var(--s-2) var(--s-6);
+}
+
+.footer-links a {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.footer-links a:hover {
+  color: var(--ink);
+}
+
+.footer-legal {
+  position: relative;
+  margin-top: var(--s-5);
+  max-width: 80ch;
+  font-size: 13px;
+  color: var(--ink-3);
+}

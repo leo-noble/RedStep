@@ -1,0 +1,61 @@
+{
+ "id": "mawrth",
+ "bbox": [
+  -21.1,
+  23.25,
+  -18.9,
+  24.75
+ ],
+ "center": [
+  -20,
+  24
+ ],
+ "layers": {
+  "viking": {
+   "file": "viking.webp",
+   "bbox": [
+    -21.1,
+    23.25,
+    -18.9,
+    24.75
+   ],
+   "trekLayer": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
+   "zoom": 7
+  },
+  "relief": {
+   "file": "relief.webp",
+   "bbox": [
+    -21.1,
+    23.25,
+    -18.9,
+    24.75
+   ],
+   "trekLayer": "Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw",
+   "zoom": 8
+  },
+  "themis-day": {
+   "file": "themis-day.webp",
+   "bbox": [
+    -21.1,
+    23.25,
+    -18.9,
+    24.75
+   ],
+   "trekLayer": "THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018",
+   "zoom": 9
+  },
+  "themis-night": {
+   "file": "themis-night.webp",
+   "bbox": [
+    -21.1,
+    23.25,
+    -18.9,
+    24.75
+   ],
+   "trekLayer": "THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018",
+   "zoom": 9
+  }
+ },
+ "traverse": null,
+ "built": "2026-10-24"
+}

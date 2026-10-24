@@ -1,0 +1,167 @@
+.sos {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.sos-open {
+  pointer-events: auto;
+}
+
+.sos-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity var(--d-panel) var(--ease);
+}
+
+.sos-open .sos-scrim {
+  opacity: 1;
+}
+
+.sos-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  overflow-y: auto;
+  padding: var(--s-5) var(--s-6) var(--s-6);
+  background: #07090e;
+  border-left: 1px solid var(--rule);
+  transform: translateX(100%);
+  transition: transform var(--d-panel) var(--ease);
+  outline: none;
+}
+
+.sos-open .sos-panel {
+  transform: none;
+}
+
+.sos-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sos-kicker {
+  color: var(--nogo);
+}
+
+.sos-close {
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  border: 0;
+  background: none;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink-2);
+}
+
+.sos-title {
+  font-size: var(--t-3);
+  margin: var(--s-3) 0 var(--s-5);
+}
+
+.sos-order {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.sos-order li {
+  display: grid;
+  grid-template-columns: 28px 96px 1fr;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.sos-order b {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.sos-order li.hot b,
+.sos-order li.hot .mono {
+  color: var(--nogo);
+}
+
+.sos-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--s-6) 0 var(--s-4);
+}
+
+.sos-tabs button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--rule);
+  background: none;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.sos-tabs button[aria-selected='true'] {
+  border-color: var(--nogo);
+  color: var(--ink);
+  background: rgba(255, 141, 122, 0.1);
+}
+
+.sos-steps {
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.sos-steps li::marker {
+  font-family: var(--mono);
+  color: var(--nogo);
+}
+
+.sos-proc {
+  margin-top: var(--s-3);
+}
+
+.sos-case {
+  margin-top: var(--s-5);
+  padding: var(--s-4);
+  border-radius: var(--r-2);
+  background: rgba(127, 176, 255, 0.06);
+  border: 1px solid rgba(127, 176, 255, 0.18);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.sos-case .micro {
+  display: flex;
+  align-items: center;
+  color: var(--ice);
+  margin-bottom: 6px;
+}
+
+.sos-drill {
+  margin-top: var(--s-5);
+}
+
+@media (max-width: 520px) {
+  .sos-panel {
+    padding: var(--s-4) var(--s-4) var(--s-6);
+  }
+  .sos-order li {
+    grid-template-columns: 22px 80px 1fr;
+  }
+}

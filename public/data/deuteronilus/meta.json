@@ -1,0 +1,61 @@
+{
+ "id": "deuteronilus",
+ "bbox": [
+  22.099,
+  38.36,
+  24.299000000000003,
+  39.86
+ ],
+ "center": [
+  23.199,
+  39.11
+ ],
+ "layers": {
+  "viking": {
+   "file": "viking.webp",
+   "bbox": [
+    22.099,
+    38.36,
+    24.299000000000003,
+    39.86
+   ],
+   "trekLayer": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
+   "zoom": 7
+  },
+  "relief": {
+   "file": "relief.webp",
+   "bbox": [
+    22.099,
+    38.36,
+    24.299000000000003,
+    39.86
+   ],
+   "trekLayer": "Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw",
+   "zoom": 8
+  },
+  "themis-day": {
+   "file": "themis-day.webp",
+   "bbox": [
+    22.099,
+    38.36,
+    24.299000000000003,
+    39.86
+   ],
+   "trekLayer": "THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018",
+   "zoom": 9
+  },
+  "themis-night": {
+   "file": "themis-night.webp",
+   "bbox": [
+    22.099,
+    38.36,
+    24.299000000000003,
+    39.86
+   ],
+   "trekLayer": "THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018",
+   "zoom": 9
+  }
+ },
+ "traverse": null,
+ "built": "2026-10-24"
+}

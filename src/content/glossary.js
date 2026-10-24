@@ -1,0 +1,27 @@
+// Plain-language meanings for every technical word the app shows.
+// The UI always leads with the plain words; these appear when someone taps "?".
+export const GLOSSARY = {
+  sol: 'A Mars day: 24 hours 39 minutes 35 seconds.',
+  'height map': 'A grid that stores how high the ground is at every point. Scientists call it a DEM (digital elevation model).',
+  slope: 'How steep the ground is, in degrees. 0° is flat; 15° is a steep hiking trail; 30° is hard to stand on.',
+  MOLA: 'Mars Orbiter Laser Altimeter. A laser on NASA’s Mars Global Surveyor that measured the height of the whole planet (1997–2001).',
+  CTX: 'Context Camera on NASA’s Mars Reconnaissance Orbiter. Sees details about 6 m across.',
+  HiRISE: 'The sharpest camera orbiting Mars, on NASA’s Mars Reconnaissance Orbiter. Sees details about 25 cm across, like a kitchen table.',
+  THEMIS: 'Heat camera on NASA’s Mars Odyssey. At night, solid rock stays warm and loose dust cools fast, so it can tell them apart.',
+  TES: 'Thermal Emission Spectrometer on NASA’s Mars Global Surveyor. Mapped how dusty the surface is.',
+  Viking: 'NASA’s Viking orbiters (1976–1980) made the first full colour map of Mars.',
+  HRSC: 'High Resolution Stereo Camera on ESA’s Mars Express. Its heights are blended with MOLA in the regional map.',
+  RAD: 'Radiation Assessment Detector on NASA’s Curiosity rover. Measures the radiation dose on the surface.',
+  REMS: 'Curiosity’s weather station.',
+  MEDA: 'Perseverance’s weather station.',
+  MOXIE: 'A toaster-sized experiment on Perseverance that made oxygen from Mars air (2021–2023). A test, not a life-support system.',
+  SHARAD: 'A radar on NASA’s Mars Reconnaissance Orbiter that sees ice and rock layers under the ground.',
+  SWIM: 'Subsurface Water Ice Mapping. A NASA project that combined many orbiter datasets to map where ice is likely close to the surface.',
+  mSv: 'Millisievert, a unit of radiation dose to the body. A chest X-ray is roughly 0.1 mSv.',
+  Ls: 'Mars’s season, as an angle from 0° to 360°. 0° is northern spring; 180°–360° is the dusty season.',
+  'turn-back point': 'The furthest point where you still have enough air to walk home with a safety margin. Past it, you must turn around.',
+  'walk-back radius': 'A circle around the habitat. Inside it, a walker can always get home on foot if something goes wrong.',
+  'light time': 'How long a radio message takes to travel between Earth and Mars at the speed of light.',
+  perchlorate: 'A toxic salt found in Martian soil. It must be removed before soil can be used to grow food.',
+  EVA: 'Extravehicular activity: going outside in a spacesuit.',
+}
