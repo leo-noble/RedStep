@@ -38,6 +38,7 @@ Coordinates are planetocentric degrees, **longitude east**. A `bbox` is `[west, 
 | `places(id)` | `{home: Place, stops: ScienceStop[]}` | planner, brief |
 | `hazards(id)` | **Hazard[]** (may be empty) | planner minimap |
 | `traverse(id, meta)` | `{line: [lon, lat][], source, lastSol?}` or `null` | maps |
+| `panoramas(id)` | **Panorama[]** real rover panoramas (may be empty) | Street view, /sources |
 | `walkInputs()` | `{settings: WALK, facts: FACTS}` (see `src/content/assumptions.js`) | verdict, panels, guide |
 | `names()` | `[[name, lon, lat, type, rank], …]` IAU names (rank = label priority: 1 shows from far away, 3 only when zoomed in) | world map search |
 | `backtest(id)` | backtest result (`scripts/backtest.mjs`) | /sources |
@@ -102,6 +103,22 @@ the height map cannot show (boulder fields, unstable ground, dust deposits).
 ```
 
 The baked data has **no hazard catalogue**, so `hazards()` returns `[]` today.
+
+### Panorama
+
+Only real rover imagery goes here; places without one get the planner's labelled Demo view.
+
+```js
+{ id: 'butler', site: 'jezero', name: 'Octavia E. Butler landing site',
+  lon: 77.45089, lat: 18.44463,
+  where: 'The rover had not driven yet … JPL waypoint site 3, drive 0',   // how the position was found
+  rover: 'Perseverance', instrument: 'Mastcam-Z', sol: '3', date: '21 Feb 2021',
+  pia: 'PIA24264', title, frames: 142, credit: 'NASA/JPL-Caltech/MSSS/ASU',  // credit exactly as NASA gives it
+  page: 'https://science.nasa.gov/photojournal/…', url,                      // NASA page; web-sized image
+  fov: 360, alt, about, colour? }                                            // colour: NASA's note on colour processing
+```
+
+Today's list is `src/content/panoramas.js`; `scripts/bake-panoramas.mjs` downloads and shrinks the images.
 
 ### Walk inputs
 

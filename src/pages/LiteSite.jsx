@@ -4,7 +4,8 @@ import { Link } from 'react-router'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { corners, marsMetresPerPixel } from '../lib/marsmap.js'
-import { siteMeta, siteTraverse } from '../data/index.js'
+import { siteMeta, siteTraverse, sitePanoramas } from '../data/index.js'
+import StreetView from '../components/StreetView.jsx'
 import { LayerPanel } from '../components/planner/Panels.jsx'
 import { Badge, Source } from '../components/Atoms.jsx'
 import './site.css'
@@ -34,6 +35,7 @@ export default function LiteSite({ site }) {
   const scale = useRef(null)
   const [meta, setMeta] = useState(null)
   const [ready, setReady] = useState(false)
+  const [pano, setPano] = useState(null)
   const [layers, setLayers] = useState(() => Object.fromEntries(LITE_GROUPS.flatMap((g) => g.layers).map((l) => [l.id, { on: l.on, opacity: l.opacity }])))
 
   useEffect(() => { siteMeta(site.id).then(setMeta).catch(() => setMeta(false)) }, [site.id])
@@ -89,6 +91,7 @@ export default function LiteSite({ site }) {
   }, [layers, ready])
 
   const note = NOTES[site.id]
+  const panoramas = sitePanoramas(site.id)
   return (
     <div className="planner lite">
       <div className="mars-map">
@@ -111,6 +114,15 @@ export default function LiteSite({ site }) {
               <p>{note.text}</p>
             </div>
           )}
+          {panoramas.length > 0 && (
+            <div className="lite-street">
+              <p className="micro">Street view · real rover photos <Badge kind="nasa" /></p>
+              {panoramas.map((p) => (
+                <button key={p.id} type="button" className="btn btn-small" onClick={() => setPano(p)}>Look around {p.name} <span className="arrow">→</span></button>
+              ))}
+              <p className="lite-street-meta">{panoramas.map((p) => `${p.rover}, sol ${p.sol} · ${p.pia}`).join(' · ')}</p>
+            </div>
+          )}
           <p className="micro lite-coord">{Math.abs(site.lat).toFixed(2)}°{site.lat >= 0 ? 'N' : 'S'} · {Math.abs(site.lon).toFixed(2)}°{site.lon >= 0 ? 'E' : 'W'} <Badge kind="nasa" /></p>
           <div className="lite-plan">
             <p><b>Walk planning needs a detailed height map.</b> We prepared one for Jezero for this demo. Adding a site means running the bake script on its CTX or HiRISE height map.</p>
@@ -119,6 +131,7 @@ export default function LiteSite({ site }) {
           </div>
         </div>
       </aside>
+      {pano && <StreetView pano={pano} onClose={() => setPano(null)} />}
     </div>
   )
 }

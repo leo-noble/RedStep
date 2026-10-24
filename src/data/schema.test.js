@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
-import { checkHazards, checkMeta, checkPlaces, checkTerrain, checkTraverse, DataError } from './schema.js'
+import { checkHazards, checkMeta, checkPanoramas, checkPlaces, checkTerrain, checkTraverse, DataError } from './schema.js'
+import { PANORAMAS } from '../content/panoramas.js'
 import { STOPS, HABITAT } from '../content/science.js'
 
 const raw = JSON.parse(fs.readFileSync('public/data/jezero/meta.json', 'utf8'))
@@ -20,6 +21,8 @@ describe('data schema', () => {
     expect(() => checkPlaces({ home: HABITAT, stops: STOPS.jezero }, 'jezero')).not.toThrow()
     const p = JSON.parse(fs.readFileSync('public/data/jezero/perseverance.json', 'utf8'))
     expect(() => checkTraverse({ line: p.line, source: p.source }, 'jezero')).not.toThrow()
+    expect(() => checkPanoramas(PANORAMAS.map((q) => ({ ...q, url: 'x' })), 'all')).not.toThrow()
+    for (const q of PANORAMAS) expect(fs.existsSync(`public/data/panoramas/${q.file}`)).toBe(true)
   })
 
   it('names the problem when data is incomplete', () => {
@@ -29,5 +32,6 @@ describe('data schema', () => {
     expect(() => checkPlaces({ home: HABITAT, stops: [{ id: 'a', name: 'A', lon: 1 }] }, 'jezero')).toThrow(/stop "a"/)
     expect(() => checkHazards([{ id: 'h', kind: 'lava', lon: 0, lat: 0, note: 'n', source: 's', badge: 'nasa' }], 'jezero')).toThrow(/hazard "h"/)
     expect(() => checkTraverse({ line: [[0, 0]], source: 's' }, 'jezero')).toThrow(/line/)
+    expect(() => checkPanoramas([{ ...PANORAMAS[0], url: 'x', credit: '' }], 'jezero')).toThrow(/credit/)
   })
 })

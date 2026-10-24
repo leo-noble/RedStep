@@ -1095,6 +1095,18 @@
 .lite .mars-map .maplibregl-ctrl-bottom-left { bottom: 16px; }
 .lite .mars-scale { bottom: 52px; }
 
+.lite-street {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.lite-street-meta {
+  margin: 0;
+  font: 400 12px / 1.4 var(--mono);
+  color: var(--ink-3);
+}
+
 .lite-card .side-body {
   display: grid;
   gap: var(--s-4);

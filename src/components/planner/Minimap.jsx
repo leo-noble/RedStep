@@ -27,6 +27,10 @@ function shape(ctx, kind, x, y, s = 1) {
     ctx.beginPath(); ctx.moveTo(0, -6.5); ctx.lineTo(6.5, 5); ctx.lineTo(-6.5, 5); ctx.closePath(); ctx.fill(); ctx.stroke()
     ctx.fillStyle = '#000'; ctx.fillRect(-0.8, -2.5, 1.6, 4); ctx.fillRect(-0.8, 2.6, 1.6, 1.4)
   }
+  if (kind === 'here') {
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.18)'; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill()
+    ctx.fillStyle = COL.you; ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, 7); ctx.fill(); ctx.stroke()
+  }
   if (kind === 'you') {
     ctx.fillStyle = 'rgba(0, 229, 255, 0.18)'; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill()
     ctx.fillStyle = COL.you; ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(5.5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5.5, 6); ctx.closePath(); ctx.fill(); ctx.stroke()
@@ -75,7 +79,7 @@ function runs(profile, green, red) {
  * @param {{green: number, red: number}} props.limits  slope limits in degrees
  * @param {string} [props.title]
  */
-const Minimap = forwardRef(function Minimap({ profile, analysis: a, stops, visited, home, hazards = [], limits, title = 'Minimap', className = '' }, ref) {
+const Minimap = forwardRef(function Minimap({ profile = [], analysis: a, stops, visited = [], home, hazards = [], limits, title = 'Minimap', className = '', heading = true }, ref) {
   const mini = useRef(null)
   const big = useRef(null)
   const dialog = useRef(null)
@@ -112,6 +116,7 @@ const Minimap = forwardRef(function Minimap({ profile, analysis: a, stops, visit
     } else {
       const xs = [...profile.map((q) => mx(q[3])), mx(home[0])], ys = [...profile.map((q) => my(q[4])), my(home[1])]
       for (const s of stops) if (visited.includes(s.id)) { xs.push(mx(s.lon)); ys.push(my(s.lat)) }
+      if (p) { xs.push(mx(p.lon)); ys.push(my(p.lat)) }
       const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
       cx = (x0 + x1) / 2; cy = (y0 + y1) / 2
       scale = Math.min((w * 0.84) / Math.max(x1 - x0, 200), (h * 0.8) / Math.max(y1 - y0, 200))
@@ -151,9 +156,8 @@ const Minimap = forwardRef(function Minimap({ profile, analysis: a, stops, visit
     if (!turnAtEnd) shape(ctx, 'turn', sx(a.turnBack.lon), sy(a.turnBack.lat))
     else if (end && !a?.loop) shape(ctx, 'end', sx(end[3]), sy(end[4]))
     shape(ctx, 'home', sx(home[0]), sy(home[1]))
-    if (p) {
-      ctx.save(); ctx.translate(sx(p.lon), sy(p.lat)); ctx.rotate(p.bearing * D); shape(ctx, 'you', 0, 0); ctx.restore()
-    }
+    if (p && p.bearing == null) shape(ctx, 'here', sx(p.lon), sy(p.lat))
+    else if (p) { ctx.save(); ctx.translate(sx(p.lon), sy(p.lat)); ctx.rotate(p.bearing * D); shape(ctx, 'you', 0, 0); ctx.restore() }
 
     // north and scale
     ctx.fillStyle = COL.text
@@ -187,19 +191,22 @@ const Minimap = forwardRef(function Minimap({ profile, analysis: a, stops, visit
     if (!expanded && d.open) d.close()
   }, [expanded])
 
+  const walk = profile.length > 1
   const legend = [
-    ['you', 'You (arrow = heading)'],
-    ['route-easy', 'Route, easy ground'],
-    ['route-careful', `Careful: over ${limits.green}°`],
-    ['route-steep', `Too steep: over ${limits.red}°`],
+    heading ? ['you', 'You (arrow = heading)'] : ['here', 'You are here (direction not known)'],
+    walk && ['route-easy', 'Route, easy ground'],
+    walk && ['route-careful', `Careful: over ${limits.green}°`],
+    walk && ['route-steep', `Too steep: over ${limits.red}°`],
     ['home', 'Home (start)'],
-    turnAtEnd ? (a?.loop ? null : ['end', 'End of walk']) : ['turn', 'Turn-back point'],
+    !walk ? null : turnAtEnd ? (a?.loop ? null : ['end', 'End of walk']) : ['turn', 'Turn-back point'],
     ['visited', 'Science stop on this walk'],
     ['stop', 'Other science stop'],
     showSteepest ? ['steepest', `Steepest point (${a.maxSlope.toFixed(0)}°)`] : null,
     hazards.length ? ['hazard', 'Known hazard'] : null,
   ].filter(Boolean)
-  const label = `${title}: north-up map of your walk with home, ${visited.length} science stop${visited.length === 1 ? '' : 's'}${showSteepest ? ', the steepest point' : ''}${turnAtEnd ? '' : ' and the turn-back point'}.`
+  const label = walk
+    ? `${title}: north-up map of your walk with home, ${visited.length} science stop${visited.length === 1 ? '' : 's'}${showSteepest ? ', the steepest point' : ''}${turnAtEnd ? '' : ' and the turn-back point'}.`
+    : `${title}: north-up map showing where you are, home and the science stops.`
 
   return (
     <>
@@ -214,7 +221,7 @@ const Minimap = forwardRef(function Minimap({ profile, analysis: a, stops, visit
         {open && <div className="mm-screen"><canvas ref={mini} className="mm-canvas" role="img" aria-label={label} /></div>}
         {open && (
           <ul className="mm-key" aria-hidden="true">
-            {[['you', 'You'], ['home', 'Home'], ['visited', 'Stop'], ['route-steep', 'Steep']].map(([k, t]) => <li key={k}><Glyph kind={k} />{t}</li>)}
+            {[[heading ? 'you' : 'here', 'You'], ['home', 'Home'], ['visited', 'Stop'], walk && ['route-steep', 'Steep']].filter(Boolean).map(([k, t]) => <li key={k}><Glyph kind={k} />{t}</li>)}
           </ul>
         )}
       </section>

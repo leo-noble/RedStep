@@ -5,7 +5,7 @@
 // src/data/adapters/ that returns the shapes in src/data/schema.js, add it to ADAPTERS, and set
 // VITE_MARS_DATA=<its id> (or change DEFAULT). No page code changes. See docs/data-schema.md.
 import { baked } from './adapters/baked.js'
-import { checkHazards, checkMeta, checkPlaces, checkTerrain, checkTraverse } from './schema.js'
+import { checkHazards, checkMeta, checkPanoramas, checkPlaces, checkTerrain, checkTraverse } from './schema.js'
 
 export { DataError } from './schema.js'
 
@@ -50,6 +50,9 @@ export const siteTraverse = (id) => once(`traverse:${id}`, async () => {
   const t = await source.traverse(id, await siteMeta(id))
   return t && checkTraverse(t, id)
 })
+
+/** Real rover panoramas taken at the site (Street view). Empty when there are none. */
+export const sitePanoramas = (id) => checkPanoramas(source.panoramas?.(id) || [], id)
 
 /** IAU place names for search and labels. */
 export const placeNames = () => once('names', () => source.names())

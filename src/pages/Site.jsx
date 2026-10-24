@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
-import { siteById, sitePlaces, siteMeta, siteTraverse, siteHazards, WALK, FACTS } from '../data/index.js'
+import { siteById, sitePlaces, siteMeta, siteTraverse, siteHazards, sitePanoramas, WALK, FACTS } from '../data/index.js'
 import { LAYER_GROUPS } from '../content/layers.js'
 import { instantAtLocalTime, marsTime } from '../lib/mars24.js'
 import { paintElevation, paintSlope } from '../lib/marsmap.js'
@@ -10,6 +10,8 @@ import { useEmergency } from '../components/Layout.jsx'
 import MarsMap from '../components/planner/MarsMap.jsx'
 import Profile from '../components/planner/Profile.jsx'
 import Minimap from '../components/planner/Minimap.jsx'
+import StreetView from '../components/StreetView.jsx'
+import StreetPicker from '../components/StreetPicker.jsx'
 import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, VerdictPanel } from '../components/planner/Panels.jsx'
 import { Sidebar } from '../components/Sidebar.jsx'
 import { MANUAL } from '../content/manual.js'
@@ -83,6 +85,10 @@ function Planner({ site }) {
   const minimap = useRef(null)
   const stopFollow = useRef(null)
   const [hazards, setHazards] = useState([])
+  const panoramas = useMemo(() => sitePanoramas(site.id), [site.id])
+  const [picking, setPicking] = useState(false)
+  const [street, setStreet] = useState(null) // { pano } for real photos, { demo: place } for the orbital demo
+  const ground = useRef(null)
   useEffect(() => { siteHazards(site.id).then(setHazards).catch(() => setHazards([])) }, [site.id])
 
   // On phones the zoom buttons, scale and draw hint sit just under the action bar, whose height
@@ -338,6 +344,35 @@ function Planner({ site }) {
   const endFollow = () => { stopFollow.current?.(); stopFollow.current = null; setFollowing(false); mapRef.current?.setLayer('slope', layers.slope.on, layers.slope.opacity); if (result) mapRef.current?.fitRoute(result.line) }
   useEffect(() => () => stopFollow.current?.(), [])
 
+  // ---- street view ----
+  const openStreet = (pick) => {
+    setPicking(false)
+    setSheetOpen(false)
+    if (pick.pano) return setStreet({ pano: pick.pano })
+    setStreet({ demo: pick.place })
+    ground.current = mapRef.current?.groundView(pick.place.lon, pick.place.lat, (b) => minimap.current?.setPlayer(pick.place.lon, pick.place.lat, b))
+  }
+  const closeStreet = useCallback(() => {
+    ground.current?.stop(); ground.current = null
+    setStreet(null)
+    if (result) mapRef.current?.fitRoute(result.line)
+  }, [result])
+  useEffect(() => {
+    if (!street) return
+    const t = setTimeout(() => {
+      if (street.pano) minimap.current?.setPlayer(street.pano.lon, street.pano.lat, null)
+      else minimap.current?.setPlayer(street.demo.lon, street.demo.lat, ground.current?.bearing() ?? 0)
+    }, 0)
+    return () => clearTimeout(t)
+  }, [street])
+  useEffect(() => {
+    if (!street?.demo) return
+    const key = (e) => { if (e.key === 'Escape') closeStreet() }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [street, closeStreet])
+  useEffect(() => () => ground.current?.stop(), [])
+
   const exportBrief = async () => {
     if (!result) return
     const snapshot = await mapRef.current?.snapshot(result.line)
@@ -377,7 +412,7 @@ function Planner({ site }) {
   const settingsPanel = <SettingsPanel settings={settings} onChange={setSettings} date={date} onDate={setDate} sol={sol} snap={snap} onSnap={setSnap} />
 
   return (
-    <div className={`planner ${following ? 'following' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
+    <div className={`planner ${following ? 'following' : ''} ${street?.demo ? 'demo' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
       {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
       {!grid && (
         <div className="planner-loading" role="status" aria-live="polite">
@@ -405,6 +440,7 @@ function Planner({ site }) {
           </>
         )}
         <button type="button" className="btn btn-small ab-risky" onClick={tryRisky} disabled={!grid || busy} title="Draws a straight walk across steep ground so you can see a NO-GO and why">Try a risky walk</button>
+        <button type="button" className="btn btn-small" onClick={() => setPicking(true)} disabled={!mapReady}>Street view</button>
         {a && (
           <span className="ab-after">
             <button type="button" className="btn btn-small" onClick={follow}>Fly along in 3D</button>
@@ -473,6 +509,26 @@ function Planner({ site }) {
         </div>
       )}
 
+      {picking && <StreetPicker panoramas={panoramas} stops={stops} visited={visited} home={places.home} canDemo={!!grid} onPick={openStreet} onClose={() => setPicking(false)} />}
+      {street?.pano && (
+        <StreetView pano={street.pano} onClose={closeStreet}>
+          <Minimap ref={minimap} className="mm-sv" title="Location" heading={false} profile={a?.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
+        </StreetView>
+      )}
+      {street?.demo && (
+        <>
+          <div className="sv-demo" role="region" aria-label="Demo street view">
+            <p className="sv-demo-tag">DEMO · NOT ROVER PHOTOS</p>
+            <p><b>{street.demo.name}</b>: no rover panorama here, so this is a 3D view built from orbit (MRO CTX photo, plus HiRISE where it covers, on the CTX height map at true scale). The 3D shape comes from a 40 m height map, so boulders and small ledges are flat here.</p>
+            <div className="sv-demo-row">
+              <button type="button" className="btn btn-small" onClick={() => ground.current?.turn(-45)} aria-label="Turn left">←</button>
+              <button type="button" className="btn btn-small" onClick={() => ground.current?.turn(45)} aria-label="Turn right">→</button>
+              <button type="button" className="btn btn-small" onClick={closeStreet}>Close demo view</button>
+            </div>
+          </div>
+          <Minimap ref={minimap} title="Location" profile={a?.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
+        </>
+      )}
       {following && a && (
         <Minimap ref={minimap} profile={a.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
       )}

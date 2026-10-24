@@ -369,3 +369,9 @@ code {
   font-size: 14px;
   color: var(--ink-3);
 }
+
+.src-method-note {
+  margin-top: var(--s-2);
+  font-size: 13px;
+  color: var(--ink-3);
+}

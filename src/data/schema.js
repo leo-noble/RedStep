@@ -60,6 +60,25 @@
  * @property {string} source
  * @property {number} [lastSol]
  *
+ * @typedef {object} Panorama  a real rover panorama for Street view
+ * @property {string} id
+ * @property {string} site
+ * @property {string} name  place name
+ * @property {number} lon  where the rover stood
+ * @property {number} lat
+ * @property {string} where  how the position was worked out
+ * @property {string} rover
+ * @property {string} instrument
+ * @property {string} sol  sol or range of sols the images were taken
+ * @property {string} date
+ * @property {string} pia  NASA Photojournal id
+ * @property {string} credit  exact credit line from NASA
+ * @property {string} page  NASA page for the image
+ * @property {string} url  the web-sized image
+ * @property {number} fov  horizontal field of view in degrees (360 = full circle)
+ * @property {string} alt  text alternative
+ * @property {string} [colour]  how NASA processed the colours, when the caption says
+ *
  * @typedef {object} Assumption  one walk input (see src/content/assumptions.js)
  * @property {string} label
  * @property {number} value
@@ -131,4 +150,16 @@ export function checkTraverse(t, id) {
   need(t && Array.isArray(t.line) && t.line.length > 1 && t.line.every(isLonLat), what, 'line must be a list of [lon, lat]')
   need(typeof t.source === 'string', what, 'source missing')
   return t
+}
+
+/** @returns {Panorama[]} */
+export function checkPanoramas(list, id) {
+  const what = `panoramas for "${id}"`
+  need(Array.isArray(list), what, 'must be a list')
+  for (const p of list) {
+    need(p.id && p.name && num(p.lon) && num(p.lat) && p.where, what, `panorama "${p.id || '?'}" needs id, name, lon, lat and where`)
+    need(p.rover && p.instrument && p.sol && p.date && p.pia && p.credit && p.page && p.url, what, `panorama "${p.id}" needs rover, instrument, sol, date, pia, credit, page and url`)
+    need(num(p.fov) && p.fov > 0 && p.fov <= 360 && p.alt, what, `panorama "${p.id}" needs fov and alt`)
+  }
+  return list
 }

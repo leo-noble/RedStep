@@ -5,6 +5,7 @@
 import { SITES } from '../../content/sites.js'
 import { STOPS, HABITAT } from '../../content/science.js'
 import { WALK, FACTS } from '../../content/assumptions.js'
+import { PANORAMAS } from '../../content/panoramas.js'
 
 const ROOT = new URL(import.meta.env.BASE_URL, globalThis.location?.href)
 const url = (path) => new URL(`data/${path}`, ROOT).href
@@ -79,6 +80,9 @@ export const baked = {
   },
 
   walkInputs: () => ({ settings: WALK, facts: FACTS }),
+
+  /** Real rover panoramas (src/content/panoramas.js, baked by scripts/bake-panoramas.mjs). */
+  panoramas: (id) => PANORAMAS.filter((p) => p.site === id).map((p) => ({ ...p, url: url(`panoramas/${p.file}`) })),
 
   names: async () => (await json('names.json')).names,
 

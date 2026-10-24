@@ -12,7 +12,8 @@ const line = (coords, props = {}) => ({ type: 'Feature', properties: props, geom
 /**
  * The layered Mars map. Parent drives it through the ref:
  *   setLayer(id, on, opacity) · setImage(id, url) · setRoute(line, waypoints) · setStops(stops, visited)
- *   setMarkers({ habitat, turnBack }) · setRadius(lon, lat, m) · setHover(lon, lat) · follow(profile, hud) · snapshot()
+ *   setMarkers({ habitat, turnBack }) · setRadius(lon, lat, m) · setHover(lon, lat) · follow(profile, hud)
+ *   groundView(lon, lat, onTurn) · snapshot()
  */
 const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, onWaypointDrag, onStopClick, onReady, drawing }, ref) {
   const el = useRef(null)
@@ -202,6 +203,24 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       const b = coords.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]))
       const pad = window.innerWidth < 820 ? { top: 90, bottom: window.innerHeight * 0.5, left: 30, right: 30 } : { top: 110, bottom: 260, left: 400, right: 440 }
       m.fitBounds(b, { padding: pad, duration: prefersReducedMotion() ? 0 : 1400, maxZoom: 13.4 })
+    },
+    /**
+     * Demo street view: a ground-level 3D look from orbital data (photo on the height map, true
+     * scale). onTurn(bearing) fires as the view turns. Returns { turn(deg), bearing(), stop() }.
+     */
+    groundView(lon, lat, onTurn) {
+      const m = map.current
+      if (!m) return { turn() {}, stop() {} }
+      if (m.getSource('dem')) m.setTerrain({ source: 'dem', exaggeration: 1 })
+      const rot = () => onTurn?.(m.getBearing())
+      m.on('rotate', rot)
+      m.easeTo({ center: [lon, lat], zoom: 15.2, pitch: 76, bearing: m.getBearing(), duration: prefersReducedMotion() ? 0 : 1400 })
+      rot()
+      return {
+        turn: (deg) => m.easeTo({ bearing: m.getBearing() + deg, duration: prefersReducedMotion() ? 0 : 500 }),
+        bearing: () => m.getBearing(),
+        stop: () => { m.off('rotate', rot); m.setTerrain(null); m.easeTo({ pitch: 0, bearing: 0, duration: prefersReducedMotion() ? 0 : 900 }) },
+      }
     },
     /** Fly along the walk in 3D. hud(i, d, {lon, lat, bearing}) is called each frame. Returns a stop function. */
     follow(profile, hud, done) {

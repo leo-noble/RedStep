@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Badge, Eyebrow } from '../components/Atoms.jsx'
 import { BADGES } from '../content/site.js'
 import { DATA, FACT_SOURCES } from '../content/sources.js'
-import { WALK, backtest, dataSource } from '../data/index.js'
+import { WALK, SITES, backtest, dataSource, sitePanoramas } from '../data/index.js'
 import { BASE } from '../content/habitat.js'
 import './page.css'
 
@@ -42,6 +42,16 @@ export default function Sources() {
           </div>
         </section>
       ))}
+
+      <section className="src-group">
+        <h2 className="micro">Street view panoramas <Badge kind="nasa" /></h2>
+        <ul className="src-facts">
+          {SITES.flatMap((st) => sitePanoramas(st.id)).map((p) => (
+            <li key={p.id}><a href={p.page} target="_blank" rel="noreferrer">{p.pia}: {p.title} ↗</a> · {p.rover} {p.instrument}, sol {p.sol} ({p.date}) · {p.credit}</li>
+          ))}
+        </ul>
+        <p className="src-method-note">Shrunk to 6,000 px wide for the web by <code>scripts/bake-panoramas.mjs</code>. Rover positions from JPL MMGIS waypoints. Places without a rover panorama get a Demo view from orbit, labelled as not rover photos.</p>
+      </section>
 
       <section className="src-group">
         <h2 className="micro">Facts and methods</h2>
