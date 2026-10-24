@@ -1,0 +1,154 @@
+{
+ "generated": "2026-10-24",
+ "source": "NASA JPL MMGIS M20_traverse.json (Perseverance drives to sol 2009)",
+ "grid": "MRO CTX height map (USGS), 20 m averaged to 40 m",
+ "limits": {
+  "greenSlope": 10,
+  "redSlope": 15
+ },
+ "steepness": {
+  "pathKm": 46.03,
+  "outsideGridKm": 0,
+  "pctEasy": 76.1,
+  "pctCareful": 19,
+  "pctTooSteep": 4.94,
+  "passesPct": 95.06,
+  "flaggedStretches": 12,
+  "flagged": [
+   {
+    "fromKm": 28.15,
+    "toKm": 28.25,
+    "lengthM": 101,
+    "maxSlope": 18.1,
+    "sols": "1183–1219",
+    "lon": 77.30538,
+    "lat": 18.49734
+   },
+   {
+    "fromKm": 29.11,
+    "toKm": 29.39,
+    "lengthM": 286,
+    "maxSlope": 18.2,
+    "sols": "1247–1265",
+    "lon": 77.2992,
+    "lat": 18.48936
+   },
+   {
+    "fromKm": 30.04,
+    "toKm": 30.5,
+    "lengthM": 457,
+    "maxSlope": 17.6,
+    "sols": "1274–1285",
+    "lon": 77.2994,
+    "lat": 18.47673
+   },
+   {
+    "fromKm": 30.66,
+    "toKm": 30.86,
+    "lengthM": 198,
+    "maxSlope": 16.9,
+    "sols": "1292–1298",
+    "lon": 77.29708,
+    "lat": 18.47142
+   },
+   {
+    "fromKm": 33.37,
+    "toKm": 33.41,
+    "lengthM": 34,
+    "maxSlope": 15.3,
+    "sols": "1362",
+    "lon": 77.26467,
+    "lat": 18.45958
+   },
+   {
+    "fromKm": 33.78,
+    "toKm": 33.81,
+    "lengthM": 35,
+    "maxSlope": 15.3,
+    "sols": "1407",
+    "lon": 77.26467,
+    "lat": 18.46009
+   },
+   {
+    "fromKm": 33.94,
+    "toKm": 33.96,
+    "lengthM": 26,
+    "maxSlope": 15.1,
+    "sols": "1415",
+    "lon": 77.26478,
+    "lat": 18.45971
+   },
+   {
+    "fromKm": 34.18,
+    "toKm": 34.8,
+    "lengthM": 621,
+    "maxSlope": 18.1,
+    "sols": "1429–1502",
+    "lon": 77.2617,
+    "lat": 18.46021
+   },
+   {
+    "fromKm": 35.82,
+    "toKm": 35.97,
+    "lengthM": 152,
+    "maxSlope": 19.1,
+    "sols": "1519–1523",
+    "lon": 77.25673,
+    "lat": 18.45302
+   },
+   {
+    "fromKm": 36.5,
+    "toKm": 36.54,
+    "lengthM": 37,
+    "maxSlope": 15.4,
+    "sols": "1549–1556",
+    "lon": 77.25703,
+    "lat": 18.46108
+   },
+   {
+    "fromKm": 37.23,
+    "toKm": 37.41,
+    "lengthM": 180,
+    "maxSlope": 19,
+    "sols": "1577–1592",
+    "lon": 77.25665,
+    "lat": 18.45322
+   },
+   {
+    "fromKm": 38.3,
+    "toKm": 38.47,
+    "lengthM": 172,
+    "maxSlope": 26,
+    "sols": "1646–1674",
+    "lon": 77.26466,
+    "lat": 18.44782
+   }
+  ]
+ },
+ "air": {
+  "suit": {
+   "suitHours": 7,
+   "reservePct": 25,
+   "flatPaceKmh": 2,
+   "climbCostPctPer10pct": 40
+  },
+  "drives": 382,
+  "fitWithinBudget": 382,
+  "fitPct": 100,
+  "longestDrive": {
+   "sol": 352,
+   "m": 489
+  },
+  "tooLongForAWalk": []
+ },
+ "tiltCheck": {
+  "waypoints": 706,
+  "medianRoverTilt": 7,
+  "medianOurSlope": 5.5,
+  "medianAbsDiff": 1.6,
+  "correlation": 0.81,
+  "roverTiltOver15": 60,
+  "weCallCarefulOrSteep": 53,
+  "weCallTooSteep": 37
+ }
+}

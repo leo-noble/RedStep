@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Badge, Eyebrow } from '../components/Atoms.jsx'
 import { BADGES } from '../content/site.js'
 import { DATA, FACT_SOURCES } from '../content/sources.js'
@@ -62,6 +63,8 @@ export default function Sources() {
         </ul>
       </section>
 
+      <Backtest />
+
       <section className="src-group">
         <h2 className="micro">Assumptions you can change <Badge kind="illustrative" /></h2>
         <div className="src-assume">
@@ -82,5 +85,24 @@ export default function Sources() {
         </ul>
       </section>
     </div>
+  )
+}
+
+/** Our rules run along Perseverance's real path (scripts/backtest.mjs → backtest.json). */
+function Backtest() {
+  const [b, setB] = useState(null)
+  useEffect(() => { fetch(`${import.meta.env.BASE_URL}data/jezero/backtest.json`).then((r) => r.json()).then(setB).catch(() => {}) }, [])
+  if (!b) return null
+  const st = b.steepness, t = b.tiltCheck, air = b.air
+  return (
+    <section className="src-group">
+      <h2 className="micro">Checking the planner against Perseverance <Badge kind="derived" /></h2>
+      <ul className="src-methods">
+        <li><b>{st.passesPct}% of Perseverance’s real {st.pathKm} km path passes our steepness rule</b> (ground at or under {b.limits.redSlope}°). {st.pctTooSteep}% is flagged as too steep, in {st.flaggedStretches} stretches, all on the climb from the delta to the crater rim ({st.flagged.map((f) => `sols ${f.sols}`).slice(0, 3).join(', ')}…). A rover can drive slopes a walking crew should avoid, so these flags are expected, not errors.</li>
+        <li><b>Our slope from orbit matches the rover’s own measured tilt:</b> at {t.waypoints} rover stops the correlation is {t.correlation}, with a median difference of {t.medianAbsDiff}°. Our 40 m map reads a little flatter than the ground under the rover (median {t.medianOurSlope}° vs {t.medianRoverTilt}°). Where the rover tilted more than {b.limits.redSlope}° ({t.roverTiltOver15} stops), we call {t.weCallTooSteep} too steep and {t.weCallCarefulOrSteep} at least “careful”.</li>
+        <li><b>Air budget:</b> each of the {air.drives} logged drives, walked out and back with our default suit ({air.suit.suitHours} h, {air.suit.reservePct}% reserve), fits the usable air ({air.fitPct}%). Single drives are short (longest {air.longestDrive.m} m, sol {air.longestDrive.sol}), so this mainly shows the budget logic runs on real paths.</li>
+        <li className="src-method-note">Method: path from NASA JPL MMGIS, sampled every 20 m on the MRO CTX height map (USGS, 20 m averaged to 40 m), default limits. Generated {b.generated} by <code>scripts/backtest.mjs</code>.</li>
+      </ul>
+    </section>
   )
 }
