@@ -1,6 +1,6 @@
 # Marswalk Planner
 
-**Plan a walk on another world.** A layered Mars map where you pick a site, draw a Marswalk, and get an instant, data-backed verdict — GO, CAUTION or NO-GO, and why — plus the science you will do on the way. Built from real NASA mission data.
+**Plan a walk on another world.** A layered Mars map of the whole planet, with a walk planner at Jezero Crater: draw a Marswalk and get an instant, data-backed verdict — GO, CAUTION or NO-GO, and why — plus the science you will do on the way. Built from real NASA mission data.
 
 NASA Space Apps Challenge 2026 · *Interplanetary Survival Guide: Martian Map* · a Loadstone project.
 

@@ -80,6 +80,7 @@ export default function Home() {
           Plan a walk<br />on <span className="serif">another world.</span>
         </h1>
         <p className="intro-pitch">{SITE.pitchShort}</p>
+        <p className="intro-why">{SITE.whyJezero}</p>
         <div className="intro-cta">
           <button type="button" className="btn btn-primary" onClick={begin}>Begin descent <span className="arrow">↓</span></button>
           <button type="button" className="btn btn-ghost" onClick={skip}>Skip to Mars</button>
