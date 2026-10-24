@@ -57,7 +57,10 @@ function Planner({ site }) {
   const [meta, setMeta] = useState(null)
   const [grid, setGrid] = useState(null)
   const [mapReady, setMapReady] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(null) // fatal: terrain could not load
+  const [loadPct, setLoadPct] = useState(0)
+  const [loadStage, setLoadStage] = useState('download')
+  const [slowLoad, setSlowLoad] = useState(false)
   const [layers, setLayers] = useState(() => Object.fromEntries(ALL_LAYERS.map((l) => [l.id, { on: l.on, opacity: l.opacity }])))
   const [settings, setSettings] = useState(() => ({ ...DEFAULTS, ...store.get('mw-settings-v2', {}), ...(params.get('t') ? { startHour: Number(params.get('t')) } : {}) }))
   const [date, setDate] = useState(params.get('d') || today())
@@ -91,18 +94,29 @@ function Planner({ site }) {
   const sol = useMemo(() => marsTime(startMs), [startMs])
   useEffect(() => { store.set('mw-settings-v2', settings) }, [settings])
 
+  useEffect(() => {
+    if (grid) return
+    const t = setTimeout(() => setSlowLoad(true), 6000)
+    return () => clearTimeout(t)
+  }, [grid])
+
   // ---- worker ----
   useEffect(() => {
     const w = new Worker(new URL('../compute/worker.js', import.meta.url), { type: 'module' })
     worker.current = w
     w.onmessage = ({ data }) => {
       if (data.type === 'ready') { setMeta((m) => m || data.meta); setGrid({ w: data.w, h: data.h, slope: data.slope, elev: data.elev, dx: data.dx, dy: data.dy }) }
-      else if (data.type === 'error') { setError(data.message); setBusy(false) }
+      else if (data.type === 'progress') { setLoadPct(data.pct); if (data.stage) setLoadStage(data.stage) }
+      else if (data.type === 'error') {
+        setBusy(false)
+        if (data.init) setError(`Couldn\u2019t load the terrain: ${data.message}.`)
+        else setSuggestNote(`Something went wrong while planning (${data.message}). Try again.`)
+      }
       else if (data.id === reqId.current) handleResult(data)
     }
-    w.onerror = (e) => setError(e.message || 'Worker failed')
+    w.onerror = (e) => setError(`Couldn\u2019t start the route calculator${e.message ? `: ${e.message}` : ''}.`)
     w.postMessage({ type: 'init', site: site.id, base: new URL(BASE, location.href).href })
-    fetch(`${BASE}data/${site.id}/meta.json`).then((r) => r.json()).then((d) => setMeta((m) => m || d)).catch(() => setError('Map data missing. Run npm run bake.'))
+    fetch(`${BASE}data/${site.id}/meta.json`).then((r) => r.json()).then((d) => setMeta((m) => m || d)).catch(() => setError('Couldn\u2019t load the map data. Check your connection and try again.'))
     return () => w.terminate()
   }, [site.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -305,7 +319,10 @@ function Planner({ site }) {
       <div className="site-error">
         <p className="micro">Map data</p>
         <h1>{error}</h1>
-        <Link to="/" className="btn">Back to the globe</Link>
+        <div className="site-error-actions">
+          <button type="button" className="btn btn-primary" onClick={() => location.reload()}>Try again</button>
+          <Link to="/" className="btn">Back to the Mars map</Link>
+        </div>
       </div>
     )
   }
@@ -320,12 +337,17 @@ function Planner({ site }) {
   return (
     <div className={`planner ${following ? 'following' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
       {meta && <MarsMap ref={mapRef} base={BASE} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
-      {!grid && <div className="planner-loading"><span className="micro">Loading the Jezero height map · MRO CTX</span></div>}
+      {!grid && (
+        <div className="planner-loading" role="status" aria-live="polite">
+          <span><i className="spinner" aria-hidden="true" />{loadStage === 'slopes' ? 'Working out slopes…' : `Loading terrain… ${loadPct}%`}{slowLoad && <small>Slow connection: the Jezero height map is about 1.8 MB.</small>}</span>
+        </div>
+      )}
 
       {/* action bar */}
       <div className="actionbar glass" role="toolbar" aria-label="Walk tools">
-        <button type="button" className="btn btn-primary ab-main" onClick={() => suggest()} disabled={!grid || busy}>
-          {busy ? 'Finding a safe path…' : a ? 'Suggest another walk' : 'Suggest a safe walk'}
+        <button type="button" className="btn btn-primary ab-main" onClick={() => suggest()} disabled={!grid || busy} aria-busy={!grid || busy}>
+          {(!grid || busy) && <i className="spinner spinner-dark" aria-hidden="true" />}
+          {!grid ? 'Loading terrain…' : busy ? 'Finding a safe path…' : a ? 'Suggest another walk' : 'Suggest a safe walk'}
         </button>
         <div className="ab-appetite" role="radiogroup" aria-label="Walk length">
           {APPETITE.map((x) => (
@@ -333,7 +355,7 @@ function Planner({ site }) {
           ))}
         </div>
         <span className="ab-or">or</span>
-        <button type="button" className={`btn btn-small ${drawing ? 'on' : ''}`} aria-pressed={drawing} onClick={() => setDrawing((d) => !d)}>{drawing ? 'Done drawing' : 'Draw my own'}</button>
+        <button type="button" className={`btn btn-small ${drawing ? 'on' : ''}`} aria-pressed={drawing} disabled={!grid} onClick={() => setDrawing((d) => !d)}>{drawing ? 'Done drawing' : 'Draw my own'}</button>
         {(drawing || waypoints.length > 1) && (
           <>
             <button type="button" className="btn btn-small ab-icon" onClick={undo} disabled={waypoints.length < 2} aria-label="Undo last point" title="Undo last point">↶</button>
