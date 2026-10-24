@@ -10,13 +10,15 @@
 5. **Default walk on arrival**: Medium suggestion runs automatically when the URL has no walk.
 6. **Try a risky walk**: picked from the terrain (nearest stop whose straight line crosses > 15° ground); shows NO-GO with reasons. Unit-tested on the real grid.
 7. **Backtest vs Perseverance** (`scripts/backtest.mjs`, shown on /sources, DERIVED): 95.06% of the 46.03 km path passes the 15° rule; 4.94% flagged in 12 stretches (rim climb). Orbit slope vs rover tilt at 706 stops: r = 0.81, median diff 1.6°. All 382 drives fit the air budget (longest 489 m).
+11. **44 px tap targets** (`src/styles/touch.css`, phones < 768 px and touch screens): 0 controls under 44 px on every route at 375×812 on the live site; inline text links left as is (WCAG inline exception). Planner zoom buttons, scale and draw hint now follow the action bar's real height on phones (they were partly hidden behind it).
+12. *(part)* **HydrateFallback warning**: lazy pages have a fallback; console clean on all routes on the live site.
+
+Deployed to production 24 Oct 2026 (entry `index-By8mWoHc.js`).
 
 ### Still open
 - 8 sensitivity view (speed × suit air → verdict grid)
 - 9 home promise line under the headline
 - 10 page weight: before = main JS 1,424 kB (407 kB gz), home loads 6,685 KB images/data, og.png 1.1 MB; lazy-load Explorer/maplibre, drop 4K texture, lazy site images, shrink og.png
-- 11 44 px tap targets on touch (check 375×812)
-- 12 h1 on /site/jezero, per-route titles, real 404 (Vercel 404.html + limited rewrites), HydrateFallback warning
-- Redeploy (live site has none of this branch yet)
+- 12 (rest) h1 on /site/jezero, per-route titles, real 404 (Vercel 404.html + limited rewrites)
 - P3 (after 28 Oct): requirements map + official dataset
 - Fill in: team names/roles; confirm `SITE.whyJezero`
