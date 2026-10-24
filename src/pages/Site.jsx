@@ -232,6 +232,15 @@ function Planner({ site }) {
     worker.current.postMessage({ type: 'suggest', id, habitat, stops, settings, startMs, site, facts: FACT_VALUES, appetite: APPETITE.find((a) => a.id === which).value })
   }, [grid, appetite, habitat, stops, settings, startMs, site])
 
+  // First visit without a walk in the URL: show the Medium suggestion straight away,
+  // so the answer card is visible without pressing anything.
+  const autoRan = useRef(!!params.get('w'))
+  useEffect(() => {
+    if (!grid || autoRan.current) return
+    autoRan.current = true
+    suggest('balanced')
+  }, [grid, suggest])
+
   const onMapClick = useCallback((p, stopId) => {
     if (!drawing) return
     const s = stopId && stops.find((x) => x.id === stopId)
