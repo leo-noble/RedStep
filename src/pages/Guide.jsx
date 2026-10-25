@@ -74,7 +74,7 @@ export default function Guide() {
         <header className="g-head">
           <Eyebrow>Step {idx + 1} of {STEPS.length}</Eyebrow>
           <h1 tabIndex={-1} ref={head}>{s.title}</h1>
-          <p className="g-question serif">{s.question}</p>
+          <p className="g-question">{s.question}</p>
           <p className="g-lead">{s.lead}</p>
         </header>
 

@@ -13,9 +13,8 @@
   letter-spacing: -0.05em;
 }
 
-.page-head .serif {
+.page-head .accent {
   color: var(--ember);
-  letter-spacing: -0.03em;
 }
 
 .page-lead {

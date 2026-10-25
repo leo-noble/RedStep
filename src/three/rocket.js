@@ -2,6 +2,8 @@
 // black band under the nose fairing and two strap-on boosters with dark lower halves, firing
 // three engines. Built from smooth turned shapes with painted panels and the MARSWALK name.
 // Animated: flickering flames, streaming exhaust smoke, engine shake, booster separation.
+// Paint is clear-coated with soft reflections (envMap) and casts shadows; the fire is brighter
+// than white so the scene's bloom makes it glow.
 // Local units: rocket length 1, engines at y = 0, nose at y = 1. Illustrative, not to scale.
 import * as THREE from 'three'
 
@@ -101,7 +103,7 @@ void main(){
   vec3 col = mix(hot, warm, smoothstep(0.04, 0.4, along));
   col = mix(col, tail, smoothstep(0.45, 1.0, along)) + diamonds * vec3(0.4, 0.5, 0.7);
   float a = clamp((body * body + diamonds * 0.5) * power, 0.0, 1.0);
-  gl_FragColor = vec4(col * a, a);
+  gl_FragColor = vec4(col * a * (1.0 + 0.8 * smoothstep(0.35, 0.0, along)), a); // the hot core is brighter than white, so it glows
 }`
 
 function flame(radius, length, seed) {
@@ -142,18 +144,20 @@ void main(){
   gl_FragColor = vec4(col, a);
 }`
 
-export function createRocket() {
+export function createRocket({ envMap = null } = {}) {
   const root = new THREE.Group() // moved along the flight path; +Y = direction of flight
   const shake = new THREE.Group() // engine vibration
   root.add(shake)
   const body = new THREE.Group() // rolls slowly about its long axis
   shake.add(body)
 
-  const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.04, ...o })
-  const white = std({ color: 0xf0efeb })
-  const black = std({ color: 0x141416, roughness: 0.55 })
-  const metal = std({ color: 0x8f9196, roughness: 0.3, metalness: 0.8 })
-  const nozzleMat = std({ color: 0x3c3d42, roughness: 0.28, metalness: 0.85, side: THREE.DoubleSide, emissive: new THREE.Color(0xff7a2a), emissiveIntensity: 0 })
+  // painted parts: clear-coated, with panel lines pressed in (the colour texture doubles as bump)
+  const paint = (o) => new THREE.MeshPhysicalMaterial({ roughness: 0.38, metalness: 0.02, clearcoat: 0.5, clearcoatRoughness: 0.25, envMap, envMapIntensity: 0.3, ...(o.map ? { bumpMap: o.map, bumpScale: 1.2 } : {}), ...o })
+  const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.04, envMap, envMapIntensity: 0.4, ...o })
+  const white = paint({ color: 0xf0efeb })
+  const black = paint({ color: 0x141416, roughness: 0.5 })
+  const metal = std({ color: 0x8f9196, roughness: 0.3, metalness: 0.8, envMapIntensity: 1 })
+  const nozzleMat = std({ color: 0x3c3d42, roughness: 0.28, metalness: 0.85, envMapIntensity: 1, side: THREE.DoubleSide, emissive: new THREE.Color(0xff7a2a), emissiveIntensity: 0 })
 
   const lathe = (pts, m, parent = body, x = 0, seg = 72) => {
     const o = new THREE.Mesh(new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg), m)
@@ -170,13 +174,13 @@ export function createRocket() {
 
   // core stage and upper stage, one painted cylinder from the engine bay to the fairing
   const CORE0 = 0.045, CORE1 = 0.8
-  cyl(R, R, CORE0, CORE1, std({ map: coreTex(CORE0, CORE1, 0.6, 0.665) }))
+  cyl(R, R, CORE0, CORE1, paint({ map: coreTex(CORE0, CORE1, 0.6, 0.665) }))
   lathe([[R * 0.82, 0.0], [R * 0.9, 0.02], [R, CORE0]], metal) // engine bay
   // nose fairing: smooth ogive
   const ogive = []
   for (let i = 0; i <= 28; i++) { const t = i / 28; ogive.push([R * Math.pow(Math.max(0, 1 - t * t), 0.55) + (i === 28 ? 0 : 0), CORE1 + t * 0.2]) }
   ogive[ogive.length - 1][0] = 0.0006
-  lathe(ogive, std({ map: fairingTex(), roughness: 0.3 }))
+  lathe(ogive, paint({ map: fairingTex(), roughness: 0.3 }))
   // core engine nozzle
   const bell = (r0, r1, len) => { const p = []; for (let i = 0; i <= 14; i++) { const t = i / 14; p.push([r0 + (r1 - r0) * Math.pow(t, 0.6), -t * len]) } return p.reverse() }
   lathe(bell(0.012, 0.03, 0.06), nozzleMat, body, 0, 40).position.y = 0.006
@@ -187,7 +191,7 @@ export function createRocket() {
     const b = new THREE.Group()
     body.add(b)
     const B0 = 0.01, B1 = 0.42
-    cyl(BR, BR, B0, B1, std({ map: boosterTex(B0, B1, 0.26) }), b, sx * BX, 48)
+    cyl(BR, BR, B0, B1, paint({ map: boosterTex(B0, B1, 0.26) }), b, sx * BX, 48)
     const cone = []
     for (let i = 0; i <= 20; i++) { const t = i / 20; cone.push([Math.max(0.0005, BR * Math.pow(1 - t * t, 0.5)), B1 + t * 0.1]) }
     lathe(cone, white, b, sx * BX, 48)
@@ -201,6 +205,9 @@ export function createRocket() {
     }
     boosters.push({ group: b, sx, nozzleY: B0 - 0.048 })
   }
+
+  // solid parts cast and catch shadows (boosters shading the core, for depth)
+  body.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } })
 
   // ---------- fire ----------
   const fire = new THREE.Group()
@@ -218,16 +225,16 @@ export function createRocket() {
 
   // hot glow at each nozzle
   const puff = puffTex()
-  const glowMat = new THREE.SpriteMaterial({ map: puff, color: 0xffb070, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
+  const glowMat = new THREE.SpriteMaterial({ map: puff, color: new THREE.Color(1.4, 0.85, 0.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
   const glows = [[0, -0.06], ...boosters.map((b) => [b.sx * BX, b.nozzleY - 0.005])].map(([x, y]) => {
     const s = new THREE.Sprite(glowMat)
-    s.position.set(x, y, 0); s.scale.setScalar(0.13)
+    s.position.set(x, y, 0); s.scale.setScalar(0.08)
     body.add(s)
     return s
   })
 
   // smoke particles
-  const N = 2400
+  const N = 1800
   const seeds = new Float32Array(N * 4), which = new Float32Array(N)
   for (let i = 0; i < N; i++) {
     seeds.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
@@ -253,6 +260,7 @@ export function createRocket() {
   // the fire lights the rocket's base and boosters
   const fireLight = new THREE.PointLight(0xff9a50, 0, 0.9, 1.4)
   fireLight.position.set(0, -0.05, 0.06)
+  // (intensity is set from the thrust each frame)
   body.add(fireLight)
 
   // booster separation: they drift off, tumbling, and fade from view
@@ -296,7 +304,7 @@ export function createRocket() {
       fire.scale.set(1, (0.45 + 0.55 * thrust) * flick, 1)
       for (const f of flames) { f.material.uniforms.time.value = t; f.material.uniforms.power.value = Math.min(1, thrust * 1.3) }
       for (const f of boosterFlames) f.scale.y = (0.45 + 0.55 * thrust) * flick
-      glows.forEach((g, i) => g.scale.setScalar((i ? 0.1 : 0.14) * (0.6 + 0.4 * thrust) * flick))
+      glows.forEach((g, i) => g.scale.setScalar((i ? 0.06 : 0.085) * (0.6 + 0.4 * thrust) * flick))
       smokeMat.uniforms.time.value = t
       smokeMat.uniforms.power.value = thrust
       smokeMat.uniforms.px.value = px

@@ -35,7 +35,6 @@
   /* type */
   --font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  --serif: 'Instrument Serif', Georgia, serif;
 
   --t-hero: clamp(56px, 11vw, 176px);
   --t-1: clamp(40px, 7vw, 112px);

@@ -11,7 +11,7 @@ export default function Habitat() {
     <div className="page">
       <header className="page-head">
         <Eyebrow>Base calculator</Eyebrow>
-        <h1>What does a crew<br /><span className="serif">need to live?</span></h1>
+        <h1>What does a crew<br /><span className="accent">need to live?</span></h1>
         <p className="page-lead">Change the crew size and every assumption. Air, water, food and shelter update together. Numbers marked <Badge kind="nasa" /> come from missions; numbers marked <Badge kind="illustrative" /> are planning guesses you can change.</p>
       </header>
 

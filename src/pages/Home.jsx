@@ -48,11 +48,15 @@ export default function Home() {
     return () => { alive = false; api?.dispose(); space.current = null }
   }, [reduced])
 
-  // fetch the map code while the visitor reads the intro
+  // fetch the map code while the visitor reads the intro (after the headline has settled, and
+  // only when the browser is idle, so the Earth animation never stutters)
   useEffect(() => {
-    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1200))
-    const id = idle(() => loadExplorer().catch(() => {}))
-    return () => (window.cancelIdleCallback || clearTimeout)(id)
+    let id = null
+    const t = setTimeout(() => {
+      const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200))
+      id = idle(() => loadExplorer().catch(() => {}), { timeout: 4000 })
+    }, 2500)
+    return () => { clearTimeout(t); if (id !== null) (window.cancelIdleCallback || clearTimeout)(id) }
   }, [])
 
   // Hand over from the 3D arrival to the map once the map has drawn, then free the GPU.
@@ -109,7 +113,7 @@ export default function Home() {
       <section className="intro" aria-hidden={phase !== 'earth'} inert={phase !== 'earth'}>
         <p className="intro-kicker">NASA Space Apps 2026 · Martian Map</p>
         <h1 className="intro-title">
-          Plan a walk<br />on <span className="serif">another world.</span>
+          Plan a walk<br />on <span className="accent">another world.</span>
         </h1>
         <p className="intro-pitch">{SITE.pitchShort}</p>
         <p className="intro-why">{SITE.whyJezero}</p>
@@ -119,11 +123,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* the map loads underneath during the flight, so it is ready on arrival */}
-      {phase !== 'earth' && (
-        <div className="home-map" inert={phase !== 'globe'}>
-          <Suspense fallback={phase === 'globe' ? <p className="home-loading" role="status"><i className="spinner" aria-hidden="true" />Loading the Mars map…</p> : null}>
-            <Explorer visible={phase === 'globe'} onReady={() => setMapReady(true)} />
+      {/* the map starts once the rocket is at Mars (setting it up mid-flight made the flight stutter);
+          the 3D globe stays on screen until the map has drawn */}
+      {phase === 'globe' && (
+        <div className="home-map">
+          <Suspense fallback={sceneGone ? <p className="home-loading" role="status"><i className="spinner" aria-hidden="true" />Loading the Mars map…</p> : null}>
+            <Explorer visible onReady={() => setMapReady(true)} />
           </Suspense>
         </div>
       )}

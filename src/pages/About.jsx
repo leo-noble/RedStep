@@ -19,7 +19,7 @@ export default function About() {
     <div className="page">
       <header className="page-head">
         <Eyebrow>About this project</Eyebrow>
-        <h1>A survival guide<br /><span className="serif">you can walk.</span></h1>
+        <h1>A survival guide<br /><span className="accent">you can walk.</span></h1>
         <p className="page-lead">{SITE.name} is our answer to NASA Space Apps 2026 &ldquo;Interplanetary Survival Guide: Martian Map&rdquo;: a layered Mars map that helps a human explorer plan a safe walk and do new science on the way.</p>
       </header>
 

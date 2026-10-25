@@ -150,11 +150,9 @@ canvas {
   font-feature-settings: 'tnum' 1;
 }
 
-.serif {
-  font-family: var(--serif);
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+/* highlighted words in a heading: same typeface, in the accent colour */
+.accent {
+  color: var(--ember);
 }
 
 .rule {
