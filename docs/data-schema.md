@@ -43,7 +43,7 @@ Coordinates are planetocentric degrees, **longitude east**. A `bbox` is `[west, 
 | `names()` | `[[name, lon, lat, type, rank], …]` IAU names (rank = label priority: 1 shows from far away, 3 only when zoomed in) | world map search |
 | `backtest(id)` | backtest result (`scripts/backtest.mjs`) | /sources |
 | `tiles(id)` | URL template `…/{z}/{x}/{y}.jpg` for `viking`, `mola`, `dust` | world map |
-| `texture(file)` | URL of a whole-planet texture | intro globe |
+| `texture(file)` | URL of a whole-planet texture | home page planets |
 
 ### SiteMeta
 

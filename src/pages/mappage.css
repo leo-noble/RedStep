@@ -1,0 +1,32 @@
+/* /map: the whole-planet Mars map, full screen under the nav */
+.map-page {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: #000;
+}
+
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.map-loading .spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid var(--rule);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: map-spin 0.9s linear infinite;
+}
+
+@keyframes map-spin { to { transform: rotate(360deg); } }

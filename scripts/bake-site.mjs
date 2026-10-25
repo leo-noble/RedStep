@@ -3,14 +3,14 @@
 //   npm run bake
 //
 // What it makes (all written to public/data, so the built site needs no network):
-//   globe/      Mars, Earth and Moon textures for the 3D views (equirectangular, as served)
+//   globe/      Mars, Earth and Moon textures for the home page (equirectangular, as served)
 //   jezero/     elevation grid, CTX photo, mission layers, Perseverance path, meta.json
 //
 // Sources (see src/content/sources.js for the credits shown in the app):
 //   - USGS Astrogeology, Mars 2020 TRN CTX DTM + orthomosaic (Fergason et al. 2020)
 //   - NASA Mars Trek WMTS tiles (Viking MDIM 2.1, MOLA/HRSC, THEMIS, TES)
 //   - NASA JPL MMGIS Perseverance traverse + waypoints
-//   - NASA Earth Observatory Blue Marble / Black Marble, NASA Moon Trek LRO WAC
+//   - NASA Earth Observatory Blue Marble, NASA Moon Trek LRO WAC
 //
 // The map draws in Web Mercator, so every map image is warped row by row from the source's
 // equirectangular grid. Latitude and longitude stay planetocentric Mars degrees; all distances
@@ -143,25 +143,16 @@ async function bakeGlobe() {
   console.log('globe textures')
   const dir = path.join(OUT, 'globe')
   const world = [-180, -90, 180, 90]
+  // the home page's planets (src/home/MarsGlobeHero.jsx)
   const viking = await trekMosaic({ layer: 'Mars_Viking_MDIM21_ClrMosaic_global_232m', ext: 'jpg', z: 3, bbox: world })
-  await writeImage(viking, path.join(dir, 'mars-viking-4k.jpg'), { quality: 82 })
-  const vikingSmall = await shrink(viking, 2048)
-  await writeImage(vikingSmall, path.join(dir, 'mars-viking-2k.jpg'), { quality: 80 })
-  const mola = await trekMosaic({ layer: 'Mars_MGS_MOLA_ClrShade_merge_global_463m', ext: 'jpg', z: 2, bbox: world })
-  await writeImage(mola, path.join(dir, 'mars-mola-2k.jpg'), { quality: 80 })
-  const shade = await trekMosaic({ layer: 'Mars_MOLA_blend200ppx_HRSC_Shade_clon0dd_200mpp_lzw', ext: 'jpg', z: 2, bbox: world })
-  await writeImage(shade, path.join(dir, 'mars-relief-2k.jpg'), { quality: 80 })
-  const dust = await trekMosaic({ layer: 'TES_Dust', ext: 'png', z: 1, bbox: world })
-  await writeImage(dust, path.join(dir, 'mars-tes-dust-1k.webp'), { quality: 85 })
+  await writeImage(await shrink(viking, 2048), path.join(dir, 'mars-viking-2k.jpg'), { quality: 80 })
   const moon = await trekMosaic({ body: 'Moon', layer: 'LRO_WAC_Mosaic_Global_303ppd_v02', ext: 'jpg', z: 2, bbox: world })
   await writeImage(moon, path.join(dir, 'moon-lro-2k.jpg'), { quality: 80 })
 
   const eo = 'https://eoimages.gsfc.nasa.gov/images/imagerecords'
   const day = await download(`${eo}/57000/57752/land_shallow_topo_2048.jpg`, path.join(RAW, 'earth', 'blue-marble-2048.jpg'))
-  const night = await download(`${eo}/144000/144898/BlackMarble_2016_01deg.jpg`, path.join(RAW, 'earth', 'black-marble-3600.jpg'))
   await sharp(day).resize(2048, 1024).jpeg({ quality: 80, mozjpeg: true }).toFile(path.join(dir, 'earth-day-2k.jpg'))
-  await sharp(night).resize(2048, 1024).jpeg({ quality: 82, mozjpeg: true }).toFile(path.join(dir, 'earth-night-2k.jpg'))
-  console.log('  earth day/night written')
+  console.log('  earth written')
 }
 
 async function shrink(img, W) {

@@ -88,7 +88,7 @@ export const baked = {
 
   backtest: (id) => json(`${id}/backtest.json`),
 
-  /** Whole-planet texture for the intro globe (Viking, MOLA, Blue/Black Marble, LRO). */
+  /** Whole-planet texture for the home page planets (Viking, Blue Marble, LRO). */
   texture: (file) => url(`globe/${file}`),
 
   /** World-map tile pyramid for a basemap id (viking, mola, dust). */
