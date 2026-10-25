@@ -63,5 +63,5 @@ export const backtest = (id) => once(`backtest:${id}`, () => source.backtest(id)
 /** URL template for a world-map tile pyramid. */
 export const basemapTiles = (id) => source.tiles(id)
 
-/** URL of a whole-planet texture for the home page planets. */
+/** URL of a whole-planet texture for the intro globe. */
 export const globeTexture = (file) => source.texture(file)

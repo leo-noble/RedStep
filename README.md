@@ -8,8 +8,8 @@ NASA Space Apps Challenge 2026 · *Interplanetary Survival Guide: Martian Map* �
 
 ## The 60-second demo
 
-1. **Land** on the home page and scroll: a rocket flies from Earth to Mars past the story of the project, with a live Mars clock (Mars24). Pick a landing site on the globe, or press **Open the Mars map**.
-2. **Mars map** (`/map`): a Google-Maps-style explorer. Globe view when zoomed out, flat map when zoomed in, real day and night shading (Mars24), 1,779 official IAU place names to search, tap anywhere for local Mars time and the nearest named place, switch Colour / Height / Dust, zoom into Jezero down to HiRISE detail.
+1. **Land** on the home page: Earth's night side (NASA Black Marble city lights), the Moon (LRO), hairline orbits. Press **Begin descent** (or scroll): the Marswalk rocket lifts off, drops its boosters, flies the transfer arc and swings into orbit around Mars.
+2. **Mars map** (also at `/map`): a Google-Maps-style explorer. Globe view when zoomed out, flat map when zoomed in, real day and night shading (Mars24), 1,779 official IAU place names to search, tap anywhere for local Mars time and the nearest named place, switch Colour / Height / Dust, zoom into Jezero down to HiRISE detail.
 3. Pick **Jezero Crater** in the sidebar → **Plan a walk here**.
 4. Press **Suggest safe route**. The planner searches the height map for safe paths to real Perseverance sample sites and returns **GO** with the turn-back point.
 5. Try **Bold**: it reaches the delta and Wildcat Ridge (organic molecules) but drops to CAUTION. That is the safety-versus-science trade-off.
@@ -21,7 +21,7 @@ NASA Space Apps Challenge 2026 · *Interplanetary Survival Guide: Martian Map* �
 | Challenge asks | What we built |
 |---|---|
 | Layered, integrated view | 11 layers on one map with opacity sliders, each labelled with mission, instrument and detail |
-| Data from multiple NASA missions | MRO HiRISE + CTX, MGS MOLA + TES, Mars Odyssey THEMIS, Viking, Mars Express HRSC (blend), Curiosity RAD, Perseverance traverse + samples, LRO and Earth Observatory on the home page |
+| Data from multiple NASA missions | MRO HiRISE + CTX, MGS MOLA + TES, Mars Odyssey THEMIS, Viking, Mars Express HRSC (blend), Curiosity RAD, Perseverance traverse + samples, LRO and Earth Observatory for the intro |
 | Plan a successful Marswalk | Slope limits, safe paths (A*/Dijkstra), suit air with turn-back point, walk-back circle, sun height (NASA GISS Mars24), radiation dose, Earth light time, GO/CAUTION/NO-GO with reasons |
 | New science along the way | 9 science stops at real sample sites with *why it matters* and *which data says so*; a science score that trades openly against safety |
 | Survival guide | 8-step interactive guide (pressure, landing, air, water & food, shelter & radiation, Mars time, emergency drill, checklist) and a base calculator |
@@ -58,7 +58,7 @@ npm test
 - **Ground type**: THEMIS day and night infrared (Mars Odyssey); night IR is also sampled onto the grid as a loose-ground penalty.
 - **Rover data**: Perseverance traverse and waypoints, Curiosity traverse (JPL MMGIS).
 - **World map**: Web Mercator tile pyramids cut from Viking MDIM 2.1 (zoom 0–5), MOLA colour (0–4) and TES dust (0–2); IAU/USGS place names via Mars Trek (`names.json`).
-- **Home page planets**: Viking MDIM 2.1 Mars, LRO WAC Moon, NASA Blue Marble Earth.
+- **Intro**: Viking MDIM 2.1, MOLA/HRSC relief, LRO WAC Moon, NASA Blue Marble and Black Marble.
 
 The map draws in Web Mercator (MapLibre), so the bake warps every image row by row from equirectangular. All distances use the Mars radius. 3D terrain tiles are generated in the browser from the grid (a `marsdem://` protocol), with heights scaled so 1× is true to scale.
 
@@ -66,14 +66,14 @@ The map draws in Web Mercator (MapLibre), so the bake warps every image row by r
 
 ## Tech
 
-Vite + React 19 + React Router 7. `three` for the home page's rocket and planets (plain three.js, no wrapper, for full control and a smaller bundle). `maplibre-gl` for the map and 3D terrain. `html-to-image` for the brief PNG. Route search and slope run in a Web Worker. Charts are hand-written SVG. Scroll and number animations use requestAnimationFrame with direct style writes. Fonts: Montserrat, Space Mono, Instrument Serif (all self-hosted).
+Vite + React 19 + React Router 7. `three` for the intro, the rocket and the globe (plain three.js, no wrapper, for full control and a smaller bundle). `maplibre-gl` for the map and 3D terrain. `html-to-image` for the brief PNG. Route search and slope run in a Web Worker. Charts are hand-written SVG. Scroll and number animations use requestAnimationFrame with direct style writes. Fonts: Montserrat, Space Mono, Instrument Serif (all self-hosted).
 
 ```
 src/content/   all copy and datasets: sites, science stops, assumptions, survival guide, sources
 src/compute/   grid, slope, path finding, walk analysis, worker (pure, tested)
 src/lib/       Mars24, ephemeris, advisor rules, map helpers, hooks
-src/home/      home page: rocket intro, Mars clock, story chapters, site-chooser globe
-src/pages/     MapPage (/map), Site (planner), Guide, Habitat, Sources, About, Brief
+src/three/     intro scene (space.js) and the Marswalk rocket (rocket.js)
+src/pages/     Home, MapPage (/map), Site (planner), Guide, Habitat, Sources, About, Brief
 scripts/       bake-site.mjs, make-og.mjs, try-suggest.mjs
 ```
 

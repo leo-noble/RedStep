@@ -60,12 +60,12 @@ export const DATA = [
     product: 'Mars rock samples list', by: 'NASA', url: 'https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/', licence: PD, badge: 'nasa',
   },
   {
-    id: 'globeEarth', group: 'Home page', name: 'Earth', plain: 'Earth picture on the home page',
-    mission: 'Terra MODIS', instrument: 'Blue Marble', resolution: 'resampled to 2048 px',
-    product: 'land_shallow_topo_2048', by: 'NASA Earth Observatory', url: 'https://visibleearth.nasa.gov/collection/1484/blue-marble', licence: PD, badge: 'nasa',
+    id: 'globeEarth', group: 'Home page', name: 'Earth day and night', plain: 'Earth pictures in the opening scene',
+    mission: 'Terra MODIS; Suomi NPP VIIRS', instrument: 'Blue Marble; Black Marble 2016', resolution: 'resampled to 2048 px',
+    product: 'land_shallow_topo_2048, BlackMarble_2016_01deg', by: 'NASA Earth Observatory', url: 'https://earthobservatory.nasa.gov/features/NightLights', licence: PD, badge: 'nasa',
   },
   {
-    id: 'globeMoon', group: 'Home page', name: 'Moon map', plain: 'Moon picture on the home page',
+    id: 'globeMoon', group: 'Home page', name: 'Moon map', plain: 'Moon picture in the opening scene',
     mission: 'Lunar Reconnaissance Orbiter', instrument: 'LROC Wide Angle Camera', resolution: 'resampled to 2048 px',
     product: 'LRO_WAC_Mosaic_Global_303ppd_v02', by: 'NASA / ASU, via Moon Trek', url: 'https://trek.nasa.gov/moon/', licence: PD, badge: 'nasa',
   },

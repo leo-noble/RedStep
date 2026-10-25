@@ -21,6 +21,7 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/touch.css'
 import Layout from './components/Layout.jsx'
+import Home from './pages/Home.jsx'
 import RouteError from './pages/RouteError.jsx'
 
 // Shown inside the layout while a page's code downloads on the first visit, so the nav appears
@@ -33,7 +34,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     errorElement: <RouteError />,
     children: [
-      { index: true, ...page(() => import('./home/HomePage.jsx')) },
+      { index: true, element: <Home /> },
       { path: 'map', ...page(() => import('./pages/MapPage.jsx')) },
       { path: 'site/:id', ...page(() => import('./pages/Site.jsx')) },
       { path: 'guide', ...page(() => import('./pages/Guide.jsx')) },

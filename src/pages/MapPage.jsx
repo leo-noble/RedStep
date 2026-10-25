@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import './mappage.css'
 
 // The whole-planet Mars map (MapLibre). The heaviest code in the app, so it loads on its own;
-// the cinematic homepage (src/home) prefetches it once the browser is idle.
+// the home page prefetches it while the intro plays.
 const Explorer = lazy(() => import('../components/Explorer.jsx'))
 
 export default function MapPage() {
