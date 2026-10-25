@@ -78,6 +78,8 @@
  * @property {number} fov  horizontal field of view in degrees (360 = full circle)
  * @property {string} alt  text alternative
  * @property {string} [colour]  how NASA processed the colours, when the caption says
+ * @property {number} [startX]  where the view starts across the image, 0 .. 1 (default 0, the left edge)
+ * @property {number} [startY]  where the view starts vertically, 0 top .. 1 bottom (default 0.5)
  *
  * @typedef {object} Assumption  one walk input (see src/content/assumptions.js)
  * @property {string} label

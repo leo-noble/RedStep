@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { SITE } from '../content/site.js'
 import { globeTexture } from '../data/index.js'
 import { useReducedMotion } from '../lib/hooks.js'
-import Explorer from '../components/Explorer.jsx'
+// The world map (MapLibre) is the heaviest code in the app, so it loads on its own: fetched in
+// the background while the intro plays, and needed only once you head for Mars.
+const loadExplorer = () => import('../components/Explorer.jsx')
+const Explorer = lazy(loadExplorer)
 import Orbits from '../components/Orbits.jsx'
 import './home.css'
 
@@ -44,6 +47,13 @@ export default function Home() {
     }).catch(() => setFailed(true))
     return () => { alive = false; api?.dispose(); space.current = null }
   }, [reduced])
+
+  // fetch the map code while the visitor reads the intro
+  useEffect(() => {
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1200))
+    const id = idle(() => loadExplorer().catch(() => {}))
+    return () => (window.cancelIdleCallback || clearTimeout)(id)
+  }, [])
 
   // Hand over from the 3D arrival to the map once the map has drawn, then free the GPU.
   useEffect(() => {
@@ -112,7 +122,9 @@ export default function Home() {
       {/* the map loads underneath during the flight, so it is ready on arrival */}
       {phase !== 'earth' && (
         <div className="home-map" inert={phase !== 'globe'}>
-          <Explorer visible={phase === 'globe'} onReady={() => setMapReady(true)} />
+          <Suspense fallback={phase === 'globe' ? <p className="home-loading" role="status"><i className="spinner" aria-hidden="true" />Loading the Mars map…</p> : null}>
+            <Explorer visible={phase === 'globe'} onReady={() => setMapReady(true)} />
+          </Suspense>
         </div>
       )}
 

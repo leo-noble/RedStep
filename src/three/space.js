@@ -149,11 +149,8 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
   marsGroup.add(mars)
   const marsAtmo = atmosphere(MARS_R * 1.018, 0xe8a670, new THREE.Vector3(), 3.2, 0.9)
   marsGroup.add(marsAtmo)
-  // upgrade to the 4k mosaic once the scene is up
-  setTimeout(() => {
-    const hi = tex('mars-viking-4k.jpg')
-    hi.onUpdate = () => { if (marsMat.map === maps.viking) { maps.viking = hi; marsMat.map = hi; marsMat.needsUpdate = true } }
-  }, 1500)
+  // (no 4k upgrade: Mars is only on screen for the last second of the flight before the map
+  // takes over, so the extra 1.4 MB never showed)
 
   // Real subsolar point -> light direction in Mars's own frame.
   let marsSunLocal = new THREE.Vector3(1, 0, 0)

@@ -132,6 +132,30 @@
   border-color: rgba(255, 255, 255, 0.16);
 }
 
+.home-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.home-loading .spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: -2px;
+  border: 2px solid var(--rule);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: home-spin 0.9s linear infinite;
+}
+
+@keyframes home-spin { to { transform: rotate(360deg); } }
+
 .home-map {
   display: contents;
 }

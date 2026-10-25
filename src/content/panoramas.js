@@ -43,6 +43,7 @@ export const PANORAMAS = [
     page: 'https://science.nasa.gov/photojournal/mastcam-zs-360-degree-view-of-van-zyl-overlook/',
     image: 'https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia24/pia24663/PIA24663.jpg',
     file: 'vanzyl.webp',
+    startX: 0.3, startY: 0.15, // start where the mosaic is complete; much of its lower half was not photographed
     lon: 77.45213981, lat: 18.44475241,
     where: 'The rover parked here on sol 52 (JPL waypoint site 3, drive 2046) and did not drive again until sol 65.',
     alt: 'Full circle view of the crater floor from Van Zyl Overlook, the low rise where Perseverance parked while the Ingenuity helicopter made its first flights.',

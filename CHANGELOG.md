@@ -1,5 +1,15 @@
 # Changelog
 
+## Round 2: data layer, minimap, street view, ambient, polish (24–25 Oct 2026)
+
+1. **Data layer** (`src/data/`): every page, map and the route worker read Mars data through one module, checked against `schema.js`. Today's files sit behind `adapters/baked.js`; NASA's official dataset needs one adapter and `VITE_MARS_DATA`. Schema and how-to: `docs/data-schema.md`. `/sources` shows the source in use.
+2. **Minimap** in Fly along: you + heading, route by steepness, home, end/turn-back, stops, steepest point, known hazards; collapsible; ⤢ opens a large pop-up with legend. Not on the planning map.
+3. **Street view**: three real NASA panoramas (PIA24264 landing site sol 3, PIA24663 Van Zyl Overlook sols 53–64, PIA24626 Mont Mercou sol 3090) with rover, sol, date, PIA id and credit always visible; positions from JPL waypoints. Other stops: Demo view from orbit, labelled "DEMO · NOT ROVER PHOTOS".
+4. **Ambient**: the intro flight never blocks (map loads underneath; any input skips). Dust-and-sky layer behind info pages and the planner loading screen; footer switch; still for reduced motion.
+5. **Mission-control accents** on the minimap, verdict header, key readouts and Fly along HUD only.
+6. **Polish**: main JS 1,425 kB → 360 kB (world map loads on its own, prefetched during the intro); 4k globe texture dropped (1.4 MB, never visible); friendly error page when a page fails to load; Street view starts on photographed ground on phones.
+
+
 ## Branch `space-apps/judging-upgrades` (24 Oct 2026)
 
 ### Done (one commit each, verified in the browser)

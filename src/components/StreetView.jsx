@@ -14,8 +14,9 @@ export default function StreetView({ pano, onClose, children }) {
   const [img, setImg] = useState(null) // {w, h} once loaded
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  const [zoom, setZoom] = useState(0)
-  const view = useRef({ x: 0, y: 0.5 }) // x: share of the image width scrolled; y: 0 top .. 1 bottom
+  // phones are tall and narrow, so start a step closer to fill the screen with ground
+  const [zoom, setZoom] = useState(() => (window.innerWidth < 820 ? 1 : 0))
+  const view = useRef({ x: pano.startX ?? 0, y: pano.startY ?? 0.5 }) // x: share of the image width scrolled; y: 0 top .. 1 bottom
   const drag = useRef(null)
 
   useEffect(() => {

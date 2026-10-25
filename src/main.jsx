@@ -22,6 +22,7 @@ import './styles/base.css'
 import './styles/touch.css'
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
+import RouteError from './pages/RouteError.jsx'
 
 // Shown inside the layout while a page's code downloads on the first visit, so the nav appears
 // straight away instead of a blank screen.
@@ -31,6 +32,7 @@ const page = (load) => ({ lazy: async () => ({ Component: (await load()).default
 const router = createBrowserRouter([
   {
     element: <Layout />,
+    errorElement: <RouteError />,
     children: [
       { index: true, element: <Home /> },
       { path: 'site/:id', ...page(() => import('./pages/Site.jsx')) },
