@@ -16,7 +16,7 @@ export const SITE = {
 
 // Top menu: kept to four plain choices. Everything else is linked from the footer.
 export const NAV = [
-  { to: '/', label: 'Mars map' },
+  { to: '/map', label: 'Mars map' },
   { to: '/site/jezero', label: 'Plan a walk' },
   { to: '/guide', label: 'Survival guide' },
   { to: '/about', label: 'About' },

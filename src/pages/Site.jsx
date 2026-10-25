@@ -399,7 +399,7 @@ function Planner({ site }) {
         <h1>{error}</h1>
         <div className="site-error-actions">
           <button type="button" className="btn btn-primary" onClick={() => location.reload()}>Try again</button>
-          <Link to="/" className="btn">Back to the Mars map</Link>
+          <Link to="/map" className="btn">Back to the Mars map</Link>
         </div>
       </div>
     )

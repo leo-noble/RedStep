@@ -14,16 +14,18 @@ export default function Layout() {
   const open = useCallback((focus = null) => setEmergency({ focus }), [])
   const close = useCallback(() => setEmergency(null), [])
   const ctx = useMemo(() => ({ open }), [open])
-  const immersive = pathname === '/' || pathname.startsWith('/site/') || pathname === '/brief'
+  const home = pathname === '/'
+  // Full-screen tools: no footer, no ambient background.
+  const immersive = pathname === '/map' || pathname.startsWith('/site/') || pathname === '/brief'
 
   useEffect(() => { if (!pathname.startsWith('/guide')) window.scrollTo(0, 0) }, [pathname])
 
   return (
     <EmergencyCtx.Provider value={ctx}>
       <a className="skip" href="#main">Skip to content</a>
-      {pathname !== '/brief' && <Nav overlay={immersive} onEmergency={() => open()} />}
-      <main id="main" tabIndex={-1} className={immersive ? '' : 'has-ambient'}>
-        {!immersive && <Ambient />}
+      {pathname !== '/brief' && <Nav overlay={immersive || home} onEmergency={() => open()} />}
+      <main id="main" tabIndex={-1} className={immersive || home ? '' : 'has-ambient'}>
+        {!immersive && !home && <Ambient />}
         <Outlet />
       </main>
       {!immersive && <Footer />}

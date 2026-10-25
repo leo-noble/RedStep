@@ -127,7 +127,7 @@ export default function LiteSite({ site }) {
           <div className="lite-plan">
             <p><b>Walk planning needs a detailed height map.</b> We prepared one for Jezero for this demo. Adding a site means running the bake script on its CTX or HiRISE height map.</p>
             <Link to="/site/jezero" className="btn btn-primary">Plan a walk at Jezero <span className="arrow">→</span></Link>
-            <Link to="/" className="btn">Back to the globe</Link>
+            <Link to="/map" className="btn">Back to the globe</Link>
           </div>
         </div>
       </aside>
