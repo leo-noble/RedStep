@@ -1,7 +1,8 @@
 // The opening scene and the Mars globe, in one WebGL canvas.
 // Phase "earth": Earth's night side with city lights, the Moon, hairline orbits.
-// Phase "flight": the Marswalk rocket lifts off, drops its boosters, flies the transfer arc and
-// swings into a parking orbit around Mars, filmed as a sequence of camera shots (about 12 s).
+// Phase "flight" (about 7 s): a wide shot of Earth and the Moon as the Marswalk rocket lifts off
+// and drops its boosters; a soft fade; then Mars, with the rocket gliding in and swinging into
+// orbit in front of it.
 // Phase "globe": Mars fills the view; drag to spin, sites are pinned, lit by the real Sun.
 //
 // Textures are real NASA mosaics (see scripts/bake-site.mjs). Mars is lit from the actual
@@ -22,7 +23,6 @@ const D = Math.PI / 180
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const clamp01 = (x) => Math.max(0, Math.min(1, x))
 const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t) }
-const quadInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 /** Frame-rate independent approach: share of the gap to close this frame. */
 const damp = (rate, dt) => 1 - Math.exp(-rate * dt)
 
@@ -64,17 +64,17 @@ void main(){
 
 // last pass before output: soft vignette and a little moving film grain
 const FILM = {
-  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, vignette: { value: 0.42 }, grain: { value: 0.035 } },
+  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, vignette: { value: 0.42 }, grain: { value: 0.035 }, fade: { value: 1 } },
   vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */ `
-uniform sampler2D tDiffuse; uniform float time; uniform float vignette; uniform float grain;
+uniform sampler2D tDiffuse; uniform float time; uniform float vignette; uniform float grain; uniform float fade;
 varying vec2 vUv;
 void main(){
   vec4 c = texture2D(tDiffuse, vUv);
   vec2 d = (vUv - 0.5) * vec2(1.15, 1.0);
   c.rgb *= mix(1.0, smoothstep(0.85, 0.2, length(d)), vignette);
   float n = fract(sin(dot(vUv * 913.7 + time * 61.3, vec2(12.9898, 78.233))) * 43758.5453);
-  c.rgb *= 1.0 + (n - 0.5) * grain;
+  c.rgb *= (1.0 + (n - 0.5) * grain) * fade;
   gl_FragColor = c;
 }`,
 }
@@ -114,39 +114,6 @@ function ring(center, r, opacity, segments = 512, color = 0xffffff) {
     pts.push(new THREE.Vector3(center.x + r * Math.cos(a), center.y, center.z + r * Math.sin(a)))
   }
   return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }))
-}
-
-/** Space dust streaking past the camera: sells speed during the cruise. */
-function speedStreaks(count) {
-  const pos = new Float32Array(count * 6)
-  const seeds = Array.from({ length: count }, () => [Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random()])
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  const m = new THREE.LineBasicMaterial({ color: 0xd6def5, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })
-  const lines = new THREE.LineSegments(g, m)
-  lines.frustumCulled = false
-  const right = new THREE.Vector3(), up = new THREE.Vector3(), fwd = new THREE.Vector3(), p = new THREE.Vector3()
-  let travel = 0
-  return {
-    object: lines,
-    /** amount 0..1, speed in streak lengths per second, vel = direction of travel */
-    update(camera, vel, speed, amount, dt) {
-      m.opacity = 0.32 * amount
-      lines.visible = amount > 0.01
-      if (!lines.visible) return
-      travel += speed * dt
-      camera.matrixWorld.extractBasis(right, up, fwd)
-      fwd.negate() // camera looks down -Z
-      const len = 0.08 + 0.5 * Math.min(1, speed / 6)
-      for (let i = 0; i < count; i++) {
-        const [x, y, z] = seeds[i]
-        const depth = 0.4 + ((z * 6 - travel) % 6 + 6) % 6 // 0.4..6.4 ahead, coming towards us
-        p.copy(camera.position).addScaledVector(fwd, depth).addScaledVector(right, x * depth * 0.75).addScaledVector(up, y * depth * 0.5)
-        pos.set([p.x, p.y, p.z, p.x - vel.x * len, p.y - vel.y * len, p.z - vel.z * len], i * 6)
-      }
-      g.attributes.position.needsUpdate = true
-    },
-  }
 }
 
 export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`, reducedMotion = false, onPhase = () => {}, onFrame = () => {} } = {}) {
@@ -269,15 +236,14 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
   const pmrem = new THREE.PMREMGenerator(renderer)
   const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture // soft studio reflections on the paint
   const rocket = createRocket({ envMap })
-  const ROCKET_SIZE = 0.42
   rocket.object.visible = false
   scene.add(rocket.object)
   const UP = new THREE.Vector3(0, 1, 0)
   const qTmp = new THREE.Quaternion()
-  const placeRocket = (pos, dir) => {
+  const placeRocket = (pos, dir, size) => {
     rocket.object.position.copy(pos)
     rocket.object.quaternion.copy(qTmp.setFromUnitVectors(UP, dir))
-    rocket.object.scale.setScalar(ROCKET_SIZE)
+    rocket.object.scale.setScalar(size)
   }
   // studio-style light on the rocket: a bright key from the upper right of the view (casting soft
   // shadows of the boosters onto the core) and a cool fill from the other side. Both are narrow
@@ -300,8 +266,6 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
     rocketKey.position.copy(rocket.object.position).addScaledVector(camRight, 2).addScaledVector(camera.up, 2.5).addScaledVector(toCam, 1.5)
     rocketFill.position.copy(rocket.object.position).addScaledVector(camRight, -3).addScaledVector(camera.up, -0.8).addScaledVector(toCam, 0.6)
   }
-  const streaks = speedStreaks(110)
-  scene.add(streaks.object)
 
   // ---- camera ----
   const camEarthWide = { pos: new THREE.Vector3(-2.2, 0.5, 6.2), look: new THREE.Vector3(-1.2, 0.1, 0) }
@@ -319,39 +283,81 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
   }
 
   // ---- flight timeline (seconds) ----
-  const FLIGHT_S = 12.5
-  const IGNITE = 0.9 // engines light, then lift-off
-  const ARRIVE = 9.2 // reaches the parking orbit
-  const SEPARATE = 4.2 // boosters drop away
-  const MECO = 8.2 // main engine cut-off before Mars
+  const FLIGHT_S = 7
+  const IGNITE = 0.5 // engines light, then lift-off
+  const SEPARATE = 2.4 // boosters drop away
+  const LEAVE = 3.6 // rocket has left the Earth frame
+  const CUT = 3.45 // fade to black ends here: from now on we are at Mars
+  const ORBIT_IN = 5.4 // joins the parking orbit
+  const ROCKET_EARTH = 0.58, ROCKET_MARS = 0.36
   let phase = 'earth'
   let T = 0
   let holdAt = null // screenshots: freeze the flight at a given moment
   let orbitTheta = TH1
-  const rp = new THREE.Vector3(), rdir = new THREE.Vector3(), side = new THREE.Vector3(), upv = new THREE.Vector3()
-  const centre = new THREE.Vector3(), prevCentre = new THREE.Vector3(), vel = new THREE.Vector3(), toMars = new THREE.Vector3()
-  const launchCam = new THREE.Vector3(), shotPos = new THREE.Vector3(), shotLook = new THREE.Vector3(), tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3()
-  const camPos = camEarth.pos.clone(), camLook = camEarth.look.clone(), camUp = UP.clone(), camUpTarget = new THREE.Vector3(), launchUp = new THREE.Vector3()
-  const posOffset = new THREE.Vector3(), lookOffset = new THREE.Vector3() // camera relative to the rocket, smoothed
+  const rp = new THREE.Vector3(), rdir = new THREE.Vector3()
+  const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3()
+  const camPos = camEarth.pos.clone(), camLook = camEarth.look.clone()
   let fov = 32
   camera.position.copy(camPos)
   camera.lookAt(camLook)
 
-  /** Where the rocket is at flight time t, and which way it points. */
+  // The wide shot: Earth low on the left, the Moon above, room for the rocket to climb across.
+  const wide = { pos: new THREE.Vector3(), look: new THREE.Vector3() }
+  const setWide = () => {
+    if (tall()) { wide.pos.set(0.9, 1.3, 15); wide.look.set(1.5, 0.4, -1.8) }
+    else { wide.pos.set(-0.6, 0.9, 8.6); wide.look.set(1.5, 0.9, -1.4) }
+  }
+  // departure: from Earth's upper-right limb (as seen from the wide shot), climbing out of frame
+  const departure = new THREE.CubicBezierCurve3(new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3())
+  const planDeparture = () => {
+    setWide()
+    const fwd = tmpA.subVectors(wide.look, wide.pos).normalize()
+    const right = tmpB.crossVectors(fwd, UP).normalize()
+    const dir = new THREE.Vector3().copy(right).multiplyScalar(0.72).addScaledVector(UP, 0.66).addScaledVector(fwd, -0.18).normalize()
+    departure.v0.copy(dir).multiplyScalar(1.01).add(EARTH)
+    departure.v1.copy(departure.v0).addScaledVector(dir, 0.9)
+    departure.v2.copy(departure.v1).addScaledVector(right, 1.0).addScaledVector(UP, 0.75)
+    departure.v3.copy(departure.v2).addScaledVector(right, 2.1).addScaledVector(UP, 1.3).addScaledVector(fwd, 0.6)
+  }
+  // arrival: the rocket glides in from behind Mars on the left and joins the orbit in front of it,
+  // going round the other way (theta decreasing)
+  const TH_IN = 150 * D
+  const ARRIVAL = orbitAt(TH_IN)
+  const arriveDir = orbitDir(TH_IN).negate()
+  const arrival = new THREE.CubicBezierCurve3(
+    ARRIVAL.clone().addScaledVector(arriveDir, -6.5).addScaledVector(UP, 0.5),
+    ARRIVAL.clone().addScaledVector(arriveDir, -3.8),
+    ARRIVAL.clone().addScaledVector(arriveDir, -1.6),
+    ARRIVAL.clone(),
+  )
+  const ARRIVE_LEN = arrival.getLength()
+  const W_IN = (0.5 * ARRIVE_LEN / (ORBIT_IN - CUT)) / ORBIT_R // angular speed when it joins the orbit
+  const W_END = 0.18 // and once it has settled (the globe phase keeps this pace)
+
+  /** Where the rocket is at flight time t, and which way it points; returns its size. */
   function rocketAt(t) {
-    if (t < ARRIVE) {
-      const u = quadInOut(clamp01((t - IGNITE) / (ARRIVE - IGNITE)))
-      arc.getPointAt(u, rp); arc.getTangentAt(u, rdir)
-    } else {
-      const q = clamp01((t - ARRIVE) / (FLIGHT_S - ARRIVE))
-      orbitTheta = TH0 + (TH1 - TH0) * (q * q * (3 - 2 * q))
-      orbitAt(orbitTheta, rp); orbitDir(orbitTheta, rdir)
+    if (t < CUT) {
+      const x = clamp01((t - IGNITE) / (LEAVE - IGNITE))
+      const u = x * x // speeding up
+      departure.getPointAt(Math.min(u, 1), rp); departure.getTangentAt(Math.min(u, 1), rdir)
+      return ROCKET_EARTH
     }
+    if (t < ORBIT_IN) {
+      const x = clamp01((t - CUT) / (ORBIT_IN - CUT))
+      const u = 0.5 * x + 0.5 * x * (2 - x) // slowing to half speed as it reaches the orbit
+      arrival.getPointAt(u, rp); arrival.getTangentAt(u, rdir)
+      return ROCKET_MARS
+    }
+    const dtO = t - ORBIT_IN, span = FLIGHT_S - ORBIT_IN
+    const a = (W_IN - W_END) / span
+    orbitTheta = TH_IN - (W_IN * dtO - 0.5 * a * dtO * dtO)
+    orbitAt(orbitTheta, rp); orbitDir(orbitTheta, rdir).negate()
+    return ROCKET_MARS
   }
   const thrustAt = (t) => {
     if (t < IGNITE) return smooth(0, IGNITE, t) // ignition
-    if (t < SEPARATE) return 1
-    return (1 - 0.3 * smooth(SEPARATE, SEPARATE + 0.6, t)) * (1 - smooth(MECO - 0.4, MECO, t))
+    if (t < CUT) return 1 - 0.25 * smooth(SEPARATE, SEPARATE + 0.5, t)
+    return 0.5 * (1 - smooth(ORBIT_IN - 0.6, ORBIT_IN, t)) // a last burn on the way in, then quiet
   }
 
   // globe spin state
@@ -413,69 +419,29 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
   window.addEventListener('pointerup', up)
   canvas.addEventListener('wheel', wheel, { passive: false })
 
-  // ---- the flight, shot by shot ----
+  // ---- the flight ----
   function flight(dt) {
     if (holdAt === null) T = Math.min(FLIGHT_S, T + dt)
     else T = holdAt * FLIGHT_S
-    prevCentre.copy(centre)
-    rocketAt(T)
-    placeRocket(rp, rdir)
-    centre.copy(rp).addScaledVector(rdir, ROCKET_SIZE * 0.35) // middle of rocket + fire
-    vel.subVectors(centre, prevCentre)
-    const speed = dt > 0 ? vel.length() / dt : 0
-    if (vel.lengthSq() > 1e-12) vel.normalize(); else vel.copy(rdir)
-    const thrust = thrustAt(T)
-    rocket.update(thrust, dt, renderer.domElement.height, T > SEPARATE)
+    const size = rocketAt(T)
+    placeRocket(rp, rdir, size)
+    rocket.update(thrustAt(T), dt, renderer.domElement.height, T > SEPARATE)
 
-    // rocket frame
-    side.crossVectors(rdir, UP).normalize()
-    upv.crossVectors(side, rdir).normalize()
-    const near = tall() ? 2.2 : 1 // tall phone screens need the camera further back
-
-    // shot weights
-    const wL = 1 - smooth(1.2, 2.4, T) // lift-off, from the launch site
-    const wT = smooth(1.2, 2.4, T) * (1 - smooth(5.6, 7.0, T)) // tracking beside the rocket
-    const wC = smooth(5.6, 7.0, T) * (1 - smooth(7.6, 9.2, T)) // behind it, heading for Mars
-    const wO = smooth(7.6, 9.2, T) // wide on Mars: the rocket arrives from behind it and swings round
-    const sum = wL + wT + wC + wO || 1
-    const rel = wL + wT + wC || 1 // the shots that ride with the rocket
-
-    shotPos.set(0, 0, 0); shotLook.set(0, 0, 0)
-    // lift-off: looking down on the pad from above
-    shotPos.addScaledVector(launchCam, wL); shotLook.addScaledVector(centre, wL)
-    // tracking: from the side swinging to three-quarters behind
-    const beta = (10 + 40 * smooth(2.0, 6.4, T)) * D
-    tmpA.copy(centre).addScaledVector(side, Math.cos(beta) * 1.25 * near).addScaledVector(rdir, -Math.sin(beta) * 1.25 * near).addScaledVector(upv, -0.12 * near)
-    shotPos.addScaledVector(tmpA, wT); shotLook.addScaledVector(centre, wT)
-    // chase: behind the rocket on the line to Mars, so both are in frame
-    toMars.subVectors(MARS, centre).normalize()
-    tmpB.copy(rdir).lerp(toMars, 0.5).normalize()
-    tmpA.copy(centre).addScaledVector(tmpB, -1.35 * near).addScaledVector(upv, 0.3 * near).addScaledVector(side, 0.18 * near)
-    shotPos.addScaledVector(tmpA, wC); shotLook.addScaledVector(tmpB.multiplyScalar(1.6).add(centre), wC)
-    shotPos.divideScalar(rel); shotLook.divideScalar(rel)
-
-    // the camera operator follows smoothly (offsets from the rocket, so it never falls behind)...
-    const k = holdAt === null ? damp(3.2, dt) : 1
-    posOffset.lerp(tmpA.subVectors(shotPos, centre), k)
-    lookOffset.lerp(tmpA.subVectors(shotLook, centre), k)
-    camPos.copy(centre).add(posOffset)
-    camLook.copy(centre).add(lookOffset)
-    // ...then settles on a fixed view of Mars while the rocket swings into orbit across it
-    const g = camGlobe()
-    camPos.lerp(g.pos, wO)
-    camLook.lerp(g.look, wO)
-    // never let the camera pass through Mars on the way into orbit
-    tmpA.subVectors(camPos, MARS)
-    if (tmpA.length() < MARS_R * 1.45) camPos.copy(MARS).addScaledVector(tmpA.normalize(), MARS_R * 1.45)
-    // engine shake near the rocket
-    const shake = thrust * (0.006 * wL + 0.0025 * wT) * near
-    if (shake > 0) camPos.add(tmpA.set(Math.sin(T * 71), Math.sin(T * 53 + 1.7), Math.cos(T * 61)).multiplyScalar(shake))
-    // tilt the frame so the rocket climbs diagonally while we ride with it
-    camUpTarget.copy(UP).multiplyScalar(1 - wL).addScaledVector(launchUp, wL).addScaledVector(rdir, 0.6 * wT + 0.25 * wC).normalize()
-    camUp.lerp(camUpTarget, k).normalize()
-    // a wider lens at lift-off and in the chase, a longer one for the tracking shot
-    fov += ((36 * wL + 32 * wT + 40 * wC + 32 * wO) / sum - fov) * k
-    streaks.update(camera, vel, Math.min(8, speed * 3), wC * (1 - smooth(MECO, ARRIVE, T)), dt)
+    const k = holdAt === null ? damp(1.8, dt) : 1
+    if (T < CUT) {
+      // ease from the opening view into the wide shot, with a slow push in
+      const push = 1 - 0.06 * smooth(0, CUT, T)
+      tmpA.copy(wide.pos).sub(wide.look).multiplyScalar(push).add(wide.look)
+      camPos.lerp(tmpA, k); camLook.lerp(wide.look, k)
+    } else {
+      // at Mars: a fixed view, settling in slowly
+      const g = camGlobe()
+      const back = 1 + 0.1 * (1 - smooth(CUT, FLIGHT_S, T))
+      camPos.copy(g.pos).sub(MARS).multiplyScalar(back).add(MARS)
+      camLook.copy(g.look)
+    }
+    // a soft fade to black carries us from Earth to Mars
+    film.uniforms.fade.value = T < CUT ? 1 - smooth(CUT - 0.45, CUT, T) : smooth(CUT, CUT + 0.55, T)
 
     onFrame({ phase, progress: T / FLIGHT_S })
     if (T >= FLIGHT_S && holdAt === null) setPhase('globe')
@@ -524,7 +490,7 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
 
     // Real sun on Mars: rotate the subsolar vector by the globe's own rotation.
     tmp.copy(marsSunLocal).applyQuaternion(marsGroup.quaternion)
-    if (phase === 'earth' || (phase === 'flight' && T < FLIGHT_S * 0.5)) {
+    if (phase === 'earth' || (phase === 'flight' && T < CUT)) {
       sunLight.position.copy(sunDir).multiplyScalar(50).add(EARTH)
       sunLight.target.position.copy(EARTH)
     } else {
@@ -547,25 +513,24 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
       tmpB.copy(g.pos).sub(MARS).multiplyScalar(spin.zoom).add(MARS)
       const k = damp(7, dt)
       camPos.lerp(tmpB, k); camLook.lerp(g.look, k)
-      camUp.lerp(UP, k).normalize()
       fov += (32 - fov) * k
+      film.uniforms.fade.value += (1 - film.uniforms.fade.value) * k
       // the rocket keeps circling Mars until the map takes over
       if (rocket.object.visible) {
-        if (!reducedMotion) orbitTheta += dt * 0.18
-        placeRocket(orbitAt(orbitTheta, rp), orbitDir(orbitTheta, rdir))
+        if (!reducedMotion) orbitTheta -= dt * W_END
+        placeRocket(orbitAt(orbitTheta, rp), orbitDir(orbitTheta, rdir).negate(), ROCKET_MARS)
         rocket.update(0, dt, renderer.domElement.height, true)
       }
-      streaks.update(camera, vel, 0, 0, dt)
     }
     camera.position.copy(camPos)
-    camera.up.copy(phase === 'earth' ? UP : camUp)
+    camera.up.copy(UP)
     camera.lookAt(camLook)
     if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix() }
     if (rocket.object.visible) lightRocket()
     // line timing: orbits fade in over ~1.8 s each, staggered; the arc draws on over 2.8 s.
     // Once the flight starts they fade out, so no hairlines cut across the shots.
     const it = (now - introStart) / 1000
-    const linesOn = phase === 'earth' ? 1 : phase === 'flight' ? 1 - smooth(0, 1.2, T) : 0
+    const linesOn = phase === 'earth' ? 1 : phase === 'flight' ? 1 - smooth(0, 0.8, T) : 0
     for (const [line, target, delay] of orbits) line.material.opacity = (reducedMotion ? target : target * smooth(delay, delay + 1.8, it)) * linesOn
     if (!reducedMotion) arcLine.geometry.setDrawRange(0, Math.round(ARC_POINTS * ease(Math.min(1, Math.max(0, (it - 1.1) / 2.8)))))
     arcLine.material.opacity = 0.55 * linesOn
@@ -585,20 +550,7 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
 
   function startFlight() {
     T = 0
-    rocketAt(0)
-    centre.copy(rp).addScaledVector(rdir, ROCKET_SIZE * 0.35)
-    prevCentre.copy(centre)
-    // the launch camera: low beside the pad, a little behind the rocket, looking up
-    const n = tmpA.copy(LAUNCH).normalize()
-    side.crossVectors(rdir, n).normalize()
-    // from above and to the side, so Earth's night side (city lights, blue rim) fills the frame
-    // behind the rocket; 'up' on screen is the rocket's way along the ground
-    launchUp.copy(rdir).addScaledVector(n, -rdir.dot(n)).normalize()
-    launchCam.copy(LAUNCH).addScaledVector(n, 0.85 * (tall() ? 1.8 : 1)).addScaledVector(side, 0.6 * (tall() ? 1.8 : 1)).addScaledVector(launchUp, -0.3)
-    // start the camera exactly where the Earth view is, so the move begins smoothly
-    posOffset.subVectors(camPos, centre)
-    lookOffset.subVectors(camLook, centre)
-    camUp.copy(UP)
+    planDeparture()
     rocket.object.visible = true
     setPhase('flight')
   }
@@ -621,9 +573,10 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
     },
     skip() {
       const g = camGlobe()
-      camPos.copy(g.pos); camLook.copy(g.look); camUp.copy(UP); fov = 32
+      camPos.copy(g.pos); camLook.copy(g.look); fov = 32
+      film.uniforms.fade.value = 1
       T = FLIGHT_S
-      orbitTheta = TH1
+      orbitTheta = TH_IN - 80 * D
       rocket.object.visible = true
       setPhase('globe')
     },
