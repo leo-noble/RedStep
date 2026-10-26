@@ -405,3 +405,91 @@
   mask-composite: intersect;
 }
 
+
+/* Desktop: the steps sidebar sits on the left edge of the window, full height, like the
+   Mars map's sidebar. Closing it slides it off to the left and the page widens; opening it
+   slides it back and the steps settle in one after another. */
+@media (min-width: 981px) {
+  .guide {
+    --rail-w: 280px;
+    display: block;
+    max-width: none;
+    padding-left: calc(12px + var(--rail-w) + var(--s-7));
+    padding-right: var(--pad);
+    transition: padding-left 560ms var(--ease);
+  }
+
+  .guide.rail-closed {
+    padding-left: calc(12px + 40px + var(--s-7));
+  }
+
+  .g-main {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .g-rail {
+    position: fixed;
+    z-index: 20;
+    left: 12px;
+    top: calc(var(--nav-h) + 10px);
+    bottom: 12px;
+    width: var(--rail-w);
+    max-height: none;
+    align-self: stretch; /* "start" would shrink a fixed box to its content */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 24px 60px rgba(0, 0, 0, 0.45);
+    will-change: transform, opacity;
+    transition: transform 560ms var(--ease), opacity 420ms var(--ease);
+  }
+
+  .rail-closed .g-rail {
+    transform: translateX(calc(-100% - 24px));
+    opacity: 0;
+  }
+
+  .g-steps {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .guide:not(.rail-closed) .g-rail-head,
+  .guide:not(.rail-closed) .g-steps li {
+    animation: g-rail-in 460ms var(--ease) both;
+  }
+
+  .g-steps li:nth-child(1) { animation-delay: 80ms; }
+  .g-steps li:nth-child(2) { animation-delay: 110ms; }
+  .g-steps li:nth-child(3) { animation-delay: 140ms; }
+  .g-steps li:nth-child(4) { animation-delay: 170ms; }
+  .g-steps li:nth-child(5) { animation-delay: 200ms; }
+  .g-steps li:nth-child(6) { animation-delay: 230ms; }
+  .g-steps li:nth-child(7) { animation-delay: 260ms; }
+  .g-steps li:nth-child(n + 8) { animation-delay: 290ms; }
+
+  .g-rail-open {
+    left: 12px;
+    top: calc(var(--nav-h) + 10px);
+    transform: scale(0.9);
+    transition: opacity 300ms var(--ease), transform 300ms var(--ease);
+  }
+
+  .g-rail-open.show {
+    transform: none;
+  }
+}
+
+@keyframes g-rail-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-rail { transition: opacity 220ms ease !important; }
+  .rail-closed .g-rail { transform: none; }
+  .guide:not(.rail-closed) .g-rail-head,
+  .guide:not(.rail-closed) .g-steps li { animation: none; }
+}
