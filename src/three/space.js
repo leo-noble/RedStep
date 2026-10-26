@@ -268,9 +268,10 @@ export function createSpace(canvas, { texture = (file) => `/data/globe/${file}`,
   }
 
   // ---- camera ----
-  const camEarthWide = { pos: new THREE.Vector3(-2.2, 0.5, 6.2), look: new THREE.Vector3(-1.2, 0.1, 0) }
-  // phones: Earth sits in the top half, above the headline
-  const camEarthTall = { pos: new THREE.Vector3(0.1, 0.9, 11), look: new THREE.Vector3(0.2, -2.1, 0) }
+  // opening view: Earth's glowing edge along the bottom of the frame, the Moon above
+  const camEarthWide = { pos: new THREE.Vector3(0.35, 0.75, 3.3), look: new THREE.Vector3(0.6, 1.05, 0) }
+  // phones: the same, a little further back
+  const camEarthTall = { pos: new THREE.Vector3(0.2, 0.6, 4.6), look: new THREE.Vector3(0.3, 1.5, 0) }
   const camEarth = { pos: camEarthWide.pos.clone(), look: camEarthWide.look.clone() }
   const pickEarthCam = () => { const c = camera.aspect < 0.8 ? camEarthTall : camEarthWide; camEarth.pos.copy(c.pos); camEarth.look.copy(c.look) }
   const tall = () => camera.aspect < 0.8

@@ -1,6 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { SITE } from '../content/site.js'
-import { globeTexture } from '../data/index.js'
+import { globeTexture, siteById } from '../data/index.js'
+import { marsTime, sunAt, fmtHours } from '../lib/mars24.js'
+import { earthMars } from '../lib/ephem.js'
+import { Badge } from '../components/Atoms.jsx'
 import { useReducedMotion } from '../lib/hooks.js'
 // The world map (MapLibre) is the heaviest code in the app, so it loads on its own: fetched in
 // the background while the intro plays, and needed only once you head for Mars.
@@ -9,12 +12,21 @@ const Explorer = lazy(loadExplorer)
 import Orbits from '../components/Orbits.jsx'
 import './home.css'
 
-// the three things a visitor can do, shown under the headline
-const FEATURES = [
-  { k: '01', title: 'Layered NASA maps', text: 'Viking, MOLA, CTX, HiRISE and THEMIS on one globe.' },
-  { k: '02', title: 'A clear answer', text: 'Draw a walk at Jezero: GO, CAUTION or NO-GO, and why.' },
-  { k: '03', title: 'Street view', text: 'Look around real Perseverance and Curiosity panoramas.' },
-]
+const SEASONS = ['Northern spring', 'Northern summer', 'Northern autumn', 'Northern winter']
+const JEZERO = siteById('jezero')
+
+/** Live figures for the mission strip, computed in the browser (Mars24 and the planets' orbits). */
+function liveNow() {
+  const now = Date.now()
+  const t = marsTime(now)
+  const em = earthMars(now)
+  return {
+    km: `${Math.round(em.km / 1e6)} million km`,
+    msg: `${em.lightMin.toFixed(0)} min`,
+    season: SEASONS[Math.floor((((t.Ls % 360) + 360) % 360) / 90)],
+    jezero: fmtHours(sunAt(now, JEZERO.lat, JEZERO.lon, t).ltst),
+  }
+}
 
 const seen = { intro: false } // skip the intro on return visits within the session
 
@@ -27,6 +39,12 @@ export default function Home() {
   const [failed, setFailed] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [sceneGone, setSceneGone] = useState(seen.intro)
+  const [live, setLive] = useState(liveNow)
+  useEffect(() => {
+    if (phase !== 'earth') return
+    const id = setInterval(() => setLive(liveNow()), 1000)
+    return () => clearInterval(id)
+  }, [phase])
 
   // Opening scene (three.js). Not created at all on return visits.
   useEffect(() => {
@@ -117,41 +135,34 @@ export default function Home() {
       <div className="home-glow" ref={glow} aria-hidden="true" />
       {failed && phase === 'earth' && <div className="home-fallback" aria-hidden="true"><Orbits label /></div>}
 
-      <div className="intro-scrim" aria-hidden="true" />
-      <section className="intro" aria-hidden={phase !== 'earth'} inert={phase !== 'earth'}>
-        <div className="intro-main">
-          <p className="intro-badge">
-            <span className="intro-badge-dot" aria-hidden="true" />
-            NASA Space Apps 2026
-            <span className="intro-badge-sep" aria-hidden="true" />
-            <span className="intro-badge-soft">Martian Map challenge</span>
-          </p>
-          <h1 className="intro-title">
-            Plan a walk on <span className="accent">another world.</span>
+      <div className="hero-scrim" aria-hidden="true" />
+      <section className="intro hero" aria-hidden={phase !== 'earth'} inert={phase !== 'earth'}>
+        <div className="hero-center">
+          <p className="hero-eyebrow">NASA Space Apps 2026<span className="hero-eyebrow-more"> · Martian Map challenge</span></p>
+          <h1 className="hero-title">
+            Plan a walk<br />on <span className="accent">another world.</span>
           </h1>
-          <p className="intro-pitch">{SITE.pitchShort}</p>
-          <div className="intro-cta">
-            <button type="button" className="btn btn-primary intro-launch" onClick={begin}>
-              Launch to Mars <span className="arrow" aria-hidden="true">→</span>
+          <p className="hero-pitch">{SITE.pitchShort}</p>
+          <div className="hero-cta">
+            <button type="button" className="hero-launch" onClick={begin}>
+              <span className="hero-launch-pulse" aria-hidden="true" />
+              Launch to Mars
             </button>
-            <button type="button" className="btn btn-ghost" onClick={skip}>Skip to the map</button>
+            <button type="button" className="hero-skip" onClick={skip}>or go straight to the map <span aria-hidden="true">→</span></button>
           </div>
         </div>
 
-        <ul className="intro-features" aria-label="What you can do">
-          {FEATURES.map((f) => (
-            <li key={f.title}>
-              <span className="intro-feature-k">{f.k}</span>
-              <b>{f.title}</b>
-              <span>{f.text}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="intro-foot">
-          <p className="intro-why">{SITE.whyJezero}</p>
-          <p className="intro-credit">Earth at night: NASA Black Marble · Moon: NASA LRO · Mars: Viking</p>
+        <div className="hero-strip">
+          <dl>
+            <div><dt>Mars is now</dt><dd>{live.km}</dd></div>
+            <div><dt>Message to Earth</dt><dd>{live.msg}</dd></div>
+            <div><dt>Season on Mars</dt><dd>{live.season}</dd></div>
+            <div><dt>Time at Jezero</dt><dd>{live.jezero}</dd></div>
+          </dl>
+          <p className="hero-strip-note"><Badge kind="derived" /> Worked out live in your browser from NASA's Mars24 method and the planets' orbits.</p>
         </div>
+
+        <p className="hero-credit">Earth at night: NASA Black Marble · Moon: NASA LRO · Mars: Viking</p>
       </section>
 
       {/* the map starts once the rocket is at Mars (setting it up mid-flight made the flight stutter);
