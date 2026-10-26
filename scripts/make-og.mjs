@@ -30,7 +30,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
       <text x="28" y="0" font-size="30" font-weight="700" fill="#7fe0a8">GO</text>
       <text x="92" y="0" font-family="Menlo, monospace" font-size="18" fill="#c9ced8">Jezero Crater · HiRISE · CTX · MOLA · THEMIS · RAD</text>
     </g>
-    <g transform="translate(64 548) scale(0.0667) translate(-212 -212)">${mark}</g>
+    <g transform="translate(64 548) scale(0.0602) translate(-180 -176)">${mark}</g>
     <text x="114" y="582" font-size="26" font-weight="700" letter-spacing="-0.5">Redstep</text>
   </g>
 </svg>`

@@ -1,26 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="212 212 600 600">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="180 176 664 664">
 <g xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="rs-mars" cx="36%" cy="32%" r="78%">
+    <radialGradient id="rs-shell" cx="38%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".6" stop-color="#e9e5df"/>
+      <stop offset="1" stop-color="#a9a39b"/>
+    </radialGradient>
+    <linearGradient id="rs-visor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2038"/>
+      <stop offset=".55" stop-color="#0d0a14"/>
+      <stop offset="1" stop-color="#050408"/>
+    </linearGradient>
+    <radialGradient id="rs-mars" cx="32%" cy="28%" r="80%">
       <stop offset="0" stop-color="#ffb27a"/>
-      <stop offset="0.38" stop-color="#ec7d45"/>
-      <stop offset="0.78" stop-color="#9a3d19"/>
+      <stop offset=".42" stop-color="#ec7d45"/>
+      <stop offset=".85" stop-color="#8a3313"/>
       <stop offset="1" stop-color="#4a1d0c"/>
     </radialGradient>
-    <linearGradient id="rs-rim" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
-      <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+    <linearGradient id="rs-ring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d8d3cc"/>
+      <stop offset="1" stop-color="#8f8981"/>
     </linearGradient>
-    
-    <mask id="rs-sole" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
-      <path fill="#fff" d="M512 296C592 296 630 356 628 438C626 504 600 540 592 578C586 610 602 640 600 678C598 726 560 752 512 752C464 752 428 726 428 682C428 642 446 614 440 580C432 540 396 506 396 438C396 356 434 296 512 296Z"/>
-      <g fill="#000"><rect x="360" y="356" width="300" height="11" rx="5.5"/><rect x="360" y="396" width="300" height="11" rx="5.5"/><rect x="360" y="436" width="300" height="11" rx="5.5"/><rect x="360" y="476" width="300" height="11" rx="5.5"/><rect x="360" y="516" width="300" height="11" rx="5.5"/><rect x="360" y="556" width="300" height="11" rx="5.5"/><rect x="360" y="596" width="300" height="11" rx="5.5"/><rect x="360" y="636" width="300" height="11" rx="5.5"/><rect x="360" y="676" width="300" height="11" rx="5.5"/></g>
-    </mask>
+    <radialGradient id="rs-night" cx="25%" cy="20%" r="95%">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <clipPath id="rs-visor-clip">
+      <rect x="300" y="300" width="424" height="352" rx="176"/>
+    </clipPath>
   </defs>
-  <circle cx="512" cy="512" r="300" fill="url(#rs-mars)"/>
-  <circle cx="512" cy="512" r="298" fill="none" stroke="url(#rs-rim)" stroke-width="5"/>
-  <g transform="rotate(-18 512 524)">
-    <rect width="1024" height="1024" fill="#f7f4ef" mask="url(#rs-sole)"/>
+  
+  <rect x="352" y="724" width="320" height="96" rx="48" fill="url(#rs-ring)"/>
+  <rect x="352" y="724" width="320" height="22" rx="11" fill="#000" opacity=".18"/>
+  
+  <circle cx="512" cy="490" r="300" fill="url(#rs-shell)"/>
+  
+  <rect x="196" y="430" width="40" height="128" rx="20" fill="#bdb7af"/>
+  <rect x="788" y="430" width="40" height="128" rx="20" fill="#bdb7af"/>
+  
+  <rect x="292" y="292" width="440" height="368" rx="184" fill="#7d776f"/>
+  <rect x="300" y="300" width="424" height="352" rx="176" fill="url(#rs-visor)"/>
+  <g clip-path="url(#rs-visor-clip)">
+    <circle cx="628" cy="636" r="214" fill="url(#rs-mars)"/>
+    
+    <ellipse cx="560" cy="560" rx="78" ry="30" transform="rotate(-24 560 560)" fill="#6e2f17" opacity=".45"/>
+    <ellipse cx="640" cy="520" rx="44" ry="18" transform="rotate(-20 640 520)" fill="#6e2f17" opacity=".35"/>
+    <ellipse cx="548" cy="456" rx="58" ry="17" transform="rotate(-22 548 456)" fill="#fff6ea" opacity=".9"/>
+    <circle cx="628" cy="636" r="214" fill="url(#rs-night)"/>
+    <circle cx="628" cy="636" r="212" fill="none" stroke="#ffcf9e" stroke-opacity=".55" stroke-width="5"/>
+    <circle cx="400" cy="400" r="5" fill="#fff" opacity=".8"/>
+    <circle cx="468" cy="356" r="3.5" fill="#fff" opacity=".6"/>
+    <circle cx="660" cy="372" r="4" fill="#fff" opacity=".7"/>
   </g>
+  
+  <path d="M352 520 C 344 430 372 370 438 336" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="474" cy="324" r="13" fill="#fff" opacity=".55"/>
 </g>
 </svg>
