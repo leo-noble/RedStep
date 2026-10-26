@@ -12,6 +12,8 @@ import {
   DOT_FRAGMENT,
   WIRE_VERTEX,
   WIRE_FRAGMENT,
+  HULL_VERTEX,
+  HULL_FRAGMENT,
   PLUME_VERTEX,
   PLUME_FRAGMENT,
   GLOW_VERTEX,
@@ -21,7 +23,7 @@ import {
 const HULL = [0.945, 0.922, 0.898]; // #f1ebe5
 const ICE = [0.5, 0.69, 1.0]; // #7fb0ff
 const EMBER = [1.0, 0.698, 0.357]; // #ffb25b
-const SPACING = 0.0108;
+const SPACING = 0.0092;
 
 const CORE_R = 0.05;
 const BOOST_R = 0.031;
@@ -140,6 +142,27 @@ function connect(rings, dots, normals, out, outN, outA) {
   }
 }
 
+/* Solid inner hull: a softly lit body just inside the dots. It hides the far side's dots, so
+   the rocket reads as one solid white vehicle drawn in dots instead of a see-through net. */
+function hullGeometry(profile, paint, cx, y0, y1) {
+  const pts = [];
+  for (let y = y0; y <= y1 + 1e-6; y += SPACING * 0.5) {
+    const r = profile(y);
+    if (r != null) pts.push(new THREE.Vector2(Math.max(0, r * 0.955), y));
+  }
+  const g = new THREE.LatheGeometry(pts, 48);
+  const pos = g.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const kind = paint ? paint(pos.getY(i)) : 'hull';
+    const c = kind === 'band' ? [0.06, 0.08, 0.11] : kind === 'bell' ? [0.16, 0.13, 0.11] : [0.62, 0.61, 0.6];
+    col.set(c, i * 3);
+  }
+  g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+  g.translate(cx, 0, 0);
+  return g;
+}
+
 function dotMaterial() {
   return new THREE.ShaderMaterial({
     vertexShader: DOT_VERTEX,
@@ -180,6 +203,26 @@ export function createRocketRig() {
     { kind: 'bell', cx: -BOOST_X, cz: 0, top: 0.05, bottomR: BOOST_R * 0.82, topR: BOOST_R * 0.45 },
   ];
 
+  const hullMat = new THREE.ShaderMaterial({
+    vertexShader: HULL_VERTEX,
+    fragmentShader: HULL_FRAGMENT,
+    uniforms: { uSunView: { value: new THREE.Vector3(0.6, 0.4, 0.7).normalize() }, uFade: { value: 1 } },
+    transparent: true,
+    side: THREE.DoubleSide,
+  });
+  const hullGeos = [];
+  for (const part of parts) {
+    const g =
+      part.kind === 'body'
+        ? hullGeometry(part.profile, part.paint, part.cx, part.y0, part.y1)
+        : hullGeometry((y) => bellProfile(y, part.top, part.bottomR, part.topR), () => 'bell', part.cx, 0, part.top);
+    hullGeos.push(g);
+    const mesh = new THREE.Mesh(g, hullMat);
+    mesh.renderOrder = 1;
+    mesh.frustumCulled = false;
+    body.add(mesh);
+  }
+
   for (const part of parts) {
     const rings = [];
     if (part.kind === 'body') sampleBody({ ...part, dots, normals, colors, sizes, rings });
@@ -202,7 +245,9 @@ export function createRocketRig() {
   dotGeo.setAttribute('aColor', new THREE.Float32BufferAttribute(colors, 3));
   dotGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
   const dotMat = dotMaterial();
+  hullMat.uniforms.uSunView = dotMat.uniforms.uSunView; // one sun direction for both
   const points = new THREE.Points(dotGeo, dotMat);
+  points.renderOrder = 2;
   points.frustumCulled = false;
   body.add(points);
 
@@ -213,12 +258,13 @@ export function createRocketRig() {
   const wireMat = new THREE.ShaderMaterial({
     vertexShader: WIRE_VERTEX,
     fragmentShader: WIRE_FRAGMENT,
-    uniforms: { uColor: { value: new THREE.Color(0.72, 0.8, 0.95) }, uFade: { value: 1 } },
+    uniforms: { uColor: { value: new THREE.Color(0.5, 0.56, 0.68) }, uFade: { value: 1 } },
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
   const wires = new THREE.LineSegments(wireGeo, wireMat);
+  wires.renderOrder = 2;
   wires.frustumCulled = false;
   body.add(wires);
 
@@ -297,12 +343,15 @@ export function createRocketRig() {
       dotMat.uniforms.uPx.value = px;
       dotMat.uniforms.uFade.value = fade;
       wireMat.uniforms.uFade.value = fade;
+      hullMat.uniforms.uFade.value = fade;
       // sun in view space for dot lighting
       tmpM.setFromMatrix4(camera.matrixWorldInverse);
       dotMat.uniforms.uSunView.value.copy(tmpV.copy(sunWorld).applyMatrix3(tmpM).normalize());
     },
     dispose() {
       dotGeo.dispose();
+      for (const g of hullGeos) g.dispose();
+      hullMat.dispose();
       wireGeo.dispose();
       plumeGeo.dispose();
       glowGeo.dispose();

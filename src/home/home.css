@@ -2197,3 +2197,94 @@
     white-space: nowrap;
   }
 }
+
+/* Weaker devices: the panels sit over a moving 3D scene, and re-blurring it every frame is
+   costly, so they turn solid instead. */
+.mw-home[data-quality='low'] .glass,
+.mw-home[data-quality='low'] .chapter--left,
+.mw-home[data-quality='low'] .chapter--choose,
+.mw-home[data-quality='low'] .btn--ghost,
+.mw-home[data-quality='low'] .skip-intro,
+.mw-home[data-quality='low'] .pin__label,
+.mw-home[data-quality='low'] .badge__tip {
+  background: rgba(20, 20, 24, 0.94);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ---- hero: calmer title, no clashing labels ---- */
+.mw-home .hero-copy {
+  max-width: 34rem;
+}
+
+.mw-home .hero-copy .display {
+  font-size: clamp(2.2rem, 3.1vw, 3.8rem);
+}
+
+.mw-home .hero-copy .lead {
+  max-width: 38ch;
+  font-size: clamp(0.98rem, 0.9rem + 0.25vw, 1.1rem);
+}
+
+/* The title already points at Mars; its label sat on top of the copy. */
+.mw-home .body-label--left {
+  display: none;
+}
+
+/* outline button in the accent colour, so both calls to action read as buttons */
+.mw-home .btn--ghost {
+  border-color: rgba(255, 178, 91, 0.45);
+  color: var(--ember-100);
+}
+
+.mw-home .btn--ghost:hover {
+  border-color: var(--ember);
+  color: var(--ember);
+}
+
+/* compact live card: three readings */
+.mw-home .telemetry {
+  width: 300px;
+}
+
+.mw-home .telemetry__grid {
+  gap: 8px;
+}
+
+/* chapter panels never slide under the top bar, whatever the window height */
+.mw-home .chapter--left {
+  max-height: calc(100svh - var(--nav-h) - 32px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  top: calc(50% + var(--nav-h) / 2);
+}
+
+/* the site globe's way into the full map */
+.mw-home .globe-map {
+  position: absolute;
+  z-index: var(--z-copy);
+  right: calc(var(--margin) + 28px);
+  top: calc(var(--nav-h) + 10px);
+}
+
+@media (max-width: 860px), (max-aspect-ratio: 1/1) {
+  .mw-home .chapter--left {
+    top: auto;
+    max-height: calc(100svh - var(--nav-h) - 24px);
+  }
+
+  .mw-home .chapter--left .body {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .mw-home .telemetry {
+    width: auto;
+  }
+
+  .mw-home .globe-map {
+    right: 10px;
+  }
+}

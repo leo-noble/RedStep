@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { createRocketRig } from './rocketRig.js';
 import { bake } from './bake.js';
+import { frameWatch } from '../../lib/quality.js';
 import {
   BAKE_MARS,
   BAKE_EARTH,
@@ -39,7 +40,7 @@ const ANCHORS = {
     earth: { x: -1.06, y: -0.49, r: 0.78, d: 16 }, // perspective-fitted to the limb, 3 px RMS
     moon: { x: -0.363, y: 0.659, r: 0.068, d: 20 },
     mars: { x: 0.876, y: 0.354, r: 0.0552, d: 30 },
-    rocket: { x: 0.311, y: 0.161, len: 0.527, tilt: 27.8, d: 8 },
+    rocket: { x: 0.1, y: 0.12, len: 0.54, tilt: 27.8, d: 8 }, // fills the gap between Earth and the title
     end: { x: 0.3, y: -0.02, r: 0.36 },
   },
   mid: {
@@ -205,10 +206,11 @@ function ringPoints(center, radius, normal, seg = 256, startDir = null) {
 
 /* ========================================================================== */
 
-export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} }) {
+export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, quality = 'high', onQuality }) {
+  const low = quality === 'low';
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
+    antialias: !low,
     alpha: false,
     powerPreference: 'high-performance',
   });
@@ -221,14 +223,24 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} })
   camera.position.copy(CAM0);
 
   /* ---- Baked textures ---- */
-  const marsRT = bake(renderer, BAKE_MARS, 2048, 1024, { uSeed: { value: 4.21 } });
-  const earthRT = bake(renderer, BAKE_EARTH, 2048, 1024, { uSeed: { value: 1.3 } });
-  const earthAuxRT = bake(renderer, BAKE_EARTH_AUX, 2048, 1024, { uSeed: { value: 1.3 } });
-  const moonRT = bake(renderer, BAKE_MOON, 1024, 512, { uSeed: { value: 7.7 } });
+  // Mars and the Moon use NASA maps; their drawn-in-the-browser versions are only a fallback,
+  // made if a map fails to load. Earth keeps its baked map for the ocean glint and clouds.
+  // Weaker devices bake at half size.
+  const B = low ? 1024 : 2048;
+  const placeholder = (hex) => {
+    const c = new THREE.Color(hex);
+    const t = new THREE.DataTexture(new Uint8Array([c.r * 255, c.g * 255, c.b * 255, 128]), 1, 1);
+    t.needsUpdate = true;
+    return { texture: t, dispose: () => t.dispose() };
+  };
+  const marsRT = textures.mars ? placeholder('#8a4f36') : bake(renderer, BAKE_MARS, B, B / 2, { uSeed: { value: 4.21 } });
+  const earthRT = bake(renderer, BAKE_EARTH, B, B / 2, { uSeed: { value: 1.3 } });
+  const earthAuxRT = bake(renderer, BAKE_EARTH_AUX, B, B / 2, { uSeed: { value: 1.3 } });
+  const moonRT = textures.moon ? placeholder('#5c5b5a') : bake(renderer, BAKE_MOON, 1024, 512, { uSeed: { value: 7.7 } });
   // Milky Way haze passes through the reference's upper-right (≈1300, 200 px).
   const bandD = new THREE.Vector3(0.29, 0.17, -0.94).normalize();
   const bandT = new THREE.Vector3(0.78, 0.62, 0.12).normalize(); // runs up-right toward (1500, 40)
-  const skyRT = bake(renderer, BAKE_SKY, 2048, 1024, {
+  const skyRT = bake(renderer, BAKE_SKY, B, B / 2, {
     uSeed: { value: 2.2 },
     uBandNormal: { value: new THREE.Vector3().crossVectors(bandD, bandT).normalize() },
     uBandCentre: { value: bandD },
@@ -285,7 +297,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} })
   scene.add(stars);
 
   /* ---- Bodies ---- */
-  const sphere = new THREE.SphereGeometry(1, 160, 80);
+  const sphere = low ? new THREE.SphereGeometry(1, 96, 48) : new THREE.SphereGeometry(1, 160, 80);
   const earthMat = planetMaterial('EARTH', {
     map: earthRT.texture,
     aux: earthAuxRT.texture,
@@ -319,21 +331,29 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} })
 
   // Optional NASA planet maps (equirectangular, lon −180→180). Missing files fall back silently.
   const loader = new THREE.TextureLoader();
-  const tryOverride = (url, mat) =>
+  const loaded = [];
+  const tryOverride = (url, mat, fallback) =>
     loader.load(
       url,
       (tex) => {
         tex.wrapS = THREE.RepeatWrapping;
-        tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        tex.anisotropy = Math.min(low ? 4 : 8, renderer.capabilities.getMaxAnisotropy());
+        loaded.push(tex);
         mat.uniforms.uOverride.value = tex;
         mat.uniforms.uUseOverride.value = 1;
       },
       undefined,
-      () => {},
+      () => {
+        if (!fallback) return;
+        const rt = fallback();
+        loaded.push(rt);
+        mat.uniforms.uMap.value = rt.texture;
+        mat.uniforms.uOverride.value = rt.texture;
+      },
     );
-  if (textures.mars) tryOverride(textures.mars, marsMat);
+  if (textures.mars) tryOverride(textures.mars, marsMat, () => bake(renderer, BAKE_MARS, B, B / 2, { uSeed: { value: 4.21 } }));
   if (textures.earth) tryOverride(textures.earth, earthMat);
-  if (textures.moon) tryOverride(textures.moon, moonMat);
+  if (textures.moon) tryOverride(textures.moon, moonMat, () => bake(renderer, BAKE_MOON, 1024, 512, { uSeed: { value: 7.7 } }));
 
   /* ---- Rocket ---- */
   const rig = createRocketRig();
@@ -508,10 +528,13 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} })
   let H = 1;
   let dpr = 1;
   let pxBase = 1000;
+  // Render resolution steps down when frames run slow (see frameWatch below).
+  const DPR_STEPS = [1.75, 1.25, 1, 0.75];
+  let dprStep = low ? 2 : 0;
   function resize(w, h) {
     W = Math.max(1, w);
     H = Math.max(1, h);
-    dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    dpr = Math.min(window.devicePixelRatio || 1, DPR_STEPS[dprStep]);
     renderer.setPixelRatio(dpr);
     renderer.setSize(W, H, false);
     camera.aspect = W / H;
@@ -561,8 +584,23 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} })
 
   resize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight);
 
+  const watch = frameWatch({
+    onSlow() {
+      if (dprStep >= DPR_STEPS.length - 1) return;
+      dprStep++;
+      resize(W, H);
+      onQuality?.(dprStep >= 2 ? 'low' : 'high');
+    },
+  });
+  let skip = 0;
+
   function update(state) {
     if (!L.curve) return;
+    watch.tick();
+    // On the site globe with nothing moving, draw every other frame: the slow spin and
+    // twinkle still read as smooth, at half the work.
+    const idle = interactive && !drag.on && !flight && Math.abs(drag.vx) + Math.abs(drag.vy) < 1e-5 && Math.abs(state.velocity) < 1e-3;
+    if (idle && skip++ % 2) return;
     const reduced = state.reduced;
     const time = reduced ? 1.234 : state.time;
     const p = state.progress;
@@ -786,7 +824,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {} })
       canvas.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('pointercancel', onUp);
       rig.dispose();
-      for (const rt of [marsRT, earthRT, earthAuxRT, moonRT, skyRT]) rt.dispose();
+      for (const rt of [marsRT, earthRT, earthAuxRT, moonRT, skyRT, ...loaded]) rt.dispose();
       scene.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
         if (o.material) o.material.dispose();

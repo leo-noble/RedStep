@@ -1,6 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createHeroScene } from './three/heroScene.js';
 import { globeTexture } from '../data/index.js';
+import { deviceTier } from '../lib/quality.js';
 import { fmtLat, fmtLon } from './format.js';
 
 /**
@@ -27,6 +28,11 @@ export default function MarsGlobeHero({ engine, sites, selectedId, onSelect, onA
 
   useEffect(() => {
     const wrap = wrapRef.current;
+    // Weaker devices (or ones whose frames run slow) get solid panels instead of live blur.
+    const root = wrap.closest('.mw-home');
+    const setQuality = (q) => root && (root.dataset.quality = q);
+    const quality = deviceTier();
+    setQuality(quality);
     let scene;
     try {
       scene = createHeroScene(canvasRef.current, {
@@ -37,6 +43,8 @@ export default function MarsGlobeHero({ engine, sites, selectedId, onSelect, onA
           exit: exitRef.current,
         },
         onArrive: (id) => onArriveRef.current?.(id),
+        quality,
+        onQuality: setQuality,
         // Real NASA planet maps from the app's data folder; the procedural ones stay as fallback.
         textures: { mars: globeTexture('mars-viking-2k.jpg'), earth: globeTexture('earth-day-2k.jpg'), moon: globeTexture('moon-lro-2k.jpg') },
       });

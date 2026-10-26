@@ -536,6 +536,37 @@ void main(){
 }
 `;
 
+/* ---------- Rocket inner hull (solid, behind the dots) ------------------- */
+export const HULL_VERTEX = /* glsl */ `
+attribute vec3 aColor;
+varying vec3 vC;
+varying vec3 vN;
+varying vec3 vV;
+void main(){
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vN = normalize(normalMatrix * normal);
+  vV = normalize(-mv.xyz);
+  vC = aColor;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+export const HULL_FRAGMENT = /* glsl */ `
+precision highp float;
+uniform vec3 uSunView;
+uniform float uFade;
+varying vec3 vC;
+varying vec3 vN;
+varying vec3 vV;
+void main(){
+  vec3 n = normalize(gl_FrontFacing ? vN : -vN);
+  float lit = 0.18 + 0.82 * max(dot(n, uSunView), 0.0);
+  float rim = pow(1.0 - max(dot(n, vV), 0.0), 3.0);
+  vec3 c = vC * lit * 0.42 + vec3(0.45, 0.58, 0.85) * rim * 0.18;
+  gl_FragColor = vec4(c * uFade, uFade);
+}
+`;
+
 export const WIRE_VERTEX = /* glsl */ `
 attribute float aAlpha;
 uniform float uFade;

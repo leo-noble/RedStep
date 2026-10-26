@@ -3,6 +3,7 @@ import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { circle, corners, marsMetresPerPixel, registerDem } from '../../lib/marsmap.js'
 import { prefersReducedMotion } from '../../lib/hooks.js'
+import { deviceTier } from '../../lib/quality.js'
 
 const EMPTY = { type: 'FeatureCollection', features: [] }
 const fc = (features) => ({ type: 'FeatureCollection', features })
@@ -39,7 +40,9 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       fadeDuration: 0,
       pitchWithRotate: true,
       maxPitch: 78,
-      canvasContextAttributes: { antialias: true, preserveDrawingBuffer: true },
+      // No preserved drawing buffer (it slows every frame); snapshot() reads right after a draw.
+      canvasContextAttributes: { antialias: deviceTier() !== 'low' },
+      pixelRatio: Math.min(window.devicePixelRatio || 1, deviceTier() === 'low' ? 1 : 2),
     })
     map.current = m
     if (import.meta.env.DEV) window.__map = m
@@ -291,9 +294,10 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
           resolve(out.toDataURL('image/jpeg', 0.88))
           m.jumpTo(view)
         }
-        m.once('idle', grab)
-        setTimeout(grab, 2500)
-        m.triggerRepaint()
+        // read the canvas inside a render event, while the frame just drawn is still there
+        const grabAfterDraw = () => { m.once('render', grab); m.triggerRepaint() }
+        m.once('idle', grabAfterDraw)
+        setTimeout(grabAfterDraw, 2500)
       })
     },
   }), [meta])

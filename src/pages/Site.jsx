@@ -56,6 +56,10 @@ function Planner({ site }) {
   const habitat = useMemo(() => [places.home.lon, places.home.lat], [places])
   const stops = places.stops
 
+  // The height chart folds to a one-line summary so the map gets the room; open by default only
+  // on tall screens, and remembered once you choose.
+  const [profileOpen, setProfileOpen] = useState(() => store.get('mw:profile-open', typeof window !== 'undefined' && window.innerHeight >= 1000))
+  const toggleProfile = () => setProfileOpen((o) => { store.set('mw:profile-open', !o); return !o })
   const [meta, setMeta] = useState(null)
   const [grid, setGrid] = useState(null)
   const [mapReady, setMapReady] = useState(false)
@@ -479,7 +483,17 @@ function Planner({ site }) {
             </div>
             <div className="side-body">{rightTab === 'verdict' ? verdict : rightTab === 'science' ? science : advisor}</div>
           </aside>
-          {a && <div className="profile-dock glass"><p className="pf-title">Up and down along the walk</p><Profile analysis={a} stops={stops} onHover={onHover} limits={settings} /></div>}
+          {a && (
+            <div className={`profile-dock glass ${profileOpen ? 'open' : ''}`}>
+              <button type="button" className="pf-toggle" aria-expanded={profileOpen} onClick={toggleProfile}>
+                <span className="pf-title">Up and down along the walk</span>
+                {!profileOpen && <span className="pf-sum">↑ {Math.round(a.gain)} m · ↓ {Math.round(a.loss)} m · steepest {a.maxSlope.toFixed(0)}°</span>}
+                <span className="pf-chev" aria-hidden="true">{profileOpen ? '▾' : '▸'}</span>
+                <span className="sr-only">{profileOpen ? 'Hide the height chart' : 'Show the height chart'}</span>
+              </button>
+              {profileOpen && <Profile analysis={a} stops={stops} onHover={onHover} limits={settings} />}
+            </div>
+          )}
         </>
       ) : (
         <div className={`sheet ${sheetOpen ? 'open' : ''}`}>

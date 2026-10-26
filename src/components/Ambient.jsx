@@ -4,9 +4,12 @@
 // viewer turns background motion off (footer switch).
 import { useEffect, useRef } from 'react'
 import { useAmbientMotion } from '../lib/hooks.js'
+import { deviceTier } from '../lib/quality.js'
 import './ambient.css'
 
-const FPS = 30
+// weaker devices: fewer frames and half the dust
+const LOW = deviceTier() === 'low'
+const FPS = LOW ? 20 : 30
 
 export default function Ambient({ className = '' }) {
   const ref = useRef(null)
@@ -19,7 +22,7 @@ export default function Ambient({ className = '' }) {
     let w = 0, h = 0, dust = [], raf = 0, last = 0, visible = true, t = 0
 
     const seed = () => {
-      const n = Math.min(90, Math.round((w * h) / 9000))
+      const n = Math.min(LOW ? 45 : 90, Math.round((w * h) / (LOW ? 18000 : 9000)))
       dust = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, r: 0.4 + Math.random() * 1.6, v: 6 + Math.random() * 16, a: 0.12 + Math.random() * 0.3, p: Math.random() * 6.28 }))
     }
     const size = () => {

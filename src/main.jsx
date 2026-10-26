@@ -49,8 +49,17 @@ const router = createBrowserRouter([
 
 // Offline support: the service worker (dist/sw.js, built by vite.config.js) keeps the app and
 // the Jezero data after the first visit. Production only, so development always sees fresh files.
+// It starts once the page has settled, so its download never competes with the first view,
+// and not at all on data saver or a very slow connection.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
+  const conn = navigator.connection
+  const thrifty = conn?.saveData || /(^|-)2g$/.test(conn?.effectiveType || '')
+  if (!thrifty) {
+    window.addEventListener('load', () => {
+      const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1))
+      setTimeout(() => idle(() => navigator.serviceWorker.register('/sw.js').catch(() => {})), 6000)
+    })
+  }
 }
 
 createRoot(document.getElementById('root')).render(

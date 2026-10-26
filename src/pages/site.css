@@ -8,6 +8,12 @@
   --side-w: var(--side-open);
   --right-w: 400px;
   --top: calc(var(--nav-h) + 8px);
+  --dock-h: 148px; /* height chart, open */
+}
+
+/* chart folded to its summary line: the map gets the room */
+.planner:has(.profile-dock:not(.open)) {
+  --dock-h: 44px;
 }
 
 .mars-map,
@@ -17,7 +23,7 @@
 }
 
 .mars-map .maplibregl-ctrl-bottom-right {
-  bottom: 168px;
+  bottom: calc(var(--dock-h) + 26px);
   right: calc(var(--right-w) + 28px);
 }
 
@@ -48,13 +54,13 @@
 
 .mars-map .maplibregl-ctrl-bottom-left {
   left: calc(var(--side-w) + 28px);
-  bottom: 160px;
+  bottom: calc(var(--dock-h) + 22px);
 }
 
 .mars-scale {
   position: absolute;
   left: calc(var(--side-w) + 32px);
-  bottom: 196px;
+  bottom: calc(var(--dock-h) + 52px);
   pointer-events: none;
 }
 
@@ -107,8 +113,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--s-3) var(--s-4);
-  padding: 10px 12px 10px 18px;
+  gap: 8px 10px;
+  padding: 8px 10px;
 }
 
 .ab-site {
@@ -1373,14 +1379,42 @@
 .profile-dock {
   display: flex;
   flex-direction: column;
-  height: 168px;
+  height: var(--dock-h);
+  padding-top: 6px;
+  transition: height 320ms var(--ease);
+}
+
+.pf-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
 }
 
 .pf-title {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.pf-sum {
+  font-size: 12px;
   color: var(--ink-3);
-  margin: 0 0 2px;
+}
+
+.pf-chev {
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+.pf-toggle:hover .pf-title,
+.pf-toggle:hover .pf-chev {
+  color: var(--ink);
 }
 
 .profile-dock .profile {
@@ -1515,4 +1549,28 @@
   background:
     repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(255, 255, 255, 0.16) calc(10% - 1px) 10%),
     rgba(255, 255, 255, 0.06);
+}
+
+/* Phones: the tools are one row you can swipe sideways, main button first, so the map keeps
+   most of the screen. The fade on the right says there is more. */
+@media (max-width: 820px) {
+  .actionbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 6px;
+    gap: 6px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  }
+  .actionbar::-webkit-scrollbar { display: none; }
+  .actionbar > *,
+  .ab-after > * { flex: none; }
+  .ab-main { flex: none; min-height: 40px; padding: 0 16px; font-size: 14px; }
+  .ab-appetite { flex: none; }
+  .ab-appetite button { flex: none; height: 32px; padding: 0 10px; }
+  .ab-or { display: none; }
+  .ab-after { display: contents; }
+  .actionbar .btn-small { min-height: 40px; }
 }

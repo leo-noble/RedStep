@@ -4,7 +4,7 @@ import MarsGlobeHero from './MarsGlobeHero.jsx';
 import { fmtLat, fmtLon } from './format.js';
 import Badge from './Badge.jsx';
 import { createMotionEngine, windowed, smoothstep } from './motionEngine.js';
-import { marsTime, localSolarTime, solarElevation, earthMarsLightTime, formatHMS, formatHM } from './mars24.js';
+import { marsTime, localSolarTime, solarElevation, earthMarsLightTime, formatHM } from './mars24.js';
 import { FOOTER_NAV } from '../content/site.js';
 import { HOME, SITE, LANDING_SITES, DEFAULT_SITE_ID, SOURCES, CONSTANTS, SLOPE_THRESHOLDS, EVA_DEFAULTS, getSite } from './content.js';
 import './boundary.css';
@@ -107,17 +107,12 @@ export default function HomePage() {
       const m = marsTime();
       const lt = earthMarsLightTime();
       const site = getSite(selectedId);
-      write('ls', `${m.Ls.toFixed(1)}°`);
-      write('season', `${m.season} · MY ${m.MY}`);
-      write('msd', m.MSD.toFixed(2));
-      write('mtc', formatHMS(m.MTC));
+      write('season', m.season);
       write('light', `${lt.minutes.toFixed(1)} min`);
       write('lightBig', lt.minutes.toFixed(1));
-      write('dist', `${lt.dAU.toFixed(2)} AU`);
       write('siteName', site.name.split(' ·')[0]);
-      write('ltst', formatHM(localSolarTime(m, site.lon)));
+      write('ltst', `${formatHM(localSolarTime(m, site.lon))} local time`);
       const el = solarElevation(m, site.lat, site.lon);
-      write('sun', `${el >= 0 ? '+' : '−'}${Math.abs(el).toFixed(0)}°`);
       write('daynight', el > 0 ? 'Daylight' : el > -6 ? 'Twilight' : 'Night');
     };
     tick();
@@ -205,35 +200,18 @@ export default function HomePage() {
               <Badge kind="derived" source="mars24" align="start" note={HOME.telemetryNote} />
             </header>
             <dl className="telemetry__grid">
-              <div>
-                <dt>Ls</dt>
-                <dd ref={ref('ls')}>—</dd>
-              </div>
               <div className="telemetry__wide">
                 <dt>Season</dt>
                 <dd ref={ref('season')}>—</dd>
               </div>
-              <div>
-                <dt>MSD</dt>
-                <dd ref={ref('msd')}>—</dd>
-              </div>
-              <div>
-                <dt>MTC</dt>
-                <dd ref={ref('mtc')}>—</dd>
-              </div>
-              <div>
-                <dt>Light time</dt>
+              <div className="telemetry__wide">
+                <dt>Message to Earth</dt>
                 <dd ref={ref('light')}>—</dd>
-              </div>
-              <div>
-                <dt>Earth–Mars</dt>
-                <dd ref={ref('dist')}>—</dd>
               </div>
               <div className="telemetry__wide telemetry__site">
                 <dt ref={ref('siteName')}>—</dt>
                 <dd>
-                  LTST <span ref={ref('ltst')}>—</span> · Sun <span ref={ref('sun')}>—</span> ·{' '}
-                  <span ref={ref('daynight')}>—</span>
+                  <span ref={ref('ltst')}>—</span> · <span ref={ref('daynight')}>—</span>
                 </dd>
               </div>
             </dl>
@@ -369,6 +347,10 @@ export default function HomePage() {
               )}
             </div>
           </div>
+
+          <Link to="/map" className="chapter globe-map btn btn--ghost btn--sm" data-chapter="choose" style={{ '--w': 'var(--w-choose)' }}>
+            Open the full Mars map <span aria-hidden="true">→</span>
+          </Link>
 
           <p className="drag-hint micro" aria-hidden="true">
             Drag to rotate · {selected?.name}

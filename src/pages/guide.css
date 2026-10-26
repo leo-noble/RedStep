@@ -202,14 +202,14 @@
 }
 
 .g-head h1 {
-  font-size: var(--t-1);
-  letter-spacing: -0.05em;
+  font-size: clamp(36px, 4.6vw, 68px);
+  letter-spacing: -0.04em;
   outline: none;
 }
 
 .g-question {
-  margin-top: var(--s-4);
-  font-size: var(--t-4);
+  margin-top: var(--s-3);
+  font-size: clamp(19px, 1.6vw, 24px);
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--ember);
@@ -385,3 +385,23 @@
   .g-rail-open { display: none; }
   .g-refs { display: none; }
 }
+
+/* Texture behind the top of the guide: NASA's MOLA shaded relief of Mars (credited on the
+   Data & sources page), faded out to the sides and below. */
+.guide::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  inset: 0 0 auto;
+  height: 620px;
+  pointer-events: none;
+  background: url('/data/globe/mars-relief-2k.jpg') center 38% / cover no-repeat;
+  opacity: 0.22;
+  filter: sepia(0.6) saturate(1.6) hue-rotate(-12deg);
+  /* fades out below and toward both sides, so it has no hard edge */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(#000 30%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent), linear-gradient(#000 30%, transparent);
+  mask-composite: intersect;
+}
+

@@ -15,6 +15,7 @@ import { SITE } from '../content/site.js'
 import { Sidebar, SbSection, SbRow, SbDisclosure } from './Sidebar.jsx'
 import { Badge, Source } from './Atoms.jsx'
 import { prefersReducedMotion, useNarrow } from '../lib/hooks.js'
+import { deviceTier } from '../lib/quality.js'
 import './explorer.css'
 
 const thumb = (id) => basemapTiles(id).replace('{z}/{x}/{y}', '0/0/0')
@@ -75,6 +76,8 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
   const [ready, setReady] = useState(false)
   const [names, setNames] = useState([])
   const [basemap, setBasemap] = useState('viking')
+  const basemapRef = useRef(basemap)
+  basemapRef.current = basemap
   const [overlays, setOverlays] = useState({ night: true, rovers: true, labels: true })
   const [layersOpen, setLayersOpen] = useState(false)
   const [sbOpen, setSbOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 820)
@@ -105,6 +108,9 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
       attributionControl: false,
       renderWorldCopies: false,
       fadeDuration: 0,
+      // weaker devices draw the globe at normal (not retina) resolution
+      pixelRatio: Math.min(window.devicePixelRatio || 1, deviceTier() === 'low' ? 1 : 2),
+      maxTileCacheSize: deviceTier() === 'low' ? 60 : 200,
     })
     map.current = m
     if (import.meta.env.DEV) window.__xmap = m
@@ -115,27 +121,8 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
         m.addSource(`base-${b.id}`, { type: 'raster', tiles: [basemapTiles(b.id)], tileSize: 256, maxzoom: b.maxzoom })
         m.addLayer({ id: `base-${b.id}`, type: 'raster', source: `base-${b.id}`, paint: { 'raster-fade-duration': 0, 'raster-resampling': 'linear' }, layout: { visibility: b.id === 'viking' ? 'visible' : 'none' } })
       }
-      // sharper regional maps at the mission sites
-      for (const s of SITES) {
-        try {
-          const meta = await siteMeta(s.id)
-          const L = meta.layers
-          if (L.viking) {
-            m.addSource(`det-viking-${s.id}`, { type: 'image', url: L.viking.url, coordinates: corners(L.viking.bbox) })
-            m.addLayer({ id: `det-viking-${s.id}`, type: 'raster', source: `det-viking-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: { visibility: 'visible' } }, 'base-mola')
-          }
-          if (L.relief) {
-            m.addSource(`det-mola-${s.id}`, { type: 'image', url: L.relief.url, coordinates: corners(L.relief.bbox) })
-            m.addLayer({ id: `det-mola-${s.id}`, type: 'raster', source: `det-mola-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: { visibility: 'none' } })
-          }
-          if (s.id === 'jezero') {
-            m.addSource('det-ctx', { type: 'image', url: meta.photo.url, coordinates: corners(meta.photo.bbox) })
-            m.addLayer({ id: 'det-ctx', type: 'raster', source: 'det-ctx', minzoom: 8.5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 8.5, 0, 9.5, 1] } })
-            m.addSource('det-hirise', { type: 'image', url: L.hirise.url, coordinates: corners(L.hirise.bbox) })
-            m.addLayer({ id: 'det-hirise', type: 'raster', source: 'det-hirise', minzoom: 11, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 1] } })
-          }
-        } catch { /* site data missing: the global map still works */ }
-      }
+      // Sharper regional maps at the mission sites load only when you zoom in near one
+      // (ensureDetails, on every move), not all at once when the map opens.
       m.addSource('night', { type: 'raster', tiles: ['marsnight://{z}/{x}/{y}'], tileSize: 256, maxzoom: 3 })
       m.addLayer({ id: 'night', type: 'raster', source: 'night', paint: { 'raster-fade-duration': 0, 'raster-opacity': 0.9 } })
 
@@ -147,11 +134,6 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
       m.addSource('pin', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addLayer({ id: 'pin', type: 'circle', source: 'pin', paint: { 'circle-radius': 7, 'circle-color': '#00e5ff', 'circle-stroke-color': '#000', 'circle-stroke-width': 2 } })
 
-      // rover paths (drawn on when shown)
-      Promise.all(SITES.map((s) => siteTraverse(s.id).then((t) => t?.line).catch(() => null))).then((lines) => {
-        const feats = lines.filter(Boolean).map((c) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } }))
-        m.getSource('rovers')?.setData({ type: 'FeatureCollection', features: feats })
-      })
 
       m.on('click', 'sites', (e) => { e.preventDefault(); const s = SITES.find((x) => x.id === e.features[0].properties.id); if (s) selectSite(s) })
       m.on('mouseenter', 'sites', () => { m.getCanvas().style.cursor = 'pointer' })
@@ -162,10 +144,58 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
       })
       setReady(true)
       onReady?.()
+      ensureDetails()
     })
+
+    const detailsAdded = new Set()
+    let roversLoaded = false
+    const near = (s, b, pad) => s.lon > b.getWest() - pad && s.lon < b.getEast() + pad && s.lat > b.getSouth() - pad && s.lat < b.getNorth() + pad
+    const vis = (on) => ({ visibility: on ? 'visible' : 'none' })
+    const ensureDetails = async () => {
+      if (!m.getLayer('night')) return
+      const z = m.getZoom()
+      if (z < 4) return
+      if (!roversLoaded && z >= 5.5) {
+        // rover paths (drawn from zoom 6)
+        roversLoaded = true
+        Promise.all(SITES.map((s) => siteTraverse(s.id).then((t) => t?.line).catch(() => null))).then((lines) => {
+          const feats = lines.filter(Boolean).map((c) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } }))
+          m.getSource('rovers')?.setData({ type: 'FeatureCollection', features: feats })
+        })
+      }
+      const b = m.getBounds()
+      const base = basemapRef.current
+      for (const s of SITES) {
+        if (!near(s, b, 8)) continue
+        try {
+          if (!detailsAdded.has(s.id)) {
+            detailsAdded.add(s.id)
+            const L = (await siteMeta(s.id)).layers
+            if (L.viking) {
+              m.addSource(`det-viking-${s.id}`, { type: 'image', url: L.viking.url, coordinates: corners(L.viking.bbox) })
+              m.addLayer({ id: `det-viking-${s.id}`, type: 'raster', source: `det-viking-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: vis(base === 'viking') }, 'base-mola')
+            }
+            if (L.relief) {
+              m.addSource(`det-mola-${s.id}`, { type: 'image', url: L.relief.url, coordinates: corners(L.relief.bbox) })
+              m.addLayer({ id: `det-mola-${s.id}`, type: 'raster', source: `det-mola-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: vis(base === 'mola') }, 'night')
+            }
+          }
+          // Jezero's big CTX and HiRISE photos (about 1 MB each) wait for a closer zoom still.
+          if (s.id === 'jezero' && z >= 7.5 && !detailsAdded.has('jezero-photos') && near(s, b, 1)) {
+            detailsAdded.add('jezero-photos')
+            const meta = await siteMeta(s.id)
+            m.addSource('det-ctx', { type: 'image', url: meta.photo.url, coordinates: corners(meta.photo.bbox) })
+            m.addLayer({ id: 'det-ctx', type: 'raster', source: 'det-ctx', minzoom: 8.5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 8.5, 0, 9.5, 1] }, layout: vis(base !== 'dust') }, 'night')
+            m.addSource('det-hirise', { type: 'image', url: meta.layers.hirise.url, coordinates: corners(meta.layers.hirise.bbox) })
+            m.addLayer({ id: 'det-hirise', type: 'raster', source: 'det-hirise', minzoom: 11, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 1] }, layout: vis(base !== 'dust') }, 'night')
+          }
+        } catch { /* site data missing: the global map still works */ }
+      }
+    }
 
     const move = () => { scheduleLabels(); updateScale() }
     m.on('move', move)
+    m.on('moveend', ensureDetails)
     m.on('mousemove', (e) => { if (coordEl.current) coordEl.current.textContent = `${fmtLat(e.lngLat.lat)}  ${fmtLon(e.lngLat.lng)}` })
     return () => { m.remove(); map.current = null }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps

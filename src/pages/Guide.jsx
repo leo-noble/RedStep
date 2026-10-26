@@ -46,7 +46,7 @@ export default function Guide() {
           <p className="g-rail-title">Survival guide</p>
         </div>
         <div className="g-rail-head">
-          <p className="g-progress"><b>{finished}</b> of {STEPS.length - 1} passed</p>
+          <p className="g-progress"><b>{finished}</b> of {STEPS.length - 1} quizzes passed</p>
           <div className="g-progress-bar"><i style={{ width: `${(finished / (STEPS.length - 1)) * 100}%` }} /></div>
         </div>
         <ol className="g-steps">

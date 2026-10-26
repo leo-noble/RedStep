@@ -5,7 +5,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 
 // Writes dist/sw.js with a precache list of the app shell and the Jezero data.
-// Kept small on purpose: world-map tiles beyond zoom 2, other sites and the 4K texture are
+// Kept small on purpose: world-map tiles beyond zoom 1, other sites and the 4K texture are
 // cached at runtime, the first time they are viewed.
 function offline() {
   let outDir = 'dist'
@@ -30,7 +30,7 @@ function offline() {
         /^\/data\/jezero\//.test(f) ||
         /^\/data\/names\.json$/.test(f) ||
         (/^\/data\/globe\//.test(f) && !/4k/.test(f)) ||
-        /^\/data\/tiles\/[^/]+\/[0-2]\//.test(f)
+        /^\/data\/tiles\/[^/]+\/[0-1]\//.test(f)
       const precache = files.filter(keep).sort()
       const hash = crypto.createHash('sha1').update(precache.join('\n')).update(String(fs.statSync(path.join(root, 'index.html')).mtimeMs)).digest('hex').slice(0, 10)
       const tpl = fs.readFileSync(path.resolve('scripts/sw-template.js'), 'utf8')

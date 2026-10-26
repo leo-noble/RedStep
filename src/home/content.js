@@ -51,7 +51,7 @@ export const DEFAULT_SITE_ID = 'jezero'
 export const getSite = (id) => LANDING_SITES.find((s) => s.id === id)
 
 export const HOME = {
-  kicker: 'NASA Space Apps 2026 · Interplanetary Survival Guide',
+  kicker: 'NASA Space Apps Challenge 2026',
   titleLines: ['Plan the first', 'walk on '],
   titleAccent: 'Mars.',
   lead: 'One map built from NASA missions (height, steepness, dust, rock or sand, radiation and sunlight) that turns a landing site into a safe, science-rich Marswalk you can defend.',
