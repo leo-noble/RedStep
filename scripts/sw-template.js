@@ -1,4 +1,4 @@
-// Marswalk Planner service worker (generated into dist/sw.js at build time by vite.config.js).
+// Redstep service worker (generated into dist/sw.js at build time by vite.config.js).
 // - On install it saves the app shell and the Jezero data, so the planner works offline after
 //   the first visit.
 // - Everything else from this site (world-map tiles, other sites) is saved the first time it is

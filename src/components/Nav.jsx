@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Link, useLocation } from 'react-router'
 import { FOOTER_NAV, NAV, SITE } from '../content/site.js'
+import { useInstall, promptInstall } from '../lib/install.js'
 import './nav.css'
 
 export default function Nav({ overlay, onEmergency }) {
   const [open, setOpen] = useState(false)
+  const [iosTip, setIosTip] = useState(false)
+  const install = useInstall()
   const { pathname } = useLocation()
   useEffect(() => setOpen(false), [pathname])
   const isOn = (to) => (to === '/' ? pathname === '/' : pathname.startsWith(to.split('/').slice(0, 2).join('/')))
 
   return (
-    <header className={`nav ${overlay ? 'nav-overlay' : ''} ${open ? 'nav-open' : ''}`}>
+    <header className={`nav ${overlay ? 'nav-overlay' : ''} ${open ? 'nav-open' : ''}`} style={{ '--items': FOOTER_NAV.length + (install ? 1 : 0) }}>
       <Link to="/" className="nav-brand" aria-label={`${SITE.name}, home`}>
-        <svg viewBox="0 0 28 28" aria-hidden="true" className="nav-mark">
-          <ellipse cx="14" cy="14" rx="12.5" ry="4.6" fill="none" stroke="currentColor" strokeOpacity=".5" transform="rotate(-20 14 14)" />
-          <circle cx="14" cy="14" r="5.4" fill="var(--rust)" />
-        </svg>
+        <img src="/icons/mark.svg" alt="" width="26" height="26" className="nav-mark" />
         <span className="nav-name">{SITE.name}</span>
       </Link>
       <nav className="nav-links" aria-label="Main">
@@ -36,8 +36,14 @@ export default function Nav({ overlay, onEmergency }) {
           <span aria-hidden="true" />
         </button>
       </div>
-      <div id="nav-sheet" className="nav-sheet" hidden={!open}>
-        {FOOTER_NAV.map((n) => <NavLink key={n.to} to={n.to} end>{n.label}</NavLink>)}
+      <div id="nav-sheet" className="nav-sheet" inert={!open} aria-hidden={!open}>
+        {FOOTER_NAV.map((n, i) => <NavLink key={n.to} to={n.to} end style={{ '--i': i }}>{n.label}</NavLink>)}
+        {install && (
+          <button type="button" className="nav-install" style={{ '--i': FOOTER_NAV.length }} onClick={() => (install === 'prompt' ? promptInstall() : setIosTip((t) => !t))}>
+            <img src="/icons/icon-192.png" alt="" width="28" height="28" />
+            <span>{iosTip ? 'Tap Share, then “Add to Home Screen”' : 'Install the app'}</span>
+          </button>
+        )}
       </div>
     </header>
   )

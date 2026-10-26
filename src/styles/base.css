@@ -287,3 +287,15 @@ input[type='range'] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Installed on a home screen: behave like an app, not a web page (no rubber-band scroll of
+   the whole page, no grey tap flashes), and keep content clear of the home indicator. */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+  body { -webkit-tap-highlight-color: transparent; }
+}
+
+.sheet,
+.sb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

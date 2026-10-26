@@ -1,6 +1,7 @@
 // Builds public/og.png (1200x630 share card) from the baked Jezero HiRISE close-up.
 //   node scripts/make-og.mjs   (run after npm run bake)
 import sharp from 'sharp'
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,6 +10,9 @@ const W = 1200, H = 630
 const photo = await sharp(path.join(ROOT, 'public/data/jezero/hirise.webp'))
   .extract({ left: 1700, top: 500, width: 2000, height: 1050 })
   .resize(W, H).modulate({ brightness: 0.85 }).tint({ r: 236, g: 160, b: 110 }).toBuffer()
+
+// the Redstep mark (assets/logo-mark.svg), drawn next to the name
+const mark = (await fs.readFile(path.join(ROOT, 'assets/logo-mark.svg'), 'utf8')).replace(/<!--[\s\S]*?-->/g, '')
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
   <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".96"/><stop offset=".55" stop-color="#000" stop-opacity=".7"/><stop offset="1" stop-color="#000" stop-opacity=".1"/></linearGradient></defs>
@@ -26,7 +30,8 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
       <text x="28" y="0" font-size="30" font-weight="700" fill="#7fe0a8">GO</text>
       <text x="92" y="0" font-family="Menlo, monospace" font-size="18" fill="#c9ced8">Jezero Crater · HiRISE · CTX · MOLA · THEMIS · RAD</text>
     </g>
-    <text x="64" y="580" font-size="22" font-weight="700">Marswalk Planner</text>
+    <g transform="translate(64 548) scale(0.0667) translate(-212 -212)">${mark}</g>
+    <text x="114" y="582" font-size="26" font-weight="700" letter-spacing="-0.5">Redstep</text>
   </g>
 </svg>`
 await sharp(photo).composite([{ input: Buffer.from(svg) }]).png({ compressionLevel: 9 }).toFile(path.join(ROOT, 'public/og.png'))

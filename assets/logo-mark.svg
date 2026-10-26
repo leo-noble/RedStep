@@ -1,0 +1,25 @@
+<!-- Redstep mark: Mars, lit from the upper left, with one boot print on it. 1024 units. -->
+<g xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="rs-mars" cx="36%" cy="32%" r="78%">
+      <stop offset="0" stop-color="#ffb27a"/>
+      <stop offset="0.38" stop-color="#ec7d45"/>
+      <stop offset="0.78" stop-color="#9a3d19"/>
+      <stop offset="1" stop-color="#4a1d0c"/>
+    </radialGradient>
+    <linearGradient id="rs-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- one boot sole (wide toe, narrow arch, round heel) with tread ridges, like Apollo's print -->
+    <mask id="rs-sole" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <path fill="#fff" d="M512 296C592 296 630 356 628 438C626 504 600 540 592 578C586 610 602 640 600 678C598 726 560 752 512 752C464 752 428 726 428 682C428 642 446 614 440 580C432 540 396 506 396 438C396 356 434 296 512 296Z"/>
+      <g fill="#000"><rect x="360" y="356" width="300" height="11" rx="5.5"/><rect x="360" y="396" width="300" height="11" rx="5.5"/><rect x="360" y="436" width="300" height="11" rx="5.5"/><rect x="360" y="476" width="300" height="11" rx="5.5"/><rect x="360" y="516" width="300" height="11" rx="5.5"/><rect x="360" y="556" width="300" height="11" rx="5.5"/><rect x="360" y="596" width="300" height="11" rx="5.5"/><rect x="360" y="636" width="300" height="11" rx="5.5"/><rect x="360" y="676" width="300" height="11" rx="5.5"/></g>
+    </mask>
+  </defs>
+  <circle cx="512" cy="512" r="300" fill="url(#rs-mars)"/>
+  <circle cx="512" cy="512" r="298" fill="none" stroke="url(#rs-rim)" stroke-width="5"/>
+  <g transform="rotate(-18 512 524)">
+    <rect width="1024" height="1024" fill="#f7f4ef" mask="url(#rs-sole)"/>
+  </g>
+</g>

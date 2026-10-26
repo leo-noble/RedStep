@@ -23,9 +23,9 @@ export const SOURCES = {
   rad: { mission: 'Curiosity', instrument: 'RAD', product: 'Cruise and surface dose rate', resolution: 'Point measurement', citation: 'Hassler et al. (2014); Zeitlin et al. (2013)' },
   mars24: { mission: 'NASA GISS', instrument: 'Mars24 algorithm', product: 'Mars time, season, sun position', resolution: 'Analytic', citation: 'Allison & McEwen (2000)' },
   ephemeris: { mission: 'Analytic ephemeris', instrument: 'Earth + Mars orbits', product: 'Earth–Mars distance and light time', resolution: '≈±0.3 min' },
-  sites: { mission: 'Marswalk Planner', instrument: 'Curated sites', product: 'Rover landing points and NASA 2015 human landing-zone workshop sites', resolution: 'Point coordinates', citation: 'Each site lists its coordinate source on the map.' },
-  assumption: { mission: 'Marswalk Planner', instrument: 'Planning assumption', product: 'Editable in the walk settings', resolution: 'Set by you' },
-  schematic: { mission: 'Marswalk Planner', instrument: 'Hero scene', product: 'Orbital schematic drawn in your browser', resolution: 'Not to scale', citation: 'Planet maps: Viking (Mars), Blue Marble (Earth); distances and lighting composed for legibility.' },
+  sites: { mission: 'Redstep', instrument: 'Curated sites', product: 'Rover landing points and NASA 2015 human landing-zone workshop sites', resolution: 'Point coordinates', citation: 'Each site lists its coordinate source on the map.' },
+  assumption: { mission: 'Redstep', instrument: 'Planning assumption', product: 'Editable in the walk settings', resolution: 'Set by you' },
+  schematic: { mission: 'Redstep', instrument: 'Hero scene', product: 'Orbital schematic drawn in your browser', resolution: 'Not to scale', citation: 'Planet maps: Viking (Mars), Blue Marble (Earth); distances and lighting composed for legibility.' },
 }
 
 export const CONSTANTS = {

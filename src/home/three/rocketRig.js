@@ -50,7 +50,7 @@ function tag(g, part) {
   return g;
 }
 
-/** "MARSWALK" lettering, drawn once into a small texture (redrawn when the font arrives). */
+/** "REDSTEP" lettering, drawn once into a small texture (redrawn when the font arrives). */
 function letteringTexture() {
   const c = document.createElement('canvas');
   c.width = 1024;
@@ -65,7 +65,7 @@ function letteringTexture() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if ('letterSpacing' in ctx) ctx.letterSpacing = '14px';
-    ctx.fillText('MARSWALK', c.width / 2, c.height / 2 + 4);
+    ctx.fillText('REDSTEP', c.width / 2, c.height / 2 + 4);
     tex.needsUpdate = true;
   };
   draw();

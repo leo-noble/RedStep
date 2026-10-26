@@ -1,6 +1,6 @@
 // All site-wide copy. Change the project name here.
 export const SITE = {
-  name: 'Marswalk Planner',
+  name: 'Redstep',
   by: 'a Loadstone project',
   tagline: 'Plan a walk on another world.',
   pitch: 'Explore the whole planet, then plan a walk at Jezero Crater and get an instant answer: is it safe, why, and what science you will do on the way. Every number comes from real NASA missions.',

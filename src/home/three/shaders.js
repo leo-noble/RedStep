@@ -556,7 +556,7 @@ void main(){
     if (y > 0.70 && y < 0.765) { albedo = black; specK = 0.5; gloss = 80.0; }
     albedo *= 1.0 - 0.22 * (seam(y, 0.3, 0.0025) + seam(y, 0.52, 0.0025) + seam(y, 0.86, 0.0022));
     albedo = mix(albedo, vec3(1.0, 0.62, 0.32), seam(y, 0.775, 0.003) * 0.9); // thin ember ring
-    // MARSWALK, written down the side
+    // REDSTEP, written down the side
     float ang = atan(vObj.z, vObj.x) - 1.5707963;
     ang = atan(sin(ang), cos(ang));
     float s = ang * uCoreR;

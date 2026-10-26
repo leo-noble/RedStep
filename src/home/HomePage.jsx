@@ -152,7 +152,7 @@ export default function HomePage() {
 
   return (
     <div className="mw-home" ref={rootRef} data-choose="false" data-intro-done="false">
-      <section className="story" ref={trackRef} aria-label="Marswalk Planner introduction">
+      <section className="story" ref={trackRef} aria-label="Redstep introduction">
         <div className="stage">
           <MarsGlobeHero
             ref={heroRef}

@@ -72,7 +72,7 @@
   --s-9: 96px;
   --s-10: 128px;
   --pad: clamp(16px, 5vw, 72px);
-  --nav-h: 60px;
+  --nav-h: calc(60px + env(safe-area-inset-top, 0px)); /* + the status bar when installed on a phone */
 
   --r-1: 2px;
   --r-2: 8px;
