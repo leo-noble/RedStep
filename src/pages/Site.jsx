@@ -35,6 +35,35 @@ const APPETITE = [
 // URL state: ?w=lon,lat;lon,lat&snap=1&stops=a,b&d=2026-10-24&t=9
 const encodePts = (pts) => pts.map((p) => `${p[0].toFixed(5)},${p[1].toFixed(5)}`).join(';')
 const decodePts = (s) => (s ? s.split(';').map((q) => q.split(',').map(Number)).filter((p) => p.length === 2 && p.every(Number.isFinite)) : null)
+const MAX_POINTS = 40
+
+// Everything from a link or from saved settings is checked before use, so a hand-edited link
+// or an old saved value can't crash the planner or push a limit outside its range.
+const clampNum = (v, lo, hi, fallback) => {
+  const n = typeof v === 'string' && v.trim() === '' ? NaN : Number(v)
+  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback
+}
+const cleanSettings = (s) => {
+  const out = { ...DEFAULTS }
+  for (const [k, w] of Object.entries(WALK)) out[k] = clampNum(s?.[k], w.min ?? -Infinity, w.max ?? Infinity, w.value)
+  // "too steep" must stay above "careful"
+  if (out.redSlope <= out.greenSlope) out.redSlope = Math.min(WALK.redSlope.max, out.greenSlope + 1)
+  if (out.redSlope <= out.greenSlope) out.greenSlope = out.redSlope - 1
+  return out
+}
+const DATE_MIN = '2026-01-01', DATE_MAX = '2035-12-31'
+const cleanDate = (d) => (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(Date.parse(`${d}T12:00:00Z`)) && d >= DATE_MIN && d <= DATE_MAX ? d : today())
+// A walk always starts at the habitat, has at most MAX_POINTS points and stays near the site.
+const cleanPoints = (pts, home) => {
+  if (!pts?.length) return [home]
+  const out = [home]
+  for (const p of pts.slice(1)) {
+    const last = out[out.length - 1]
+    const repeat = Math.abs(p[0] - last[0]) < 1e-4 && Math.abs(p[1] - last[1]) < 1e-4 // within ~6 m
+    if (!repeat && Math.abs(p[0] - home[0]) < 1 && Math.abs(p[1] - home[1]) < 1) out.push(p)
+  }
+  return out.slice(0, MAX_POINTS)
+}
 
 export default function Site() {
   const { id } = useParams()
@@ -68,11 +97,13 @@ function Planner({ site }) {
   const [loadStage, setLoadStage] = useState('download')
   const [slowLoad, setSlowLoad] = useState(false)
   const [layers, setLayers] = useState(() => Object.fromEntries(ALL_LAYERS.map((l) => [l.id, { on: l.on, opacity: l.opacity }])))
-  const [settings, setSettings] = useState(() => ({ ...DEFAULTS, ...store.get('mw-settings-v2', {}), ...(params.get('t') ? { startHour: Number(params.get('t')) } : {}) }))
-  const [date, setDate] = useState(params.get('d') || today())
-  const [waypoints, setWaypoints] = useState(() => decodePts(params.get('w')) || [habitat])
+  const [settings, setRawSettings] = useState(() => cleanSettings({ ...store.get('mw-settings-v2', {}), ...(params.get('t') ? { startHour: params.get('t') } : {}) }))
+  const setSettings = useCallback((u) => setRawSettings((s) => cleanSettings(typeof u === 'function' ? u(s) : u)), [])
+  const [date, setRawDate] = useState(() => cleanDate(params.get('d')))
+  const setDate = useCallback((d) => setRawDate(cleanDate(d)), [])
+  const [waypoints, setWaypoints] = useState(() => cleanPoints(decodePts(params.get('w')), habitat))
   const [snap, setSnap] = useState(params.get('snap') === '1')
-  const [stopIds, setStopIds] = useState(() => (params.get('stops') ? params.get('stops').split(',') : []))
+  const [stopIds, setStopIds] = useState(() => (params.get('stops') || '').split(',').filter((sid) => stops.some((x) => x.id === sid)).slice(0, 30))
   const [drawing, setDrawing] = useState(false)
   const [appetite, setAppetite] = useState('balanced')
   const [result, setResult] = useState(null)
@@ -286,9 +317,15 @@ function Planner({ site }) {
   const onMapClick = useCallback((p, stopId) => {
     if (!drawing) return
     const s = stopId && stops.find((x) => x.id === stopId)
-    setWaypoints((w) => [...w, s ? [s.lon, s.lat] : p])
+    const q = s ? [s.lon, s.lat] : p
+    // Only inside the detailed height map: outside it the planner cannot judge the ground.
+    const [bw, bs, be, bn] = meta?.grid.bbox || [-Infinity, -Infinity, Infinity, Infinity]
+    if (!(q[0] > bw && q[0] < be && q[1] > bs && q[1] < bn)) { setSuggestNote('No height data there, so the planner cannot judge that ground. Stay inside the dashed edge.'); return }
+    if (waypoints.length >= MAX_POINTS) { setSuggestNote(`That is the most points one walk can have (${MAX_POINTS}).`); return }
+    setSuggestNote(null)
+    setWaypoints((w) => [...w, q])
     if (s) setStopIds((ids) => (ids.includes(s.id) ? ids : [...ids, s.id]))
-  }, [drawing, stops])
+  }, [drawing, stops, meta, waypoints.length])
 
   const onWaypointDrag = useCallback((i, p) => setWaypoints((w) => w.map((q, k) => (k === i ? p : q))), [])
 

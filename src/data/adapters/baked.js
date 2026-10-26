@@ -6,6 +6,9 @@ import { SITES } from '../../content/sites.js'
 import { STOPS, HABITAT } from '../../content/science.js'
 import { WALK, FACTS } from '../../content/assumptions.js'
 import { PANORAMAS } from '../../content/panoramas.js'
+import { deviceTier } from '../../lib/quality.js'
+
+const LOW = deviceTier() === 'low'
 
 const ROOT = new URL(import.meta.env.BASE_URL, globalThis.location?.href)
 const url = (path) => new URL(`data/${path}`, ROOT).href
@@ -38,7 +41,8 @@ async function bytes(path, onBytes) {
   return out.buffer
 }
 
-const layer = (id, L) => ({ ...L, url: url(`${id}/${L.file}`), source: L.trekLayer })
+// Weak devices get the half-size copy of a big photo when the bake made one (scripts/make-lite.mjs).
+const layer = (id, L) => ({ ...L, url: url(`${id}/${(LOW && L.lite) || L.file}`), source: L.trekLayer })
 const union = (boxes) => boxes.reduce((a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])])
 
 export const baked = {
@@ -82,7 +86,7 @@ export const baked = {
   walkInputs: () => ({ settings: WALK, facts: FACTS }),
 
   /** Real rover panoramas (src/content/panoramas.js, baked by scripts/bake-panoramas.mjs). */
-  panoramas: (id) => PANORAMAS.filter((p) => p.site === id).map((p) => ({ ...p, url: url(`panoramas/${p.file}`) })),
+  panoramas: (id) => PANORAMAS.filter((p) => p.site === id).map((p) => ({ ...p, url: url(`panoramas/${LOW ? p.file.replace(/\.webp$/, '-3k.webp') : p.file}`) })),
 
   names: async () => (await json('names.json')).names,
 

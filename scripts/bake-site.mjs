@@ -18,6 +18,7 @@
 
 import { fromFile } from 'geotiff'
 import sharp from 'sharp'
+import { makeLite } from './make-lite.mjs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -287,6 +288,7 @@ async function bakeJezero() {
     built: new Date().toISOString().slice(0, 10),
   }
   await fs.writeFile(path.join(dir, 'meta.json'), JSON.stringify(meta, null, 1))
+  await makeLite(dir) // half-size copies of the big photos for low-memory devices
 }
 
 // ---------- other sites: map layers only (no walk planning) ----------

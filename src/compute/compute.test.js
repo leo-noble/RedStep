@@ -101,3 +101,35 @@ describe.skipIf(!hasData)('Jezero risky walk', () => {
     expect(r.analysis.maxSlope).toBeGreaterThan(settings.redSlope)
   }, 30000)
 })
+
+describe('ground with no height data', () => {
+  const opts = (line) => ({ line, settings, facts, habitat: line[0], startMs: Date.UTC(2026, 9, 24, 12), site: { lat: 0.01, lon: 0.01 } })
+  it('a walk that leaves the height map is NO-GO, never judged from the edge', () => {
+    const g = synth(40, 40, () => -2500) // flat, so only the missing data can stop it
+    const r = analyze(g, opts([[0.01, 0.02], [0.06, 0.02]])) // ends 0.02 deg past the east edge
+    expect(r.status).toBe('nogo')
+    expect(r.reasons[0].code).toBe('nodata')
+    expect(r.good.some((t) => t.startsWith('No ground steeper'))).toBe(false)
+  })
+  it('a gap in the map is NO-GO and the numbers stay finite', () => {
+    const g = synth(40, 40, (i) => (i >= 20 && i <= 22 ? -3276.8 : -2500)) // -32768 dm = nodata
+    const r = analyze(g, opts([[0.005, 0.02], [0.035, 0.02]]))
+    expect(r.status).toBe('nogo')
+    expect(r.reasons.some((x) => x.code === 'nodata')).toBe(true)
+    expect(Number.isFinite(r.airUsed) && Number.isFinite(r.hours) && Number.isFinite(r.gain)).toBe(true)
+  })
+  it('a flat walk inside the map stays GO', () => {
+    const g = synth(40, 40, () => -2500)
+    expect(analyze(g, opts([[0.01, 0.02], [0.02, 0.02]])).status).toBe('go')
+  })
+})
+
+describe('impossible walks', () => {
+  it('a sheer wall gives a NO-GO quickly instead of hanging', () => {
+    const g = synth(40, 40, (i) => (i < 20 ? -2500 : 0)) // a 2.5 km wall
+    const t0 = Date.now()
+    const r = analyze(g, { line: [[0.005, 0.02], [0.035, 0.02]], settings, facts, habitat: [0.005, 0.02], startMs: Date.UTC(2026, 9, 24, 12), site: { lat: 0.01, lon: 0.01 } })
+    expect(r.status).toBe('nogo')
+    expect(Date.now() - t0).toBeLessThan(2000)
+  })
+})

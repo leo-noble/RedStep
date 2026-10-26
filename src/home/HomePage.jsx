@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import MarsGlobeHero from './MarsGlobeHero.jsx';
 import { fmtLat, fmtLon } from './format.js';
 import Badge from './Badge.jsx';
+import { deviceTier } from '../lib/quality.js';
 import { createMotionEngine, windowed, smoothstep } from './motionEngine.js';
 import { marsTime, localSolarTime, solarElevation, earthMarsLightTime, formatHM } from './mars24.js';
 import { FOOTER_NAV } from '../content/site.js';
@@ -124,8 +125,10 @@ export default function HomePage() {
     heroRef.current?.setLighting(lighting);
   }, [lighting]);
 
-  // Fetch the Mars map and planner code in the background while the intro plays.
+  // Fetch the Mars map and planner code in the background while the intro plays (not on weak
+  // devices: holding the map code next to the 3D scene costs memory they don't have).
   useEffect(() => {
+    if (deviceTier() === 'low') return undefined;
     const idle = window.requestIdleCallback || ((f) => setTimeout(f, 2500));
     const id = idle(() => {
       import('../pages/MapPage.jsx').catch(() => {});

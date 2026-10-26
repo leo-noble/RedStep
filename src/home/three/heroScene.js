@@ -66,6 +66,10 @@ const ANCHORS = {
 // Mars can switch to the true Mars24 terminator.
 const SUN_EARTH = new THREE.Vector3(0.3, 0.85, -0.42).normalize();
 const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
+// Parking orbit radius (Mars radii) and angular speed (rad/s): about one lap every 30 s.
+const PARK_R = 1.24;
+const ORBIT_W = 0.21;
+
 const SUN_MARS_REF = new THREE.Vector3(0.5, 0.42, 0.76).normalize();
 const SUN_MARS_DAY = new THREE.Vector3(-0.42, 0.42, 0.8).normalize();
 
@@ -331,9 +335,28 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
   // Optional NASA planet maps (equirectangular, lon −180→180). Missing files fall back silently.
   const loader = new THREE.TextureLoader();
+  // Weaker devices draw the 2048 px maps into a 1024 px canvas first: a quarter of the
+  // graphics memory, and the full-size picture is dropped as soon as it is copied.
+  const imageLoader = new THREE.ImageLoader();
+  const loadMap = (url, onLoad, _, onError) => {
+    if (!low) return loader.load(url, onLoad, undefined, onError);
+    imageLoader.load(
+      url,
+      (im) => {
+        const c = document.createElement('canvas');
+        c.width = Math.min(1024, im.naturalWidth || im.width);
+        c.height = Math.round(c.width / 2);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        im.src = '';
+        onLoad(new THREE.CanvasTexture(c));
+      },
+      undefined,
+      onError,
+    );
+  };
   const loaded = [];
   const tryOverride = (url, mat, fallback) =>
-    loader.load(
+    loadMap(
       url,
       (tex) => {
         tex.wrapS = THREE.RepeatWrapping;
@@ -356,7 +379,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   if (textures.moon) tryOverride(textures.moon, moonMat, () => bake(renderer, BAKE_MOON, 1024, 512, { uSeed: { value: 7.7 } }));
 
   /* ---- Rocket ---- */
-  const rig = createRocketRig();
+  const rig = createRocketRig({ quality });
   scene.add(rig.group);
 
   /* ---- Layout-dependent pieces (rebuilt on resize) ---- */
@@ -422,18 +445,25 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     // Flight path: reference pose → climb → cruise → Mars parking orbit
     const tilt = (ro.tilt * Math.PI) / 180;
     const dir = new THREE.Vector3(Math.sin(tilt), Math.cos(tilt), -0.42).normalize();
-    const parkR = L.marsR * 1.75;
-    const parkN = new THREE.Vector3(0.18, 1, 0.32).normalize();
-    const park = ringPoints(L.marsPos, parkR, parkN, 256, new THREE.Vector3(-1, 0, 0.4));
+    // Parking orbit: tilted to face the camera, so the whole circle stays clear of the
+    // planet's disk (never behind it, never cutting across it) and inside the frame.
+    const parkR = L.marsR * PARK_R;
+    // (normal points away from the camera so the rocket circles clockwise; it joins at the
+    // upper left, climbing, clear of the top bar)
+    const parkN = new THREE.Vector3(-0.1, -0.3, -1).normalize();
+    const park = ringPoints(L.marsPos, parkR, parkN, 256, new THREE.Vector3(-1, 0.8, 0));
     L.parking = park;
     const entry = park.pts[0];
     const p0 = L.rocketPos0.clone().addScaledVector(dir, -L.rocketLen * 2.4);
     const p1 = L.rocketPos0.clone();
     const p2 = L.rocketPos0.clone().addScaledVector(dir, L.rocketLen * 1.6).add(new THREE.Vector3(0.6, 0.2, -1.2));
     const p3 = p1.clone().lerp(entry, 0.55).add(new THREE.Vector3(-0.4, 2.2, 0));
-    const p4 = entry;
-    L.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3, p4], false, 'centripetal');
-    L.u0 = 0.25;
+    // the last stretch runs along the orbit, so the rocket arrives already heading the way it
+    // will circle
+    const p4 = entry.clone().addScaledVector(park.v, -parkR * 1.1);
+    const pts = [p0, p1, p2, p3, p4, entry];
+    L.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    L.u0 = 1 / (pts.length - 1); // the reference pose, p1
 
     for (const line of [transfer, lunarRing, marsRing]) {
       if (!line) continue;
@@ -554,7 +584,25 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   const orbitTan = new THREE.Vector3();
   const v = new THREE.Vector3();
   const w3 = new THREE.Vector3();
-  const qAlign = new THREE.Quaternion();
+  const qA = new THREE.Quaternion();
+  const qB = new THREE.Quaternion();
+  const basis = new THREE.Matrix4();
+  const bx = new THREE.Vector3();
+  const bz = new THREE.Vector3();
+  const Z_AXIS = new THREE.Vector3(0, 0, 1);
+  const X_AXIS = new THREE.Vector3(1, 0, 0);
+  // Rotation that points the rocket's nose (local +Y) along `dir`, with its side kept square
+  // to `ref`: unlike a shortest-arc turn it never flips when the heading swings round.
+  const alignTo = (dir, ref, out) => {
+    bx.crossVectors(dir, ref);
+    if (bx.lengthSq() < 1e-8) bx.crossVectors(dir, Math.abs(dir.x) < 0.9 ? X_AXIS : Z_AXIS);
+    bx.normalize();
+    bz.crossVectors(bx, dir).normalize();
+    basis.makeBasis(bx, dir, bz);
+    return out.setFromRotationMatrix(basis);
+  };
+  let orbitA = 0;
+  let orbitV = 0;
   const qRoll = new THREE.Quaternion();
   const qDrift = new THREE.Quaternion();
   const qSpin = new THREE.Quaternion();
@@ -597,10 +645,10 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   function update(state) {
     if (!L.curve) return;
     watch.tick();
-    // On the site globe with nothing moving, draw every other frame: the slow spin and
-    // twinkle still read as smooth, at half the work.
+    // Weaker devices, on the site globe with nothing moving: draw every other frame (the slow
+    // spin, orbit and twinkle still read as smooth, at half the work).
     const idle = interactive && !drag.on && !flight && Math.abs(drag.vx) + Math.abs(drag.vy) < 1e-5 && Math.abs(state.velocity) < 1e-3;
-    if (idle && skip++ % 2) return;
+    if (idle && (low || dprStep >= 2) && skip++ % 2) return;
     const reduced = state.reduced;
     const time = reduced ? 1.234 : state.time;
     const p = state.progress;
@@ -641,47 +689,54 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       drag.on = false;
     }
 
-    /* ---- Rocket along the transfer path ---- */
-    const fp = easeInOut(clamp01(p / 0.8));
+    /* ---- Rocket along the transfer path, then into a steady parking orbit ---- */
+    const fp = easeInOut(clamp01(p / 0.9));
     const u = L.u0 + (1 - L.u0) * fp;
     L.curve.getPoint(u, rocketPos);
     L.curve.getTangent(u, tangent);
-    const park = smoothstep(0.76, 0.9, p);
+    const park = smoothstep(0.8, 0.9, p);
+    // Orbit angle: 0 is where the flight path ends. Once in orbit the rocket glides up to a
+    // steady speed; scrolling back winds it home along the circle (never across the planet).
+    if (park >= 0.999 && !reduced) {
+      orbitV += (ORBIT_W - orbitV) * Math.min(1, dt * 0.8);
+      orbitA += orbitV * dt;
+    } else {
+      orbitV = 0;
+      const w = Math.atan2(Math.sin(orbitA), Math.cos(orbitA));
+      orbitA = w - Math.sign(w) * Math.min(Math.abs(w), dt * 3);
+    }
+    let qFlight = alignTo(tangent, Z_AXIS, qA);
     if (park > 0) {
-      // Stay on the near side of the parking orbit, drifting a little along it, so the rocket
-      // never swings behind Mars or cuts across the planet on its way in (the orbit starts at
-      // the flight path's end, angle 0).
-      const a = reduced ? 0.15 : 0.15 + Math.sin(time * 0.18) * 0.3;
-      const pr = L.marsR * 1.75;
-      orbitPos.copy(L.marsPos).addScaledVector(L.parking.u, Math.cos(a) * pr).addScaledVector(L.parking.v, Math.sin(a) * pr);
-      orbitTan.copy(L.parking.u).multiplyScalar(-Math.sin(a)).addScaledVector(L.parking.v, Math.cos(a)).normalize();
+      const pr = L.marsR * PARK_R;
+      orbitPos.copy(L.marsPos).addScaledVector(L.parking.u, Math.cos(orbitA) * pr).addScaledVector(L.parking.v, Math.sin(orbitA) * pr);
+      orbitTan.copy(L.parking.u).multiplyScalar(-Math.sin(orbitA)).addScaledVector(L.parking.v, Math.cos(orbitA)).normalize();
       rocketPos.lerp(orbitPos, park);
-      tangent.lerp(orbitTan, park).normalize();
+      // turn smoothly between the flight heading and the orbit heading (no flips)
+      qFlight = qA.slerp(alignTo(orbitTan, L.parking.n, qB), park);
     }
     toMars.copy(rocketPos).sub(L.marsPos);
-    const minR = L.marsR * 1.5;
+    const minR = L.marsR * 1.15;
     if (toMars.lengthSq() < minR * minR) rocketPos.copy(L.marsPos).addScaledVector(toMars.normalize(), minR);
-    const rScale = L.rocketLen * lerp(1, 0.17, smoothstep(0.25, 0.82, p));
+    const rScale = L.rocketLen * lerp(1, 0.17, smoothstep(0.25, 0.82, p)) * lerp(1, 0.6, park);
     rig.group.scale.setScalar(rScale);
 
-    if (!reduced) {
-      const j = 0.0025 * rScale;
+    // launch rumble, gone once the engines cut off in orbit
+    if (!reduced && park < 1) {
+      const j = 0.0025 * rScale * (1 - park);
       rocketPos.x += Math.sin(time * 31.0) * Math.sin(time * 17.3) * j;
       rocketPos.y += Math.sin(time * 27.1 + 1.3) * j;
     }
     rig.group.position.copy(rocketPos);
-    qAlign.setFromUnitVectors(Y, tangent);
-    const drift = reduced ? 0 : Math.sin(time * 0.37) * 0.045;
+    const drift = reduced ? 0 : Math.sin(time * 0.37) * 0.045 * (1 - park);
     qDrift.setFromAxisAngle(w3.set(0, 0, 1), drift);
-    rig.group.quaternion.copy(qDrift).multiply(qAlign);
-    qRoll.setFromAxisAngle(Y, reduced ? 0.6 : time * 0.32);
+    rig.group.quaternion.copy(qDrift).multiply(qFlight);
+    qRoll.setFromAxisAngle(Y, reduced ? 0.6 : time * 0.32 * (1 - 0.7 * park));
     rig.body.quaternion.copy(qRoll);
 
-    const thrustBase = lerp(1, 0.75, park);
+    // engines cut off as it settles into orbit
     const vel = Math.min(1, Math.abs(state.velocity) * 4);
     const flicker = reduced ? 0 : (Math.sin(time * 41) * Math.sin(time * 13.7)) * 0.05;
-    const thrust = ignite * (thrustBase + vel * 0.35 + flicker) * (1 - choose);
-    rig.group.visible = choose < 0.999;
+    const thrust = ignite * (1 + vel * 0.35 + flicker) * (1 - park);
 
     /* ---- Camera ---- */
     const chase = smoothstep(0.03, 0.42, p);
@@ -694,8 +749,10 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     // fly-in to a site
     let exit = 0;
+    let flyFade = 1; // the camera dives inside the orbit: the rocket steps out of the way
     if (flight) {
       flight.t += reduced ? 1 : dt;
+      flyFade = 1 - smooth(clamp01(flight.t / 0.45));
       const rot = clamp01(flight.t / 0.85);
       const zoom = smooth(clamp01((flight.t - 0.55) / 1.0));
       exit = smooth(clamp01((flight.t - 1.05) / 0.5));
@@ -760,8 +817,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       time,
       thrust,
       px: pxBase * rScale,
-      // the rocket has arrived: it bows out as the site chooser takes over
-      fade: fRocket * (1 - choose),
+      fade: fRocket * flyFade,
       sunWorld: SUN_EARTH,
       camera,
     });

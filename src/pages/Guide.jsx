@@ -36,7 +36,7 @@ export default function Guide() {
     setAnswer(i)
     if (i === s.quiz.answer) setDone((d) => ({ ...d, [s.id]: true }))
   }
-  const finished = Object.keys(done).filter((k) => done[k]).length
+  const finished = STEPS.filter((x) => x.quiz && done[x.id] === true).length
 
   return (
     <div className={`guide ${railOpen ? '' : 'rail-closed'}`}>

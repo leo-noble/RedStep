@@ -12,8 +12,16 @@ import { Verdict } from '../components/Atoms.jsx'
 import Orbits from '../components/Orbits.jsx'
 import './brief.css'
 
+// The saved plan is only used if it has everything the sheet draws; anything else (an old
+// format, a hand edit) shows the "no walk yet" screen instead of breaking.
 function load() {
-  try { return JSON.parse(sessionStorage.getItem('mw-brief')) } catch { return null }
+  try {
+    const b = JSON.parse(sessionStorage.getItem('mw-brief'))
+    const a = b?.result?.analysis
+    const ok = b && siteById(b.site) && a && Array.isArray(a.profile) && a.profile.length > 1 && Number.isFinite(a.distance) && a.distance > 0 &&
+      Array.isArray(a.reasons) && b.settings && typeof b.settings === 'object' && Array.isArray(b.stopIds) && Number.isFinite(b.startMs)
+    return ok ? b : null
+  } catch { return null }
 }
 
 export default function Brief() {

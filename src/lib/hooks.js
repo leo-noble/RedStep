@@ -20,9 +20,23 @@ export function useNarrow() {
 }
 
 // localStorage can throw (private mode, blocked storage); the app must work without it.
+const sameKind = (v, f) => {
+  if (f === undefined || f === null) return true
+  if (Array.isArray(f)) return Array.isArray(v)
+  if (typeof f === 'object') return v !== null && typeof v === 'object' && !Array.isArray(v)
+  return typeof v === typeof f && (typeof v !== 'number' || Number.isFinite(v))
+}
+
 export const store = {
+  // A saved value of the wrong kind (edited by hand, or from an older version of the site)
+  // falls back to the default instead of breaking the page.
   get(key, fallback) {
-    try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v) } catch { return fallback }
+    try {
+      const v = localStorage.getItem(key)
+      if (v == null) return fallback
+      const parsed = JSON.parse(v)
+      return sameKind(parsed, fallback) ? parsed : fallback
+    } catch { return fallback }
   },
   set(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* not saved */ }

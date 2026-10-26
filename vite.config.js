@@ -27,7 +27,7 @@ function offline() {
       const keep = (f) =>
         f === '/index.html' || f === '/favicon.svg' || f === '/manifest.webmanifest' || /^\/icons\//.test(f) ||
         (/^\/assets\//.test(f) && !/\.woff$/.test(f) && !/(cyrillic|greek|vietnamese)/.test(f)) ||
-        /^\/data\/jezero\//.test(f) ||
+        (/^\/data\/jezero\//.test(f) && !/-2k\./.test(f)) || // low-memory copies are cached when used
         /^\/data\/names\.json$/.test(f) ||
         (/^\/data\/globe\//.test(f) && !/4k/.test(f)) ||
         /^\/data\/tiles\/[^/]+\/[0-1]\//.test(f)

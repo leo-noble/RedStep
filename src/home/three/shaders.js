@@ -503,88 +503,100 @@ void main(){
 }
 `;
 
-/* ---------- Dot-matrix rig: points + hairline connectors ----------------- */
-export const DOT_VERTEX = /* glsl */ `
-attribute float aSize;
-attribute vec3 aColor;
-uniform float uPx;
-uniform float uDot;
-uniform vec3 uSunView;
-uniform float uFade;
-varying vec3 vColor;
-varying float vA;
-void main(){
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vec3 n = normalize(normalMatrix * normal);
-  float facing = dot(n, normalize(-mv.xyz));
-  float lit = 0.6 + 0.4 * max(dot(n, uSunView), 0.0);
-  vA = mix(0.14, 1.0, smoothstep(-0.25, 0.55, facing)) * uFade;
-  vColor = aColor * lit;
-  gl_PointSize = max(1.0, aSize * uDot * uPx / -mv.z);
-  gl_Position = projectionMatrix * mv;
-}
-`;
-
-export const DOT_FRAGMENT = /* glsl */ `
-precision highp float;
-varying vec3 vColor;
-varying float vA;
-void main(){
-  float d = length(gl_PointCoord - 0.5);
-  float a = smoothstep(0.5, 0.18, d);
-  gl_FragColor = vec4(vColor * a * vA, 1.0);
-}
-`;
-
-/* ---------- Rocket inner hull (solid, behind the dots) ------------------- */
-export const HULL_VERTEX = /* glsl */ `
-attribute vec3 aColor;
-varying vec3 vC;
+/* ---------- Rocket: solid painted vehicle -------------------------------- */
+// Lit by the scene's sun (view space) with a soft gloss, a cool rim from space and the
+// flame's warm light on the lower body. aPart: 0 core stage, 1 booster, 2 engine bell, 3 strut.
+export const ROCKET_VERTEX = /* glsl */ `
+attribute float aPart;
 varying vec3 vN;
 varying vec3 vV;
+varying vec3 vObj;
+varying float vPart;
 void main(){
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vN = normalize(normalMatrix * normal);
   vV = normalize(-mv.xyz);
-  vC = aColor;
+  vObj = position;
+  vPart = aPart;
   gl_Position = projectionMatrix * mv;
 }
 `;
 
-export const HULL_FRAGMENT = /* glsl */ `
+export const ROCKET_FRAGMENT = /* glsl */ `
 precision highp float;
 uniform vec3 uSunView;
 uniform float uFade;
-varying vec3 vC;
+uniform float uThrust;
+uniform sampler2D uText;
+uniform float uCoreR;
+uniform float uBoostX;
 varying vec3 vN;
 varying vec3 vV;
+varying vec3 vObj;
+varying float vPart;
+
+// thin painted line at height h
+float seam(float y, float h, float w){ return 1.0 - smoothstep(0.0, w, abs(y - h)); }
+
 void main(){
   vec3 n = normalize(gl_FrontFacing ? vN : -vN);
-  float lit = 0.18 + 0.82 * max(dot(n, uSunView), 0.0);
-  float rim = pow(1.0 - max(dot(n, vV), 0.0), 3.0);
-  vec3 c = vC * lit * 0.42 + vec3(0.45, 0.58, 0.85) * rim * 0.18;
-  gl_FragColor = vec4(c * uFade, uFade);
-}
-`;
+  vec3 V = normalize(vV);
+  float y = vObj.y;
+  int part = int(vPart + 0.5);
 
-export const WIRE_VERTEX = /* glsl */ `
-attribute float aAlpha;
-uniform float uFade;
-varying float vA;
-void main(){
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vec3 n = normalize(normalMatrix * normal);
-  float facing = dot(n, normalize(-mv.xyz));
-  vA = aAlpha * mix(0.18, 1.0, smoothstep(-0.2, 0.6, facing)) * uFade;
-  gl_Position = projectionMatrix * mv;
-}
-`;
+  vec3 white = vec3(0.9, 0.895, 0.88);
+  vec3 black = vec3(0.045, 0.05, 0.058);
+  vec3 albedo = white;
+  float gloss = 48.0, specK = 0.32;
+  float heat = 0.0;
 
-export const WIRE_FRAGMENT = /* glsl */ `
-precision highp float;
-uniform vec3 uColor;
-varying float vA;
-void main(){ gl_FragColor = vec4(uColor * vA, 1.0); }
+  if (part == 0) {
+    // core stage: dark engine section, black interstage band, panel seams, fairing joint
+    if (y < 0.075) albedo = vec3(0.16, 0.16, 0.17);
+    if (y > 0.70 && y < 0.765) { albedo = black; specK = 0.5; gloss = 80.0; }
+    albedo *= 1.0 - 0.22 * (seam(y, 0.3, 0.0025) + seam(y, 0.52, 0.0025) + seam(y, 0.86, 0.0022));
+    albedo = mix(albedo, vec3(1.0, 0.62, 0.32), seam(y, 0.775, 0.003) * 0.9); // thin ember ring
+    // MARSWALK, written down the side
+    float ang = atan(vObj.z, vObj.x) - 1.5707963;
+    ang = atan(sin(ang), cos(ang));
+    float s = ang * uCoreR;
+    if (y > 0.31 && y < 0.66 && abs(s) < 0.024) {
+      vec2 uv = vec2((y - 0.31) / 0.35, 0.5 + s / 0.048);
+      albedo = mix(albedo, black, texture2D(uText, uv).a);
+    }
+  } else if (part == 1) {
+    // side boosters: dark skirt, seams
+    if (y < 0.2) albedo = black;
+    albedo *= 1.0 - 0.2 * (seam(y, 0.33, 0.0025) + seam(y, 0.46, 0.0025));
+  } else if (part == 2) {
+    // engine bells: dark bronze metal, hot near the rim
+    heat = smoothstep(0.045, 0.0, y);
+    albedo = vec3(0.2, 0.16, 0.13);
+    gloss = 24.0; specK = 0.6;
+  } else {
+    albedo = vec3(0.35);
+  }
+
+  float ndl = dot(n, uSunView);
+  float diff = max((ndl + 0.12) / 1.12, 0.0);
+  // soft fill from the camera's upper left, so the side we see reads as white paint
+  vec3 K = normalize(vec3(-0.35, 0.45, 0.82));
+  float fill = max(dot(n, K), 0.0);
+  vec3 H = normalize(uSunView + V);
+  float spec = pow(max(dot(n, H), 0.0), gloss) * specK * step(0.0, ndl);
+  float specFill = pow(max(dot(n, normalize(K + V)), 0.0), gloss * 0.5) * specK * 0.35;
+  float fres = pow(1.0 - max(dot(n, V), 0.0), 4.0);
+  vec3 amb = mix(vec3(0.05, 0.055, 0.07), vec3(0.12, 0.15, 0.22), n.y * 0.5 + 0.5);
+
+  vec3 col = albedo * (diff * 0.85 + fill * 0.55 + amb) + vec3(1.0, 0.97, 0.92) * (spec + specFill) + vec3(0.42, 0.56, 0.85) * fres * 0.22;
+  // the flame lights the bottom of the vehicle
+  col += albedo * vec3(1.0, 0.62, 0.32) * uThrust * 0.55 * smoothstep(0.24, 0.0, y);
+  // bell insides and rims glow while firing
+  if (part == 2) col += vec3(1.0, 0.55, 0.2) * heat * uThrust * (gl_FrontFacing ? 0.55 : 1.3);
+  if (!gl_FrontFacing && part != 2) col *= 0.25;
+
+  gl_FragColor = vec4(col * uFade, uFade);
+}
 `;
 
 /* ---------- Exhaust plume (fading particle dots) ------------------------- */

@@ -6,6 +6,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PANORAMAS } from '../src/content/panoramas.js'
+import { makePanoramaLite } from './make-lite.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const RAW = path.join(ROOT, 'data-raw/panoramas')
@@ -29,3 +30,5 @@ for (const p of PANORAMAS) {
   const info = await img.resize({ width: Math.min(WIDTH, width) }).webp({ quality: 80 }).toFile(out)
   console.log(`${p.id}: ${width}x${height} -> ${info.width}x${info.height}, ${(info.size / 1e6).toFixed(2)} MB`)
 }
+// half-width copies for low-memory devices
+await makePanoramaLite(OUT)

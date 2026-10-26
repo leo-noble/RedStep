@@ -22,6 +22,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
   const ready = useRef(false)
   const scale = useRef(null)
   const wps = useRef([])
+  const deferred = useRef(new Map()) // layer id -> image not loaded yet
   const cb = useRef({})
   cb.current = { onMapClick, onWaypointDrag, onStopClick, drawing }
 
@@ -53,10 +54,17 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
 
     m.on('load', () => {
       const img = (id, url, bbox) => m.addSource(id, { type: 'image', url, coordinates: corners(bbox) })
-      for (const [id, L] of Object.entries(meta.layers)) img(`src-${id}`, L.url, L.bbox)
-      img('src-photo', meta.photo.url, meta.photo.bbox)
       // placeholders until the worker sends the grid
       const blank = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+      // Photos for layers that start switched off load the first time they are switched on,
+      // so they cost no download or memory until someone asks for them.
+      deferred.current = new Map()
+      const startOn = Object.fromEntries(layers.map((l) => [l.id, l.on]))
+      for (const [id, L] of Object.entries(meta.layers)) {
+        if (startOn[id] === false) { deferred.current.set(id, L); img(`src-${id}`, blank, L.bbox) }
+        else img(`src-${id}`, L.url, L.bbox)
+      }
+      img('src-photo', meta.photo.url, meta.photo.bbox)
       img('src-elevation', blank, meta.grid.bbox)
       img('src-slope', blank, meta.grid.bbox)
 
@@ -157,7 +165,10 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
 
   useEffect(() => {
     const m = map.current
-    if (m) m.getCanvas().style.cursor = drawing ? 'crosshair' : ''
+    if (!m) return
+    m.getCanvas().style.cursor = drawing ? 'crosshair' : ''
+    // while drawing, show where the detailed height map ends (points must stay inside)
+    if (m.getLayer('dem-edge')) m.setLayoutProperty('dem-edge', 'visibility', drawing ? 'visible' : 'none')
   }, [drawing])
 
   useImperativeHandle(ref, () => ({
@@ -166,6 +177,11 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
     setLayer(id, on, opacity) {
       const m = map.current
       if (!m || !ready.current) return
+      const later = on && deferred.current.get(id)
+      if (later) {
+        deferred.current.delete(id)
+        m.getSource(`src-${id}`)?.updateImage({ url: later.url, coordinates: corners(later.bbox) })
+      }
       const ids = id === 'stops' ? ['stops', 'stops-ring'] : id === 'radius' ? ['radius', 'radius-fill'] : [id]
       for (const L of ids) {
         if (!m.getLayer(L)) continue

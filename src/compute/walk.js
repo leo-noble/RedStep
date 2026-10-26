@@ -1,7 +1,7 @@
 // Analyse one Marswalk: profile, time, suit air, turn-back point, sunlight, radiation, comms,
 // and the GO / CAUTION / NO-GO verdict with the reasons that drive it.
 // Every assumption comes in through `settings` (see src/content/assumptions.js).
-import { distance, elevAt, slopeAt } from './grid.js'
+import { distance, elevAt, slopeAt, inside } from './grid.js'
 import { marsTime, sunAt } from '../lib/mars24.js'
 import { earthMars } from '../lib/ephem.js'
 
@@ -51,6 +51,24 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
   const pts = resample(g, line)
   for (const p of pts) { p.z = elevAt(g, p.lon, p.lat); p.slope = slopeAt(g, p.lon, p.lat) }
   const n = pts.length
+
+  // Ground with no height data: outside the detailed map (lookups there only repeat the edge)
+  // or on a gap in it. Its slope is unknown, so it can never count as safe: it becomes a
+  // NO-GO below. Gaps take the nearest known height so time and air stay real numbers.
+  let unknownM = 0, unknownAt = null, lastZ = null
+  for (let k = 0; k < n; k++) {
+    const p = pts[k]
+    p.unknown = !inside(g, p.lon, p.lat) || !Number.isFinite(p.z) || !Number.isFinite(p.slope)
+    if (p.unknown) {
+      if (unknownAt === null) unknownAt = p.d
+      if (k) unknownM += p.d - pts[k - 1].d
+    }
+    if (Number.isFinite(p.z)) lastZ = p.z
+    else p.z = lastZ
+    if (!Number.isFinite(p.slope)) p.slope = 90
+  }
+  const firstZ = pts.find((p) => Number.isFinite(p.z))?.z ?? 0
+  for (const p of pts) if (p.z === null) p.z = firstZ
   const loop = distance(g, line[0], line[line.length - 1]) < 80
 
   // Stops sit at the nearest sample on the route.
@@ -117,7 +135,10 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
   const sunTrack = []
   let minSun = Infinity, darkAt = null, lowAt = null
   const totalMs = hours * 3.6e6
-  for (let ms = 0; ms <= totalMs + 1; ms += 5 * 60000) {
+  // An impossible walk (say, up a sheer wall) can take "forever"; it is NO-GO on air long
+  // before that, so the sun is only tracked for the first two sols.
+  const trackMs = Number.isFinite(totalMs) ? Math.min(totalMs, 2 * 88775e3) : 2 * 88775e3
+  for (let ms = 0; ms <= trackMs + 1; ms += 5 * 60000) {
     const e = sunAt(startMs + ms, site.lat, site.lon).elevation
     sunTrack.push([ms / 3.6e6, e])
     if (e < minSun) minSun = e
@@ -125,7 +146,7 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     if (e < s.minSun && lowAt === null) lowAt = ms / 3.6e6
   }
   const startSun = sunAt(startMs, site.lat, site.lon)
-  const endSun = sunAt(startMs + totalMs, site.lat, site.lon)
+  const endSun = sunAt(startMs + trackMs, site.lat, site.lon)
 
   const mt = marsTime(startMs)
   const comms = earthMars(startMs)
@@ -135,6 +156,9 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
   // ---- verdict ----
   const reasons = []
   const km = (m) => (m / 1000).toFixed(1)
+  if (unknownAt !== null) {
+    reasons.push({ level: 'nogo', code: 'nodata', title: `No height data at ${km(unknownAt)} km`, detail: `${Math.max(20, Math.round(unknownM))} m of the walk is outside the detailed height map or on a gap in it, so its slope is unknown. Keep the walk inside the dashed edge.`, protocol: 'suit' })
+  }
   if (redBands.length) {
     const b = redBands[0]
     reasons.push({ level: 'nogo', code: 'steep', title: `Too steep at ${km(b.from)} km`, detail: `The ground reaches ${maxSlope.toFixed(0)}°. Your limit is ${s.redSlope}°. Use a safe path to go around it.`, protocol: 'suit' })
@@ -168,7 +192,7 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
   const status = reasons.some((r) => r.level === 'nogo') ? 'nogo' : reasons.some((r) => r.level === 'caution') ? 'caution' : 'go'
 
   const good = []
-  if (!redBands.length) good.push(`No ground steeper than ${s.redSlope}°`)
+  if (!redBands.length && unknownAt === null) good.push(`No ground steeper than ${s.redSlope}°`)
   if (airUsed <= budget) good.push(`Home with ${pct(airLeft)} of the suit's air`)
   if (darkAt === null && lowAt === null) good.push(`Sun stays above ${s.minSun}° the whole time`)
 
@@ -188,7 +212,7 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     farthest, farthestAt: [pts[farIdx].lon, pts[farIdx].lat],
     sun: { start: startSun, end: endSun, min: minSun, track: sunTrack, darkAt, lowAt },
     dose, comms, mars: { sol: mt.sol, Ls: mt.Ls, dusty, msd: mt.msd },
-    bands, amberM, profile, visited,
+    bands, amberM, profile, visited, unknownM,
   }
 }
 
