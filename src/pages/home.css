@@ -37,90 +37,190 @@
 
 /* ---------- intro ---------- */
 
+/* darkens the left side under the text so it reads over the stars; fades away with the intro */
+.intro-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.22) 30%, rgba(0, 0, 0, 0) 52%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 24%);
+  transition: opacity 1100ms var(--ease);
+}
+
+.phase-flight .intro-scrim,
+.phase-globe .intro-scrim {
+  opacity: 0;
+}
+
 .intro {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: calc(var(--nav-h) + var(--s-6)) var(--pad) clamp(48px, 9vh, 96px);
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: clamp(20px, 3.5vh, 36px);
+  padding: calc(var(--nav-h) + var(--s-5)) var(--pad) clamp(24px, 4vh, 40px);
   transition: opacity 1100ms var(--ease), transform 1600ms var(--ease);
 }
 
 .phase-flight .intro,
 .phase-globe .intro {
   opacity: 0;
-  transform: translateY(-32px);
+  transform: translateY(-24px);
   pointer-events: none;
 }
 
-.intro > * {
-  animation: intro-in 1400ms var(--ease) both;
+.intro-main,
+.intro-features,
+.intro-foot {
+  animation: intro-in 1300ms var(--ease) both;
 }
 
-.intro > :nth-child(2) { animation-delay: 120ms; }
-.intro > :nth-child(3) { animation-delay: 260ms; }
-.intro > :nth-child(4) { animation-delay: 380ms; }
-.intro > :nth-child(5) { animation-delay: 460ms; }
+.intro-features { animation-delay: 220ms; }
+.intro-foot { animation-delay: 380ms; }
 
 @keyframes intro-in {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(16px); }
 }
 
-.intro-kicker {
-  display: flex;
+.intro-main {
+  align-self: center;
+  max-width: 640px;
+}
+
+.intro-badge {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: clamp(18px, 3vh, 28px);
-  font: 400 11px / 1 var(--mono);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-2);
+  margin: 0 0 clamp(18px, 3vh, 28px);
+  padding: 7px 14px 7px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.intro-kicker::before {
-  content: '';
-  width: 6px;
-  height: 6px;
+.intro-badge-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--rust);
   box-shadow: 0 0 10px var(--rust);
 }
 
+.intro-badge-sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.intro-badge-soft {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
 .intro-title {
-  max-width: 11ch;
-  font-size: clamp(54px, 9.2vw, 150px);
+  max-width: 12ch;
+  font-size: clamp(46px, 6.6vw, 104px);
   font-weight: 600;
-  line-height: 0.92;
-  letter-spacing: -0.052em;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   text-wrap: balance;
 }
 
 .intro-title .accent {
-  color: var(--ember);
+  background: linear-gradient(100deg, var(--ember) 10%, var(--rust) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .intro-pitch {
-  max-width: 38ch;
-  margin-top: clamp(18px, 3vh, 30px);
-  font-size: clamp(16px, 1.35vw, 19px);
-  line-height: 1.5;
+  max-width: 40ch;
+  margin-top: clamp(16px, 2.6vh, 24px);
+  font-size: clamp(16px, 1.3vw, 19px);
+  line-height: 1.55;
   color: var(--ink-2);
-}
-
-.intro-why {
-  max-width: 52ch;
-  margin-top: 10px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink-3);
 }
 
 .intro-cta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: clamp(24px, 4vh, 40px);
+  gap: 12px;
+  margin-top: clamp(24px, 4vh, 36px);
+}
+
+.intro-launch {
+  min-width: 190px;
+  box-shadow: 0 10px 34px rgba(236, 125, 69, 0.35);
+}
+
+/* three things you can do */
+.intro-features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: min(860px, 64vw); /* keeps clear of Earth on the right */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--r-3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 12, 18, 0.55);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.intro-features li {
+  display: grid;
+  gap: 4px;
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.intro-features li + li {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.intro-features b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.intro-feature-k {
+  font: 400 11px / 1 var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--ember);
+}
+
+.intro-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px 32px;
+}
+
+.intro-why {
+  max-width: 62ch;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.intro-credit {
+  margin: 0;
+  font: 400 10.5px / 1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 .btn-ghost {
@@ -186,9 +286,56 @@
     text-align: center;
   }
   .intro {
-    padding-bottom: var(--s-6);
+    grid-template-rows: 1fr auto auto;
+    gap: 16px;
+    padding-bottom: 20px;
+  }
+  .intro-main {
+    align-self: end;
   }
   .intro-title {
-    font-size: clamp(46px, 13vw, 72px);
+    font-size: clamp(40px, 11.5vw, 64px);
+  }
+  .intro-scrim {
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.35) 40%, rgba(0, 0, 0, 0) 60%);
+  }
+  .intro-features {
+    max-width: none;
+  }
+  .intro-cta .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  /* on phones the three features shrink to small labels */
+  .intro-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .intro-features li {
+    padding: 6px 12px;
+    border-radius: var(--r-pill);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .intro-features li + li {
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .intro-features li > :not(b) {
+    display: none;
+  }
+  .intro-features b {
+    font-size: 13px;
+  }
+  .intro-why {
+    display: none;
+  }
+  .intro-badge-sep,
+  .intro-badge-soft {
+    display: none;
   }
 }
