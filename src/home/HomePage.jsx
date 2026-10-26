@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import MarsGlobeHero from './MarsGlobeHero.jsx';
 import { fmtLat, fmtLon } from './format.js';
 import Badge from './Badge.jsx';
+import FeatureArt from './FeatureArt.jsx';
 import { deviceTier } from '../lib/quality.js';
 import { createMotionEngine, windowed, smoothstep } from './motionEngine.js';
 import { marsTime, localSolarTime, solarElevation, earthMarsLightTime, formatHM } from './mars24.js';
@@ -111,6 +112,7 @@ export default function HomePage() {
       write('season', m.season);
       write('light', `${lt.minutes.toFixed(1)} min`);
       write('lightBig', lt.minutes.toFixed(1));
+      write('lightBand', lt.minutes.toFixed(1));
       write('siteName', site.name.split(' ·')[0]);
       write('ltst', `${formatHM(localSolarTime(m, site.lon))} local time`);
       const el = solarElevation(m, site.lat, site.lon);
@@ -385,22 +387,56 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="pillars" aria-labelledby="pillars-title">
-        <header className="pillars__head">
-          <p className="eyebrow">Built for the challenge</p>
-          <h2 id="pillars-title" className="h2">
-            Four pillars, one cockpit.
+      <section className="features" aria-labelledby="features-title">
+        <header className="features__head">
+          <p className="eyebrow">{HOME.features.eyebrow}</p>
+          <h2 id="features-title" className="h2">
+            {HOME.features.title}
           </h2>
+          <p className="features__lead">{HOME.features.lead}</p>
         </header>
-        <ol className="pillars__grid">
-          {HOME.pillars.map((p) => (
-            <li key={p.n} className="pillar">
-              <span className="pillar__n">{p.n}</span>
-              <h3 className="pillar__title">{p.title}</h3>
-              <p className="pillar__body">{p.body}</p>
+        <ul className="features__grid">
+          {HOME.features.cards.map((c) => (
+            <li key={c.art} className="feature">
+              <div className="feature__art">
+                <FeatureArt kind={c.art} />
+              </div>
+              <h3 className="feature__title">{c.title}</h3>
+              <p className="feature__body">{c.body}</p>
+              <Link to={c.link} className="feature__link">
+                {c.cta} <span aria-hidden="true">→</span>
+              </Link>
             </li>
           ))}
-        </ol>
+        </ul>
+        <dl className="facts">
+          <div className="fact">
+            <dt>Sharpest photo of the ground</dt>
+            <dd>
+              25 <small>cm per pixel</small>
+            </dd>
+            <Badge kind="nasa" source="hirise" />
+          </div>
+          <div className="fact">
+            <dt>Radiation on the surface</dt>
+            <dd>
+              {CONSTANTS.radSurface.value} <small>{CONSTANTS.radSurface.unit}</small>
+            </dd>
+            <Badge kind="nasa" source="rad" />
+          </div>
+          <div className="fact">
+            <dt>A message to Earth takes, now</dt>
+            <dd>
+              <span ref={ref('lightBand')}>—</span> <small>min</small>
+            </dd>
+            <Badge kind="derived" source="ephemeris" align="end" />
+          </div>
+          <div className="fact">
+            <dt>Landing sites to explore</dt>
+            <dd>{LANDING_SITES.length}</dd>
+            <Badge kind="nasa" source="sites" align="end" />
+          </div>
+        </dl>
       </section>
 
       <footer className="home-end">

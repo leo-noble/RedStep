@@ -91,10 +91,16 @@ export const HOME = {
       body: 'Drag the globe or pick a site. Walk planning is ready at Jezero Crater; the other sites open on the map.',
     },
   },
-  pillars: [
-    { n: '01', title: 'Layered + integrated', body: 'Toggle, blend and compare NASA layers, from the whole planet down to HiRISE photos at Jezero.' },
-    { n: '02', title: 'Multiple missions', body: 'MGS, MRO, Odyssey, Viking, Curiosity and Perseverance, each named with instrument and resolution.' },
-    { n: '03', title: 'A successful Marswalk', body: 'Slope-aware routing, suit air and reserve, walk-back circle, Mars24 sun height and RAD dose.' },
-    { n: '04', title: 'Science along the way', body: 'Science stops with a reason and a time budget, weighed against the risk of getting there.' },
-  ],
+  features: {
+    eyebrow: 'What the planner does',
+    title: 'From orbit to your first step.',
+    lead: 'Four tools that work together, each one built on NASA data you can trace.',
+    cards: [
+      { art: 'layers', title: 'Layered maps', body: 'Toggle, blend and compare NASA layers, from the whole planet down to HiRISE photos at Jezero.', link: '/map', cta: 'Open the Mars map' },
+      { art: 'missions', title: 'Six missions, one view', body: 'MGS, MRO, Odyssey, Viking, Curiosity and Perseverance, each named with its instrument and resolution.', link: '/sources', cta: 'See every source' },
+      { art: 'walk', title: 'A walk you can defend', body: 'Slope-aware routing, suit air and reserve, a walk-back circle, Mars24 sun height and RAD dose.', link: '/site/jezero', cta: 'Plan a walk' },
+      { art: 'science', title: 'Science along the way', body: 'Science stops with a reason and a time budget, weighed against the risk of getting there.', link: '/guide', cta: 'Read the survival guide' },
+    ],
+  },
+
 }

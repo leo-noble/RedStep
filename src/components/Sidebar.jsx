@@ -1,6 +1,7 @@
 // Apple-style collapsible sidebar: a floating translucent panel with a sidebar toggle,
 // grouped sections and quiet rows. Used for details, references and the manual.
 import { useEffect } from 'react'
+import { shortcut } from '../lib/platform.js'
 import './sidebar.css'
 
 export function SidebarIcon() {
@@ -14,7 +15,8 @@ export function SidebarIcon() {
   )
 }
 
-export function Sidebar({ open, onToggle, title, side = 'left', className = '', header, children, footer, label }) {
+export function Sidebar({ open, onToggle, title, side = 'left', className = '', header, children, footer, label, reopenBadge }) {
+  const keys = shortcut('Shift', 'S')
   useEffect(() => {
     const key = (e) => {
       // macOS-style shortcut: Ctrl/Cmd + Shift + S toggles the sidebar
@@ -27,7 +29,7 @@ export function Sidebar({ open, onToggle, title, side = 'left', className = '', 
     <>
       <aside className={`sb sb-${side} ${open ? 'sb-open' : ''} ${className}`} aria-label={label || title} inert={!open}>
         <div className="sb-top">
-          <button type="button" className="sb-toggle" onClick={onToggle} aria-label="Hide sidebar" title="Hide sidebar">
+          <button type="button" className="sb-toggle" onClick={onToggle} aria-label="Hide sidebar" title={`Hide sidebar (${keys})`}>
             <SidebarIcon />
           </button>
           {title && <p className="sb-title">{title}</p>}
@@ -36,8 +38,9 @@ export function Sidebar({ open, onToggle, title, side = 'left', className = '', 
         <div className="sb-body">{children}</div>
         {footer && <div className="sb-footer">{footer}</div>}
       </aside>
-      <button type="button" className={`sb-reopen sb-reopen-${side} ${open ? '' : 'show'}`} onClick={onToggle} aria-label="Show sidebar" title="Show sidebar" tabIndex={open ? -1 : 0}>
+      <button type="button" className={`sb-reopen sb-reopen-${side} ${open ? '' : 'show'}`} onClick={onToggle} aria-label="Show sidebar" title={`Show sidebar (${keys})`} tabIndex={open ? -1 : 0}>
         <SidebarIcon />
+        {reopenBadge}
       </button>
     </>
   )

@@ -4,9 +4,9 @@
   height: 100svh;
   overflow: hidden;
   background: #050403;
-  --side-open: 340px;
+  --side-open: 384px;
   --side-w: var(--side-open);
-  --right-w: 400px;
+  --right-w: 0px; /* everything lives in the left sidebar now */
   --top: calc(var(--nav-h) + 8px);
   --dock-h: 148px; /* height chart, open */
 }
@@ -1022,7 +1022,7 @@
 
 /* ---------- small screens: map full screen + bottom sheet ---------- */
 @media (max-width: 1180px) {
-  .planner { --side-open: 300px; --right-w: 350px; }
+  .planner { --side-open: 344px; }
 }
 
 @media (max-width: 820px) {
@@ -1551,9 +1551,9 @@
     rgba(255, 255, 255, 0.06);
 }
 
-/* Phones: the tools are one row you can swipe sideways, main button first, so the map keeps
-   most of the screen. The fade on the right says there is more. */
-@media (max-width: 820px) {
+/* Phones and narrow windows: the tools are one row you can swipe sideways, main button
+   first, so the map keeps most of the screen. The fade on the right says there is more. */
+@media (max-width: 1180px) {
   .actionbar {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -1573,4 +1573,38 @@
   .ab-or { display: none; }
   .ab-after { display: contents; }
   .actionbar .btn-small { min-height: 40px; }
+}
+
+/* the planner's one sidebar: five tabs, help in the footer */
+.seg-ctl-5 button {
+  padding: 0 2px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.seg-ctl-5 .tab-count {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 3px;
+}
+
+.sb-help {
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.sb-help:hover {
+  color: var(--ink);
+}
+
+.planner-sb .sb-body {
+  padding: 4px 16px 16px;
 }

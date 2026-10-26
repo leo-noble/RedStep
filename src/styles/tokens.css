@@ -8,6 +8,17 @@
   --rule: rgba(255, 255, 255, 0.14);
   --rule-soft: rgba(255, 255, 255, 0.08);
 
+  /* Colour roles (60 · 30 · 10): ~60% near-black space, ~30% neutral glass panels and ink,
+     ~10% accent. Each hue has one job:
+       rust  = things you can press (buttons, the route)   ember = emphasis and highlights
+       ice   = measured NASA data and links to sources     go / caution / nogo = verdicts only
+     Never use an accent just to decorate. */
+  --surface: rgba(22, 22, 26, 0.74);
+  --surface-strong: rgba(22, 22, 26, 0.9);
+  --surface-line: rgba(255, 255, 255, 0.14);
+  --link: var(--ink);
+  --link-hover: var(--ember);
+
   /* Mars ramp: elevation, route, calls to action */
   --rust-900: #2a130b;
   --rust-700: #6e2f17;
@@ -36,26 +47,30 @@
   --font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  --t-hero: clamp(56px, 11vw, 176px);
-  --t-1: clamp(40px, 7vw, 112px);
-  --t-2: clamp(32px, 4.6vw, 64px);
-  --t-3: clamp(26px, 2.8vw, 40px);
-  --t-4: clamp(21px, 1.9vw, 28px);
-  --t-5: 18px;
+  /* Type: one modular scale (ratio 1.25, base 16 px), so every level is a clear step from
+     the next: micro 12 · small 14 · body 16 · 5: 20 · 4: 25 · 3: 31 · 2: 39–49 · 1: 49–61 ·
+     hero 61–76. Big sizes shrink on small screens. */
+  --t-hero: clamp(48px, 6.4vw, 76px);
+  --t-1: clamp(39px, 5.2vw, 61px);
+  --t-2: clamp(31px, 3.6vw, 49px);
+  --t-3: clamp(25px, 2.6vw, 31px);
+  --t-4: clamp(20px, 1.8vw, 25px);
+  --t-5: 20px;
   --t-body: 16px;
   --t-small: 14px;
-  --t-micro: 11px;
+  --t-micro: 12px;
 
-  /* space (4px base) */
+  /* Space: an 8 px grid (4 px only for hairline gaps), used for every margin and padding */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
   --s-5: 24px;
-  --s-6: 40px;
-  --s-7: 64px;
-  --s-8: 104px;
-  --s-9: 168px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --s-10: 128px;
   --pad: clamp(16px, 5vw, 72px);
   --nav-h: 60px;
 

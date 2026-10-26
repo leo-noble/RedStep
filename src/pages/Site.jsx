@@ -108,9 +108,11 @@ function Planner({ site }) {
   const [appetite, setAppetite] = useState('balanced')
   const [result, setResult] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [rightTab, setRightTab] = useState('verdict')
-  const [leftTab, setLeftTab] = useState('layers')
-  const [sbOpen, setSbOpen] = useState(false)
+  // Desktop: one sidebar on the left holds the answer, science, tips, layers and settings.
+  const [tab, setTabRaw] = useState('verdict')
+  const [leftTab, setLeftTab] = useState('layers') // phones: the sheet's "More" tab
+  const [sbOpen, setSbOpen] = useState(true)
+  const setTab = useCallback((t) => { setTabRaw(t); setSbOpen(true) }, [])
   const [hint, setHint] = useState(false)
   const [sheet, setSheet] = useState('verdict')
   const [sheetOpen, setSheetOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 820)
@@ -455,7 +457,7 @@ function Planner({ site }) {
 
   return (
     <div className={`planner ${following ? 'following' : ''} ${street?.demo ? 'demo' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
-      {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
+      {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setTab('science') }} />}
       {!grid && (
         <div className="planner-loading" role="status" aria-live="polite">
           <Ambient className="ambient-fill" />
@@ -500,26 +502,26 @@ function Planner({ site }) {
             open={sbOpen}
             onToggle={() => setSbOpen((o) => !o)}
             title={site.name}
-            label="Map layers, settings and manual"
+            label="Walk answer, science, tips, map layers and settings"
             className="planner-sb"
+            reopenBadge={a && <i className={`sb-status sb-status-${a.status}`} aria-label={`Walk verdict: ${a.status === 'nogo' ? 'no-go' : a.status}`} />}
             header={(
-              <div className="seg-ctl" role="tablist" aria-label="Sidebar">
-                {[['layers', 'Map layers'], ['settings', 'Settings'], ['manual', 'Help']].map(([k, l]) => (
-                  <button key={k} role="tab" aria-selected={leftTab === k} onClick={() => setLeftTab(k)}>{l}</button>
+              <div className="seg-ctl seg-ctl-5" role="tablist" aria-label="Sidebar">
+                {[['verdict', 'Answer'], ['science', 'Science'], ['advisor', 'Tips'], ['layers', 'Layers'], ['settings', 'Settings']].map(([k, l]) => (
+                  <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
+                    {l}{k === 'science' && visited.length > 0 && <span className="tab-count">{visited.length}</span>}
+                  </button>
                 ))}
               </div>
             )}
+            footer={(
+              <button type="button" className="sb-help" aria-pressed={tab === 'manual'} onClick={() => setTab(tab === 'manual' ? 'verdict' : 'manual')}>
+                {tab === 'manual' ? '← Back to the answer' : 'How the planner works'}
+              </button>
+            )}
           >
-            {leftTab === 'layers' ? layerPanel : leftTab === 'settings' ? settingsPanel : <ManualPanel items={MANUAL.planner} />}
+            {{ verdict, science, advisor, layers: layerPanel, settings: settingsPanel, manual: <ManualPanel items={MANUAL.planner} /> }[tab]}
           </Sidebar>
-          <aside className="side side-right glass" aria-label="Walk verdict, science and advice">
-            <div className="tabs" role="tablist">
-              <button role="tab" aria-selected={rightTab === 'verdict'} onClick={() => setRightTab('verdict')}>Answer</button>
-              <button role="tab" aria-selected={rightTab === 'science'} onClick={() => setRightTab('science')}>Science <span className="tab-count">{visited.length}</span></button>
-              <button role="tab" aria-selected={rightTab === 'advisor'} onClick={() => setRightTab('advisor')}>Tips</button>
-            </div>
-            <div className="side-body">{rightTab === 'verdict' ? verdict : rightTab === 'science' ? science : advisor}</div>
-          </aside>
           {a && (
             <div className={`profile-dock glass ${profileOpen ? 'open' : ''}`}>
               <button type="button" className="pf-toggle" aria-expanded={profileOpen} onClick={toggleProfile}>

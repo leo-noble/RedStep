@@ -19,6 +19,8 @@ import '@fontsource/space-mono/700.css'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/touch.css'
+import './styles/platform.css'
+import { platform } from './lib/platform.js'
 import Layout from './components/Layout.jsx'
 import RouteError from './pages/RouteError.jsx'
 
@@ -26,6 +28,8 @@ import RouteError from './pages/RouteError.jsx'
 // straight away instead of a blank screen.
 const PageLoading = () => <div className="page-loading" aria-busy="true" />
 const page = (load) => ({ lazy: async () => ({ Component: (await load()).default }), HydrateFallback: PageLoading })
+
+document.documentElement.dataset.platform = platform
 
 const router = createBrowserRouter([
   {
