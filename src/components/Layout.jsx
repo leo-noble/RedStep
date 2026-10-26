@@ -14,8 +14,9 @@ export default function Layout() {
   const open = useCallback((focus = null) => setEmergency({ focus }), [])
   const close = useCallback(() => setEmergency(null), [])
   const ctx = useMemo(() => ({ open }), [open])
-  // Full-screen views: no footer, no ambient background.
-  const immersive = pathname === '/' || pathname === '/map' || pathname.startsWith('/site/') || pathname === '/brief'
+  const home = pathname === '/'
+  // Full-screen views: no footer, no ambient background. Home ends in its own short credits.
+  const immersive = home || pathname === '/map' || pathname.startsWith('/site/') || pathname === '/brief'
 
   useEffect(() => { if (!pathname.startsWith('/guide')) window.scrollTo(0, 0) }, [pathname])
 
