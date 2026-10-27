@@ -1,14 +1,14 @@
-/* Liquid glass, iOS 26/27 style, for every floating panel and control (Windows keeps its own
-   Mica look from platform.css). The glass: a bright film fading down from the top edge, over
-   a blurred and more colourful copy of what is behind, a hairline rim, a lit top edge and a
-   soft shadow. Panels get larger corners; buttons stay capsules. */
+/* Glass, iOS style but matte, for every floating panel and control (Windows keeps its own
+   Mica look from platform.css): a dark tint over a softly blurred copy of what is behind, a
+   faint film at the top, a hairline rim and a soft shadow. No shine. A modest blur keeps
+   scrolling smooth. Panels get larger corners; buttons stay capsules. */
 :root {
-  --lg-film: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.022) 38%, rgba(255, 255, 255, 0) 100%);
-  --lg-tint: rgba(26, 26, 30, 0.58);
-  --lg-blur: blur(28px) saturate(1.9) brightness(1.04);
-  --lg-rim: rgba(255, 255, 255, 0.16);
-  --lg-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -0.5px 0 rgba(255, 255, 255, 0.05), 0 18px 48px rgba(0, 0, 0, 0.45);
-  --lg-radius: 22px;
+  --lg-film: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 45%);
+  --lg-tint: rgba(22, 22, 26, 0.74);
+  --lg-blur: blur(18px) saturate(1.25);
+  --lg-rim: rgba(255, 255, 255, 0.1);
+  --lg-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.06), 0 12px 32px rgba(0, 0, 0, 0.34);
+  --lg-radius: 20px;
 }
 
 :root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock, .xp-clock, .xp-zoom, .xp-searchpill, .sb-reopen, .g-rail-open, .nav-links, .mw-home .chapter--left, .mw-home .telemetry, .mw-home .feature, .mw-home .btn--ghost, .skip-intro) {
@@ -23,15 +23,15 @@
   border-radius: var(--lg-radius);
 }
 
-/* tinted glass for the main action: the accent showing through the film */
+/* the main action: flat accent, no shine */
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary) {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%), var(--rust);
+  background: var(--rust);
   border-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 8px 22px rgba(236, 125, 69, 0.32);
+  box-shadow: 0 4px 14px rgba(236, 125, 69, 0.18);
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 55%), var(--ember);
+  background: var(--ember);
 }
 
 /* phones: the sidebar is a bottom sheet, so only its top corners round */
