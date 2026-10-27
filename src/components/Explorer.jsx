@@ -65,7 +65,9 @@ function registerNight(name) {
   })
 }
 
-export default function Explorer({ onReady, initial = 'jezero', visible = true }) {
+// embedded: shown inside a scrolling page (the end of the home story). The page keeps
+// scrolling; zooming needs ⌘/Ctrl + scroll, and panning on a phone needs two fingers.
+export default function Explorer({ onReady, initial = 'jezero', visible = true, embedded = false }) {
   const el = useRef(null)
   const map = useRef(null)
   const labelsEl = useRef(null)
@@ -108,6 +110,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true }
       attributionControl: false,
       renderWorldCopies: false,
       fadeDuration: 0,
+      cooperativeGestures: embedded,
       // weaker devices draw the globe at normal (not retina) resolution
       pixelRatio: Math.min(window.devicePixelRatio || 1, deviceTier() === 'low' ? 1 : 2),
       maxTileCacheSize: deviceTier() === 'low' ? 60 : 200,

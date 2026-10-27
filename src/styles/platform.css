@@ -9,6 +9,22 @@
   --pf-control-r: 999px;
 }
 
+/* Each platform's own typeface, like a native app: SF Pro on iPhone, iPad and Mac, Segoe UI
+   on Windows; everything else keeps Montserrat. One family per device, everywhere. */
+:root[data-platform='mac'] {
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+:root[data-platform='mac'] :is(h1, h2, h3, .mw-home .display, .mw-home .h2) {
+  letter-spacing: -0.022em;
+}
+
+:root[data-platform='windows'] {
+  --font: 'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+}
+
 :root[data-platform='windows'] {
   --pf-panel-r: 8px;
   --pf-control-r: 4px;

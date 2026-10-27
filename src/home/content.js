@@ -56,8 +56,8 @@ export const HOME = {
   titleAccent: 'Mars.',
   lead: 'One map built from NASA missions (height, steepness, dust, rock or sand, radiation and sunlight) that turns a landing site into a safe, science-rich Marswalk you can defend.',
   ctaPrimary: 'Choose a landing site',
-  ctaMap: 'Open the Mars map',
-  ctaMapShort: 'Mars map',
+  ctaWalk: 'Plan a walk at Jezero',
+  ctaWalkShort: 'Plan a walk',
   skipIntro: 'Skip intro',
   scrollCue: 'Scroll to fly',
   telemetryTitle: 'Mars · now',
@@ -66,7 +66,7 @@ export const HOME = {
     { id: 'launch', n: '01', label: 'Leave Earth' },
     { id: 'cruise', n: '02', label: 'Cruise' },
     { id: 'arrive', n: '03', label: 'Arrive' },
-    { id: 'choose', n: '04', label: 'Choose a site' },
+    { id: 'choose', n: '04', label: 'Mars map' },
   ],
   story: {
     layers: {

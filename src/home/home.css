@@ -302,10 +302,6 @@
   text-wrap: pretty;
 }
 
-.mw-home .body--sm {
-  font-size: var(--fs-small);
-}
-
 .mw-home .fine {
   font-size: var(--fs-small);
   color: var(--ink-3);
@@ -915,8 +911,7 @@
   color: var(--ember);
 }
 
-.mw-home .hero-labels,
-.mw-home .hero-pins {
+.mw-home .hero-labels {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -990,260 +985,6 @@
   grid-column: 1;
   transform: translateX(34px);
   text-align: right;
-}
-
-.mw-home .pin {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: block;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  pointer-events: auto;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-.mw-home .pin__dot {
-  position: absolute;
-  left: -7px;
-  top: -7px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1.5px solid var(--ember);
-  background: rgb(0 4 8 / 0.5);
-  transition:
-    transform var(--dur-2) var(--ease),
-    background-color var(--dur-2) var(--ease);
-}
-
-.mw-home .pin__dot::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  background: var(--ember);
-}
-
-.mw-home .pin__dot::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 1px solid var(--ember);
-  opacity: 0;
-}
-
-.mw-home .pin[data-active='true'] .pin__dot {
-  transform: scale(1.25);
-}
-
-.mw-home .pin[data-active='true'] .pin__dot::after {
-  animation: mwh-pulse 2.2s var(--ease) infinite;
-}
-
-@keyframes mwh-pulse {
-  0% {
-    opacity: 0.8;
-    transform: scale(0.6);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2.2);
-  }
-}
-
-.mw-home .pin__label {
-  position: absolute;
-  left: 16px;
-  top: -16px;
-  display: grid;
-  gap: 2px;
-  padding: 6px 9px;
-  white-space: nowrap;
-  border-left: 1px solid var(--line-ember);
-  background: linear-gradient(90deg, rgb(0 4 8 / 0.7), rgb(0 4 8 / 0));
-  text-align: left;
-  opacity: 0.72;
-  transition: opacity var(--dur-2) var(--ease);
-}
-
-.mw-home .pin__label b {
-  font-family: var(--font-display);
-  font-size: 0.8125rem;
-  font-weight: var(--fw-semibold);
-  color: var(--ink-1);
-}
-
-.mw-home .pin__label em {
-  font-style: normal;
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.08em;
-  color: var(--ink-3);
-}
-
-.mw-home .pin:hover .pin__label,
-.mw-home .pin:focus-visible .pin__label,
-.mw-home .pin[data-active='true'] .pin__label {
-  opacity: 1;
-}
-
-.mw-home .pin:focus-visible {
-  box-shadow: none;
-}
-
-.mw-home .pin:focus-visible .pin__dot {
-  box-shadow: var(--focus-ring);
-}
-
-.mw-home .chapter--choose {
-  left: var(--margin);
-  top: calc(var(--nav-h) + var(--s-5));
-  bottom: var(--s-5);
-  width: min(26rem, 36vw);
-  display: flex;
-  flex-direction: column;
-}
-
-.mw-home .chapter--choose .h2 {
-  font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.5rem);
-}
-
-.mw-home .sites {
-  list-style: none;
-  margin: 0 0 var(--s-4);
-  padding: 0;
-  display: grid;
-  gap: var(--s-2);
-  overflow-y: auto;
-  min-height: 0;
-  scrollbar-width: thin;
-}
-
-.mw-home .site-card {
-  position: relative;
-  padding: var(--s-3) var(--s-4);
-  border: 1px solid var(--line-1);
-  border-radius: var(--r-2);
-  background: rgb(4 8 14 / 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition:
-    border-color var(--dur-2) var(--ease),
-    background-color var(--dur-2) var(--ease);
-}
-
-.mw-home .site-card::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 10px;
-  bottom: 10px;
-  width: 2px;
-  background: var(--ember);
-  transform: scaleY(0);
-  transition: transform var(--dur-2) var(--ease);
-}
-
-.mw-home .site-card[data-active='true'] {
-  border-color: rgb(255 178 91 / 0.32);
-  background: rgb(10 8 8 / 0.72);
-}
-
-.mw-home .site-card[data-active='true']::before {
-  transform: scaleY(1);
-}
-
-.mw-home .site-card__select {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--s-3);
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.mw-home .site-card__name {
-  font-weight: var(--fw-semibold);
-  font-size: 0.9375rem;
-}
-
-.mw-home .site-card__coords {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--ink-3);
-  white-space: nowrap;
-}
-
-.mw-home .site-card__science {
-  margin: 2px 0 0;
-  font-size: 0.75rem;
-  color: var(--ink-3);
-}
-
-.mw-home .site-card__context {
-  margin: var(--s-3) 0 0;
-  font-size: var(--fs-small);
-  color: var(--ink-2);
-  line-height: 1.5;
-}
-
-.mw-home .site-card__meta {
-  margin: var(--s-2) 0 0;
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.08em;
-  color: var(--ice);
-}
-
-.mw-home .site-card__go {
-  margin-top: var(--s-3);
-}
-
-.mw-home .lighting {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  flex-wrap: wrap;
-}
-
-.mw-home .lighting button {
-  height: 30px;
-  padding: 0 var(--s-3);
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-1);
-  background: transparent;
-  color: var(--ink-3);
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.mw-home .lighting button[aria-pressed='true'] {
-  border-color: var(--ember);
-  color: var(--ember);
-}
-
-.mw-home .drag-hint {
-  position: absolute;
-  z-index: var(--z-copy);
-  left: 65%;
-  bottom: var(--s-5);
-  translate: -50% 0;
-  color: var(--ink-3);
-  margin: 0;
-  pointer-events: none;
-  opacity: var(--w-choose);
 }
 
 .mw-home .rail {
@@ -1394,15 +1135,6 @@
   visibility: hidden;
 }
 
-
-
-
-
-
-
-
-
-
 @media (max-aspect-ratio: 8/5) {
 .mw-home .hero-copy,
 .mw-home .scroll-cue {
@@ -1521,28 +1253,8 @@
     gap: var(--s-3);
   }
 
-.mw-home .chapter--choose {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    max-height: 54svh;
-    padding: var(--s-4) var(--margin) var(--s-4);
-    background: linear-gradient(to top, rgb(0 4 8 / 0.96) 70%, rgb(0 4 8 / 0));
-  }
-
-.mw-home .chapter--choose .body,
-.mw-home .chapter--choose .eyebrow {
-    display: none;
-  }
-
 .mw-home .stage-veil::before {
     background: linear-gradient(0deg, rgb(0 4 8 / 0.9) 0%, rgb(0 4 8 / 0.5) 34%, rgb(0 4 8 / 0) 60%);
-  }
-
-.mw-home .drag-hint {
-    display: none;
   }
 
 .mw-home .rail {
@@ -1558,12 +1270,9 @@
     display: none;
   }
 
-
-
 }
 
 @media (max-width: 520px) {
-
 
 .mw-home .stats .stat__label {
     font-size: 0.6875rem;
@@ -1572,19 +1281,12 @@
 
 @media (prefers-reduced-motion: reduce) {
 .mw-home .live-dot,
-.mw-home .scroll-cue__line::after,
-.mw-home .pin[data-active='true'] .pin__dot::after {
+.mw-home .scroll-cue__line::after {
     animation: none;
   }
 }
 
 /* Link from the site chooser to the whole-planet map (added for the main app). */
-.mw-home .choose-map {
-  display: inline-block;
-  margin: var(--s-3) 0 var(--s-2);
-  font-size: 0.8125rem;
-  color: var(--ice);
-}
 
 /* ---------------------------------------------------------------------------------------------
    Match the Mars map: the same typeface, glass panels, rounded buttons and spacing as the
@@ -1592,7 +1294,7 @@
    --------------------------------------------------------------------------------------------- */
 
 .mw-home {
-  /* one typeface: labels and numbers use Montserrat with even-width figures, like the map */
+  /* one typeface (the app's): labels and numbers use it with even-width figures, like the map */
   --font-display: var(--font);
   --font-mono: var(--font);
   --fw-light: 400;
@@ -1686,8 +1388,7 @@
 
 /* glass: the Explorer sidebar material */
 .mw-home .glass,
-.mw-home .chapter--left,
-.mw-home .chapter--choose {
+.mw-home .chapter--left {
   background: var(--glass-bg);
   border: 0.5px solid var(--glass-border);
   border-radius: var(--r-3);
@@ -1828,95 +1529,7 @@
   font-weight: 700;
 }
 
-.mw-home .pin__label {
-  padding: 6px 10px;
-  border-left: 0;
-  border-radius: 10px;
-  background: rgba(22, 22, 26, 0.74);
-  border: 0.5px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.mw-home .pin__label em {
-  font-size: 11px;
-  letter-spacing: 0.02em;
-}
-
 /* the site chooser: a sidebar like the Mars map's */
-.mw-home .chapter--choose {
-  left: 12px;
-  top: calc(var(--nav-h) + 10px);
-  bottom: 12px;
-  width: min(360px, 36vw);
-  padding: var(--s-5) var(--s-4) var(--s-4);
-}
-
-.mw-home .chapter--choose .eyebrow,
-.mw-home .chapter--choose .h2,
-.mw-home .chapter--choose .body {
-  padding: 0 var(--s-2);
-}
-
-.mw-home .chapter--choose .h2 {
-  font-size: clamp(1.5rem, 1.1rem + 1.2vw, 2.1rem);
-}
-
-.mw-home .sites {
-  gap: 6px;
-  margin-bottom: var(--s-3);
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-}
-
-.mw-home .site-card {
-  padding: 12px 14px;
-  border: 0.5px solid transparent;
-  border-radius: var(--r-2);
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.mw-home .site-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.mw-home .site-card::before {
-  display: none;
-}
-
-.mw-home .site-card[data-active='true'] {
-  border-color: rgba(255, 178, 91, 0.35);
-  background: rgba(255, 178, 91, 0.08);
-}
-
-.mw-home .site-card__coords {
-  font-size: 11.5px;
-}
-
-.mw-home .site-card__meta {
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-}
-
-.mw-home .choose-map {
-  padding: 0 var(--s-2);
-}
-
-.mw-home .lighting {
-  padding: 0 var(--s-2);
-}
-
-.mw-home .lighting button {
-  height: 30px;
-  border: 0.5px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--r-pill);
-  font-weight: 600;
-  font-size: 11.5px;
-  letter-spacing: 0.02em;
-  text-transform: none;
-}
 
 /* chapter rail and the small controls */
 .mw-home .rail__item {
@@ -1940,13 +1553,6 @@
   letter-spacing: 0.02em;
   text-transform: none;
 }
-
-
-
-
-
-
-
 
 .mw-home .home-end {
   max-width: var(--maxw);
@@ -2029,16 +1635,7 @@
     margin-bottom: var(--s-4);
   }
 
-  .mw-home .chapter--choose {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-    top: auto;
-    width: auto;
-    max-height: 54svh;
-    padding: var(--s-4) var(--s-3) var(--s-3);
-    background: var(--glass-bg-strong);
-  }
+  
 
   .mw-home .cta-row .btn {
     --btn-h: 44px;
@@ -2047,15 +1644,9 @@
     letter-spacing: 0.01em;
   }
 
-
 }
-
-
 
 /* pins: only the chosen or hovered site shows its name, so close sites don't overlap */
-.mw-home .pin__label {
-  opacity: 0;
-}
 
 .mw-home .telemetry {
   width: 348px;
@@ -2074,34 +1665,21 @@
     white-space: normal;
   }
 
-  .mw-home .chapter--choose {
-    max-height: 58svh;
-  }
+  
 
-  .mw-home .choose-map {
-    margin: var(--s-2) 0;
-  }
+  
 
-  .mw-home .lighting {
-    gap: 6px;
-  }
+  
 
-  .mw-home .lighting button {
-    height: 28px;
-    padding: 0 10px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
+  
 }
 
 /* Weaker devices: the panels sit over a moving 3D scene, and re-blurring it every frame is
    costly, so they turn solid instead. */
 .mw-home[data-quality='low'] .glass,
 .mw-home[data-quality='low'] .chapter--left,
-.mw-home[data-quality='low'] .chapter--choose,
 .mw-home[data-quality='low'] .btn--ghost,
 .mw-home[data-quality='low'] .skip-intro,
-.mw-home[data-quality='low'] .pin__label,
 .mw-home[data-quality='low'] .badge__tip {
   background: rgba(20, 20, 24, 0.94);
   backdrop-filter: none;
@@ -2156,12 +1734,6 @@
 }
 
 /* the site globe's way into the full map */
-.mw-home .globe-map {
-  position: absolute;
-  z-index: var(--z-copy);
-  right: calc(var(--margin) + 28px);
-  top: calc(var(--nav-h) + 10px);
-}
 
 @media (max-width: 860px), (max-aspect-ratio: 1/1) {
   .mw-home .chapter--left {
@@ -2180,11 +1752,8 @@
     width: auto;
   }
 
-  .mw-home .globe-map {
-    right: 10px;
-  }
+  
 }
-
 
 /* ---- features: what the planner does (after the story) ----
    Hierarchy: eyebrow → section title → lead → four cards (art · title · text · link) → facts.
@@ -2403,9 +1972,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mw-home .fa-layer,
-  .mw-home .fa-route,
-  .mw-home .fa-go,
-  .mw-home .fa-ping {
+.mw-home .fa-route,
+.mw-home .fa-go,
+.mw-home .fa-ping {
     animation: none;
   }
 
@@ -2414,11 +1983,30 @@
 }
 
 /* a plain text link, not a data source: ink with an underline, ember on hover */
-.mw-home .choose-map {
-  color: var(--ink-2);
-  text-underline-offset: 3px;
+
+
+/* ---- arrival: the real Mars map (the same component as /map) fades in over the scene ---- */
+.mw-home .home-map {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;
 }
 
-.mw-home .choose-map:hover {
-  color: var(--ember);
+.mw-home .home-map.on {
+  pointer-events: auto;
+}
+
+/* the story's own controls step aside for the map */
+.mw-home[data-choose='true'] :is(.rail, .scroll-cue, .schematic-note, .skip-intro) {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* small labels read like iOS section headers: sentence case, no wide letter-spacing */
+.mw-home :is(.micro, .eyebrow, .kicker) {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 13px;
+  font-weight: 600;
 }

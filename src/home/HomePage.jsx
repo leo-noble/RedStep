@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import MarsGlobeHero from './MarsGlobeHero.jsx';
-import { fmtLat, fmtLon } from './format.js';
 import Badge from './Badge.jsx';
 import FeatureArt from './FeatureArt.jsx';
 import { deviceTier } from '../lib/quality.js';
@@ -20,17 +19,20 @@ const CHAPTER_WINDOWS = {
   choose: [0.84, 0.91, 2, 3],
 };
 const RAIL = [0, 0.27, 0.51, 0.95];
+// The end of the story is the real Mars map: the same component as the /map page.
+const Explorer = lazy(() => import('../components/Explorer.jsx'));
 
 export default function HomePage() {
   const [engine] = useState(() => createMotionEngine());
-  const navigate = useNavigate();
   const rootRef = useRef(null);
   const trackRef = useRef(null);
   const heroRef = useRef(null);
   const tele = useRef({});
-  const [selectedId, setSelectedId] = useState(DEFAULT_SITE_ID);
-  const [lighting, setLighting] = useState('day');
-  const selected = getSite(selectedId);
+  // mapOn: the Mars map is loaded (from the cruise on, so it is ready on arrival)
+  // atMars: the rocket has arrived and the map is showing; mapReady: its first frame is drawn
+  const [mapOn, setMapOn] = useState(false);
+  const [atMars, setAtMars] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   /* Engine → CSS variables (no React renders per frame) */
   useEffect(() => {
@@ -57,21 +59,26 @@ export default function HomePage() {
       const st = root.style;
       st.setProperty('--p', p.toFixed(4));
       st.setProperty('--intro', s.intro.toFixed(4));
+      const w = {};
+      for (const key of Object.keys(CHAPTER_WINDOWS)) {
+        w[key] = windowed(p, ...CHAPTER_WINDOWS[key]);
+        st.setProperty(`--w-${key}`, w[key].toFixed(4));
+      }
       for (const c of chapterEls) {
-        const w = windowed(p, ...CHAPTER_WINDOWS[c.key]);
-        st.setProperty(`--w-${c.key}`, w.toFixed(4));
-        const on = w > 0.3;
+        const on = w[c.key] > 0.3;
         if (on !== c.on) {
           c.el.dataset.on = on ? 'true' : 'false';
           c.on = on;
         }
       }
+      if (p > 0.6) setMapOn(true);
       st.setProperty('--thrust', smoothstep(0.42, 0.66, s.intro).toFixed(3));
 
       const choose = p > 0.88;
       if (choose !== lastChoose) {
         root.dataset.choose = choose ? 'true' : 'false';
         lastChoose = choose;
+        setAtMars(choose);
       }
       const introDone = s.intro >= 1;
       if (introDone !== lastIntroDone) {
@@ -108,7 +115,7 @@ export default function HomePage() {
     const tick = () => {
       const m = marsTime();
       const lt = earthMarsLightTime();
-      const site = getSite(selectedId);
+      const site = getSite(DEFAULT_SITE_ID);
       write('season', m.season);
       write('light', `${lt.minutes.toFixed(1)} min`);
       write('lightBig', lt.minutes.toFixed(1));
@@ -121,11 +128,12 @@ export default function HomePage() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [selectedId]);
+  }, []);
 
+  // While the map covers the 3D scene, the scene stops drawing.
   useEffect(() => {
-    heroRef.current?.setLighting(lighting);
-  }, [lighting]);
+    heroRef.current?.setPaused(atMars && mapReady);
+  }, [atMars, mapReady]);
 
   // Fetch the Mars map and planner code in the background while the intro plays (not on weak
   // devices: holding the map code next to the 3D scene costs memory they don't have).
@@ -141,11 +149,6 @@ export default function HomePage() {
   }, []);
 
   const goChoose = () => engine.scrollToProgress(0.97);
-  const commit = (id) => {
-    setSelectedId(id);
-    if (heroRef.current?.isInteractive()) heroRef.current.flyTo(id);
-    else navigate(`/site/${id}`);
-  };
   const ref = (k) => (el) => {
     tele.current[k] = el;
   };
@@ -154,14 +157,7 @@ export default function HomePage() {
     <div className="mw-home" ref={rootRef} data-choose="false" data-intro-done="false">
       <section className="story" ref={trackRef} aria-label="Redstep introduction">
         <div className="stage">
-          <MarsGlobeHero
-            ref={heroRef}
-            engine={engine}
-            sites={LANDING_SITES}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onArrive={(id) => navigate(`/site/${id}`)}
-          />
+          <MarsGlobeHero ref={heroRef} engine={engine} sites={LANDING_SITES} />
           <div className="stage-veil" aria-hidden="true" />
 
           {/* ---- 00 · Hero (reference frame) ---- */}
@@ -187,9 +183,9 @@ export default function HomePage() {
                 {HOME.ctaPrimary}
                 <span aria-hidden="true">↓</span>
               </button>
-              <Link to="/map" className="btn btn--ghost" aria-label={HOME.ctaMap}>
-                <span className="cta-long">{HOME.ctaMap}</span>
-                <span className="cta-short">{HOME.ctaMapShort}</span>
+              <Link to="/site/jezero" className="btn btn--ghost" aria-label={HOME.ctaWalk}>
+                <span className="cta-long">{HOME.ctaWalk}</span>
+                <span className="cta-short">{HOME.ctaWalkShort}</span>
                 <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -289,77 +285,14 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* ---- 04 · Choose a site ---- */}
-          <div className="chapter chapter--choose" data-chapter="choose" style={{ '--w': 'var(--w-choose)' }}>
-            <p className="eyebrow">{HOME.story.choose.eyebrow}</p>
-            <h2 className="h2">{HOME.story.choose.title}</h2>
-            <p className="body body--sm">
-              {HOME.story.choose.body} <Badge kind="nasa" source="sites" />
-            </p>
-            <ul className="sites" role="list">
-              {LANDING_SITES.map((s) => (
-                <li key={s.id}>
-                  <article
-                    className="site-card"
-                    data-active={s.id === selectedId ? 'true' : 'false'}
-                    onMouseEnter={() => setSelectedId(s.id)}
-                  >
-                    <button
-                      type="button"
-                      className="site-card__select"
-                      onClick={() => setSelectedId(s.id)}
-                      onFocus={() => {
-                        setSelectedId(s.id);
-                        if (engine.state.progress < 0.86) goChoose();
-                      }}
-                      aria-pressed={s.id === selectedId}
-                    >
-                      <span className="site-card__name">{s.name}</span>
-                      <span className="site-card__coords">
-                        {fmtLat(s.lat)} · {fmtLon(s.lon)}
-                      </span>
-                    </button>
-                    <p className="site-card__science">{s.science}</p>
-                    {s.id === selectedId && (
-                      <>
-                        <p className="site-card__context">{s.context}</p>
-                        <p className="site-card__meta">
-                          <span>{s.missions.join(' · ')}</span>
-                        </p>
-                        <button type="button" className="btn btn--primary btn--sm site-card__go" onClick={() => commit(s.id)}>
-                          {s.planner ? 'Plan a Marswalk here' : 'Open this site'} <span aria-hidden="true">→</span>
-                        </button>
-                      </>
-                    )}
-                  </article>
-                </li>
-              ))}
-            </ul>
-            <Link to="/map" className="choose-map">
-              Or explore the whole planet on the Mars map <span aria-hidden="true">→</span>
-            </Link>
-            <div className="lighting" role="group" aria-label="Globe lighting">
-              <button type="button" aria-pressed={lighting === 'day'} onClick={() => setLighting('day')}>
-                Presentation light
-              </button>
-              <button type="button" aria-pressed={lighting === 'now'} onClick={() => setLighting('now')}>
-                Sun now · Mars24
-              </button>
-              {lighting === 'now' ? (
-                <Badge kind="derived" source="mars24" note="Terminator from the subsolar point at this moment." align="end" />
-              ) : (
-                <Badge kind="illustrative" source="schematic" note="Lit from the viewer for legibility. Switch to Mars24 for the real terminator." align="end" />
-              )}
+          {/* ---- 04 · Arrival: the real Mars map takes over (the same one as /map) ---- */}
+          {mapOn && (
+            <div className={`home-map ${atMars ? 'on' : ''}`} inert={!atMars} aria-hidden={!atMars}>
+              <Suspense fallback={null}>
+                <Explorer visible={atMars} embedded onReady={() => setMapReady(true)} />
+              </Suspense>
             </div>
-          </div>
-
-          <Link to="/map" className="chapter globe-map btn btn--ghost btn--sm" data-chapter="choose" style={{ '--w': 'var(--w-choose)' }}>
-            Open the full Mars map <span aria-hidden="true">→</span>
-          </Link>
-
-          <p className="drag-hint micro" aria-hidden="true">
-            Drag to rotate · {selected?.name}
-          </p>
+          )}
 
           {/* ---- Progress rail ---- */}
           <nav className="rail" aria-label="Story chapters">

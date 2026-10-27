@@ -406,6 +406,10 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   function layout(aspect) {
     L.aspect = aspect;
     const A = anchorsFor(aspect);
+    // Where the camera keeps the rocket while following it: right of centre on wide screens
+    // (the story panels sit on the left), in the upper half on tall ones (panels at the bottom),
+    // so the panels never cover the rocket.
+    L.chase = aspect > 1 ? new THREE.Vector3(-0.7, 0.25, 0) : new THREE.Vector3(0, -1.3, 0);
     const e = A.earth;
     const mo = A.moon;
     const ma = A.mars;
@@ -740,7 +744,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     /* ---- Camera ---- */
     const chase = smoothstep(0.03, 0.42, p);
-    tgt.set(0, 0, 0).lerp(w3.copy(rocketPos).add(v.set(-0.3, 0.25, 0)), chase * 0.85);
+    tgt.set(0, 0, 0).lerp(w3.copy(rocketPos).add(L.chase), chase * 0.85);
     camDir.set(0, 0, 1).lerp(v.set(0.42, 0.14, 1), smoothstep(0.08, 0.5, p) * (1 - arrive)).normalize();
     let dist = lerp(10, 7, smoothstep(0, 0.35, p));
     tgt.lerp(L.endTarget, arrive);

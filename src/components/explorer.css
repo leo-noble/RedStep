@@ -10,6 +10,11 @@
   opacity: 1;
 }
 
+/* hidden (the home story before the rocket arrives): no clicks */
+.xp:not(.xp-in) {
+  pointer-events: none;
+}
+
 .xp-map {
   position: absolute;
   inset: 0;

@@ -153,10 +153,10 @@ canvas {
 
 /* -------- shared atoms -------- */
 
+/* small labels: sentence case and the body face, like iOS section headers */
 .micro {
-  font: 400 var(--t-micro) / 1.4 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 600 var(--t-micro) / 1.4 var(--font);
+  letter-spacing: 0.01em;
   color: var(--ink-3);
 }
 
