@@ -55,7 +55,7 @@
   --t-2: clamp(31px, 3.6vw, 49px);
   --t-3: clamp(25px, 2.6vw, 31px);
   --t-4: clamp(20px, 1.8vw, 25px);
-  --t-5: 20px;
+  --t-5: clamp(17px, 0.9vw + 13px, 20px); /* 17 on phones, 20 on desktop */
   --t-body: 16px;
   --t-small: 14px;
   --t-micro: 12px;

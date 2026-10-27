@@ -409,7 +409,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     // Where the camera keeps the rocket while following it: right of centre on wide screens
     // (the story panels sit on the left), in the upper half on tall ones (panels at the bottom),
     // so the panels never cover the rocket.
-    L.chase = aspect > 1 ? new THREE.Vector3(-0.7, 0.25, 0) : new THREE.Vector3(0, -1.3, 0);
+    L.chase = aspect > 1 ? new THREE.Vector3(-0.7, 0.25, 0) : new THREE.Vector3(0.5, -1.3, 0);
     const e = A.earth;
     const mo = A.moon;
     const ma = A.mars;

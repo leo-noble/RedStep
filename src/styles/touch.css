@@ -3,7 +3,7 @@
    :root so they outrank the per-page rules that set smaller sizes. Links inside running text
    are left alone (WCAG's inline exception). */
 @media (max-width: 767px), (pointer: coarse) {
-  :root :is(button, summary, select, .btn):not(.pop-btn) {
+  :root :is(button, summary, select, .btn):not(.pop-btn, .badge__chip) {
     min-height: 44px;
     min-width: 44px;
   }
@@ -30,9 +30,20 @@
   :root .nav-burger span[aria-hidden]:nth-of-type(2) { top: 18px; }
   :root .nav-burger span[aria-hidden]:nth-of-type(3) { top: 25px; }
 
-  /* the small "i" buttons keep their look; the invisible hit area around them grows to 44 px */
+  /* the small "i" buttons and the data tags keep their look; an invisible hit area around
+     them grows to 44 px */
   :root .pop-btn::after {
     inset: -13px;
+  }
+
+  :root .badge__chip {
+    position: relative;
+  }
+
+  :root .badge__chip::after {
+    content: '';
+    position: absolute;
+    inset: -11px -4px;
   }
 
   /* map attribution: a 44 px round button with the same icon */

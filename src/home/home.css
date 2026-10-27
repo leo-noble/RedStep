@@ -1213,19 +1213,15 @@
     margin-bottom: var(--s-2);
   }
 
-.mw-home .telemetry__grid > div:nth-child(2),
-.mw-home .telemetry__grid > div:nth-child(3),
-.mw-home .telemetry__grid > div:nth-child(4),
-.mw-home .telemetry__grid > div:nth-child(6) {
-    display: none;
-  }
-
 .mw-home .telemetry__grid {
-    grid-template-columns: 0.6fr 1fr 2fr;
+    grid-template-columns: 1fr 1fr 1.3fr;
+    gap: var(--s-3);
   }
 
-.mw-home .telemetry__grid > .telemetry__site {
+.mw-home .telemetry__grid > div {
     grid-column: auto;
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
 .mw-home .telemetry__grid > div {
@@ -1742,10 +1738,8 @@
   }
 
   .mw-home .chapter--left .body {
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 14.5px;
+    line-height: 1.5;
   }
 
   .mw-home .telemetry {
@@ -2009,4 +2003,16 @@
   letter-spacing: 0.01em;
   font-size: 13px;
   font-weight: 600;
+}
+
+/* narrow phones: the two hero buttons stack, full width, so neither label is squeezed */
+@media (max-width: 400px) {
+  .mw-home .cta-row {
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .mw-home .cta-row .btn {
+    flex: 1 1 100%;
+  }
 }
