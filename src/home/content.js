@@ -70,37 +70,31 @@ export const HOME = {
   ],
   story: {
     layers: {
-      eyebrow: '01 · Layered + integrated',
+      eyebrow: 'Layered + integrated',
       title: 'Five missions. One map.',
       body: 'MOLA height, HiRISE and CTX photos, THEMIS rock-or-dust infrared, TES dust and the Viking colour mosaic, plus Perseverance’s real path: stacked and blended on one Mars map, each layer labelled with its mission, instrument and resolution.',
       chips: ['mola', 'hirise', 'ctx', 'themis', 'tes', 'mdim', 'mmgis'],
     },
     cruise: {
-      eyebrow: '02 · The trip is the first hazard',
+      eyebrow: 'The trip is the first hazard',
       title: 'Every number shows its source.',
       body: 'Curiosity’s RAD measured the dose on the way and on the ground. Mission Control is minutes away, so the plan has to be right before the hatch opens.',
     },
     arrive: {
-      eyebrow: '03 · Plan a successful Marswalk',
+      eyebrow: 'Plan a successful Marswalk',
       title: 'Walk out. Do science. Walk back.',
       body: 'Slope limits, suit air with a safety reserve, a walk-back circle and science stops worth the risk. You get a GO, CAUTION or NO-GO answer with its reasons.',
     },
     choose: {
-      eyebrow: '04 · New science along the way',
+      eyebrow: 'New science along the way',
       title: 'Choose your landing site.',
       body: 'Drag the globe or pick a site. Walk planning is ready at Jezero Crater; the other sites open on the map.',
     },
   },
-  features: {
-    eyebrow: 'What the planner does',
-    title: 'From orbit to your first step.',
-    lead: 'Four tools that work together, each one built on NASA data you can trace.',
-    cards: [
-      { art: 'layers', title: 'Layered maps', body: 'Toggle, blend and compare NASA layers, from the whole planet down to HiRISE photos at Jezero.', link: '/map', cta: 'Open the Mars map' },
-      { art: 'missions', title: 'Six missions, one view', body: 'MGS, MRO, Odyssey, Viking, Curiosity and Perseverance, each named with its instrument and resolution.', link: '/sources', cta: 'See every source' },
-      { art: 'walk', title: 'A walk you can defend', body: 'Slope-aware routing, suit air and reserve, a walk-back circle, Mars24 sun height and RAD dose.', link: '/site/jezero', cta: 'Plan a walk' },
-      { art: 'science', title: 'Science along the way', body: 'Science stops with a reason and a time budget, weighed against the risk of getting there.', link: '/guide', cta: 'Read the survival guide' },
-    ],
-  },
+  walkthrough: [
+    { title: 'Pick a place on Mars', body: 'One map stacks five missions: height, photos, rock or dust. Tap a crater to see what is there.', link: '/map', cta: 'Open the Mars map', img: '/home/map.webp', alt: 'The Mars map: a globe with landing sites and a list of places' },
+    { title: 'Ask for a safe walk', body: 'At Jezero Crater the planner reads slope, suit air and sunlight, and draws a route past the science.', link: '/site/jezero', cta: 'Plan a walk', img: '/home/planner-before.webp', alt: 'The walk planner at Jezero Crater before a route is drawn' },
+    { title: 'Get a straight answer', body: 'GO, CAUTION or NO-GO, with the reasons. Every number says where it came from.', link: '/sources', cta: 'See the sources', img: '/home/planner-after.webp', alt: 'The planner with a route drawn and a GO verdict' },
+  ],
 
 }

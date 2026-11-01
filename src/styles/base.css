@@ -299,3 +299,34 @@ input[type='range'] {
 .sb {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Scroll reveal (content pages): each block rises in once, in a short stagger. */
+.rv {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 640ms var(--ease), transform 760ms var(--ease);
+  transition-delay: calc(var(--rv-i, 0) * 60ms);
+}
+
+.rv.rv-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Page changes from the menu: the old page fades down, the new one rises in. */
+::view-transition-old(root) {
+  animation: vt-out 220ms var(--ease) both;
+}
+
+::view-transition-new(root) {
+  animation: vt-in 420ms var(--ease) both;
+}
+
+@keyframes vt-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(12px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1; transform: none; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}

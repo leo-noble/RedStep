@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { Eyebrow, Badge, Slider } from '../components/Atoms.jsx'
+import { Badge, Slider } from '../components/Atoms.jsx'
 import { FarmCalc, OxygenCalc, ShelterCalc, useBase, useBaseTotals } from '../components/guide/Base.jsx'
 import { BASE } from '../content/habitat.js'
 import './page.css'
@@ -10,8 +10,7 @@ export default function Habitat() {
   return (
     <div className="page">
       <header className="page-head">
-        <Eyebrow>Base calculator</Eyebrow>
-        <h1>What does a crew<br /><span className="accent">need to live?</span></h1>
+        <h1>What does a crew need to live?</h1>
         <p className="page-lead">Change the crew size and every assumption. Air, water, food and shelter update together. Numbers marked <Badge kind="nasa" /> come from missions; numbers marked <Badge kind="illustrative" /> are planning guesses you can change.</p>
       </header>
 

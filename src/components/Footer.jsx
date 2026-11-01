@@ -16,7 +16,7 @@ export default function Footer() {
           <p className="micro">{SITE.by} · {SITE.challenge}</p>
         </div>
         <nav aria-label="Footer" className="footer-links">
-          {FOOTER_NAV.map((n) => <Link key={n.to} to={n.to}>{n.label}</Link>)}
+          {FOOTER_NAV.map((n) => <Link key={n.to} to={n.to} viewTransition>{n.label}</Link>)}
         </nav>
       </div>
       <hr className="rule" />

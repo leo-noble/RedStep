@@ -669,15 +669,6 @@
   color: var(--ink-3);
 }
 
-.mw-home .kicker__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ember);
-  box-shadow: 0 0 12px var(--ember);
-  flex: none;
-}
-
 .mw-home .cta-short {
   display: none;
 }
@@ -1749,235 +1740,10 @@
   
 }
 
-/* ---- features: what the planner does (after the story) ----
-   Hierarchy: eyebrow → section title → lead → four cards (art · title · text · link) → facts.
-   Spacing on the 8 px grid. */
-.mw-home .features {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--s-9) var(--margin) var(--s-8);
-}
-
-.mw-home .features__head {
-  max-width: 36rem;
-  margin-bottom: var(--s-7);
-}
-
-.mw-home .features__head .h2 {
-  font-size: clamp(31px, 3.6vw, 49px);
-  margin-bottom: var(--s-4);
-}
-
-.mw-home .features__lead {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.55;
-  color: var(--ink-2);
-}
-
-.mw-home .features__grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s-5);
-}
-
-.mw-home .feature {
-  display: flex;
-  flex-direction: column;
-  padding: var(--s-5);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--r-3);
-  background: rgba(22, 22, 26, 0.6);
-  transition: border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
-}
-
-.mw-home .feature:hover {
-  border-color: rgba(255, 178, 91, 0.35);
-  transform: translateY(-2px);
-}
-
-.mw-home .feature__art {
-  height: 160px;
-  margin: calc(var(--s-5) * -1) calc(var(--s-5) * -1) var(--s-5);
-  border-radius: var(--r-3) var(--r-3) 0 0;
-  background: radial-gradient(120% 120% at 50% 0%, rgba(236, 125, 69, 0.1), transparent 60%), rgba(0, 0, 0, 0.35);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-
-.mw-home .feature__title {
-  margin: 0 0 var(--s-2);
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
-.mw-home .feature__body {
-  margin: 0 0 var(--s-4);
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--ink-2);
-}
-
-.mw-home .feature__link {
-  margin-top: auto;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ember);
-  text-decoration: none;
-}
-
-.mw-home .feature__link span {
-  display: inline-block;
-  transition: transform var(--dur-2) var(--ease);
-}
-
-.mw-home .feature__link:hover span {
-  transform: translateX(3px);
-}
-
-/* facts: four real numbers, each with its data tag */
-.mw-home .facts {
-  margin: var(--s-7) 0 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 0.5px solid rgba(255, 255, 255, 0.12);
-}
-
-.mw-home .fact {
-  display: grid;
-  gap: var(--s-2);
-  align-content: start;
-  justify-items: start;
-  padding: var(--s-5) var(--s-4) 0 0;
-}
-
-.mw-home .fact dt {
-  font-size: 13px;
-  color: var(--ink-3);
-}
-
-.mw-home .fact dd {
-  margin: 0;
-  font-size: 31px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--ink);
-}
-
-.mw-home .fact dd small {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--ink-3);
-}
-
-@media (max-width: 860px) {
-  .mw-home .features {
-    padding: var(--s-8) var(--margin) var(--s-7);
-  }
-
-  .mw-home .features__grid {
-    grid-template-columns: 1fr;
-    gap: var(--s-4);
-  }
-
-  .mw-home .facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: var(--s-4);
-  }
-}
-
-/* ---- the cards' illustrations, animated in place ---- */
-.mw-home .fa {
-  width: min(100%, 300px);
-  height: auto;
-  overflow: visible;
-}
-
-.mw-home .fa text {
-  font: 600 9px var(--font);
-  letter-spacing: 0.12em;
-  fill: var(--ink-3);
-}
-
-.mw-home .fa-go text {
-  font-size: 11px;
-  fill: var(--go);
-}
-
-.mw-home .fa-layer {
-  animation: fa-lift 5s var(--ease-in-out) infinite;
-}
 
 /* the top layer lifts most, the bottom one stays: the stack breathes open and shut */
-.mw-home .fa-layer-0 { --lift: -10px; }
-.mw-home .fa-layer-1 { --lift: -5px; animation-delay: 0.1s; }
-.mw-home .fa-layer-2 { --lift: 0px; }
-
-@keyframes fa-lift {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(var(--lift, 0px)); }
-}
-
-.mw-home .fa-route {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: fa-draw 5s linear infinite;
-}
-
-@keyframes fa-draw {
-  0% { stroke-dashoffset: 1; }
-  70%, 100% { stroke-dashoffset: 0; }
-}
-
-.mw-home .fa-go {
-  animation: fa-go 5s linear infinite;
-}
-
-@keyframes fa-go {
-  0%, 66% { opacity: 0.15; }
-  74%, 96% { opacity: 1; }
-  100% { opacity: 0.15; }
-}
-
-.mw-home .fa-ping {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: fa-ping 4s var(--ease) infinite;
-  opacity: 0;
-}
-
-.mw-home .fa-ping-1 { animation-delay: 1s; }
-.mw-home .fa-ping-2 { animation-delay: 2s; }
-.mw-home .fa-ping-3 { animation-delay: 3s; }
-
-@keyframes fa-ping {
-  0% { opacity: 0.9; transform: scale(0.4); }
-  40%, 100% { opacity: 0; transform: scale(1.8); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mw-home .fa-layer,
-.mw-home .fa-route,
-.mw-home .fa-go,
-.mw-home .fa-ping {
-    animation: none;
-  }
-
-  .mw-home .fa-route { stroke-dashoffset: 0; }
-  .mw-home .fa-go { opacity: 1; }
-}
 
 /* a plain text link, not a data source: ink with an underline, ember on hover */
-
 
 /* ---- arrival: the real Mars map (the same component as /map) fades in over the scene ---- */
 .mw-home .home-map {
@@ -1992,13 +1758,18 @@
 }
 
 /* the story's own controls step aside for the map */
-.mw-home[data-choose='true'] :is(.rail, .scroll-cue, .schematic-note, .skip-intro) {
+.mw-home[data-choose='true'] :is(.rail,
+.scroll-cue,
+.schematic-note,
+.skip-intro) {
   opacity: 0 !important;
   pointer-events: none;
 }
 
 /* small labels read like iOS section headers: sentence case, no wide letter-spacing */
-.mw-home :is(.micro, .eyebrow, .kicker) {
+.mw-home :is(.micro,
+.eyebrow,
+.kicker) {
   text-transform: none;
   letter-spacing: 0.01em;
   font-size: 13px;
@@ -2015,4 +1786,121 @@
   .mw-home .cta-row .btn {
     flex: 1 1 100%;
   }
+}
+
+/* ---- How a walk gets planned: the real app, step by step as you scroll ----
+   Desktop: the steps sit on the left, the screen on the right stays put while you scroll and
+   swaps to each step's real screenshot, zooming in slowly. Phones: each step shows its own. */
+.mw-home .walk {
+  --wp: 0;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: var(--s-9) var(--margin) 0;
+}
+
+.mw-home .walk__title {
+  margin: 0;
+  font-size: clamp(31px, 3.4vw, 46px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.mw-home .walk__track { height: 260vh; }
+
+.mw-home .walk__sticky {
+  position: sticky;
+  top: calc(var(--nav-h) + 24px);
+  height: calc(100svh - var(--nav-h) - 48px);
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) 1.6fr;
+  gap: var(--s-7);
+  align-items: center;
+}
+
+.mw-home .walk__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-6); }
+
+.mw-home .walk__step {
+  opacity: 0.32;
+  transform: translateX(-6px);
+  transition: opacity 420ms var(--ease), transform 420ms var(--ease);
+}
+
+.mw-home .walk__step h3 { margin: 0 0 var(--s-2); font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.mw-home .walk__step p { margin: 0 0 var(--s-3); font-size: 16px; line-height: 1.55; color: var(--ink-2); max-width: 34ch; }
+
+.mw-home .walk__link {
+  font-size: 14px; font-weight: 600; color: var(--ember); text-decoration: none;
+  opacity: 0; pointer-events: none; transition: opacity 300ms var(--ease);
+}
+
+.mw-home .walk[data-step='0'] .walk__step:nth-child(1),
+.mw-home .walk[data-step='1'] .walk__step:nth-child(2),
+.mw-home .walk[data-step='2'] .walk__step:nth-child(3) { opacity: 1; transform: none; }
+
+.mw-home .walk[data-step='0'] .walk__step:nth-child(1) .walk__link,
+.mw-home .walk[data-step='1'] .walk__step:nth-child(2) .walk__link,
+.mw-home .walk[data-step='2'] .walk__step:nth-child(3) .walk__link { opacity: 1; pointer-events: auto; }
+
+.mw-home .walk__shot-inline { display: none; }
+
+.mw-home .walk__screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 40px 100px rgba(0, 0, 0, 0.55);
+}
+
+.mw-home .walk__shot {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0;
+  transform: scale(calc(1 + var(--wp) * 0.06));
+  transition: opacity 520ms var(--ease);
+}
+
+.mw-home .walk[data-step='0'] .walk__shot:nth-child(1),
+.mw-home .walk[data-step='1'] .walk__shot:nth-child(2),
+.mw-home .walk[data-step='2'] .walk__shot:nth-child(3) { opacity: 1; }
+
+/* step 2: a tap on "Suggest a safe walk" */
+.mw-home .walk__tap {
+  position: absolute; left: 9%; top: 9.3%; width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  border-radius: 50%; border: 3px solid var(--ember); opacity: 0;
+}
+
+.mw-home .walk[data-step='1'] .walk__tap { animation: walk-tap 1.6s var(--ease) 0.4s infinite; }
+
+@keyframes walk-tap {
+  0% { opacity: 0.9; transform: scale(0.4); }
+  60%, 100% { opacity: 0; transform: scale(1.6); }
+}
+
+/* step 3: the real GO verdict lifts out of the panel */
+.mw-home .walk__verdict {
+  position: absolute; left: 4%; top: 16%; width: 28%; border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.14);
+  opacity: 0; transform: translateY(24px) scale(0.96);
+  transition: opacity 480ms var(--ease) 0.25s, transform 600ms var(--ease) 0.25s;
+}
+
+.mw-home .walk[data-step='2'] .walk__verdict { opacity: 1; transform: none; }
+
+@media (max-width: 860px) {
+  .mw-home .walk { padding-top: var(--s-8); }
+  .mw-home .walk__track { height: auto; }
+  .mw-home .walk__sticky { position: static; height: auto; display: block; margin-top: var(--s-6); }
+  .mw-home .walk__screen { display: none; }
+  .mw-home .walk__steps { gap: var(--s-7); }
+  .mw-home .walk__step,
+  .mw-home .walk__step .walk__link { opacity: 1; transform: none; pointer-events: auto; }
+  .mw-home .walk__shot-inline {
+    display: block; width: 100%; height: auto; margin-top: var(--s-4); border-radius: 14px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mw-home .walk__shot { transform: none; }
+  .mw-home .walk__tap { animation: none; }
 }

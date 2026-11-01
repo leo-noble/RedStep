@@ -14,13 +14,13 @@ export default function Nav({ overlay, onEmergency }) {
 
   return (
     <header className={`nav ${overlay ? 'nav-overlay' : ''} ${open ? 'nav-open' : ''}`} style={{ '--items': FOOTER_NAV.length + (install ? 1 : 0) }}>
-      <Link to="/" className="nav-brand" aria-label={`${SITE.name}, home`}>
+      <Link to="/" viewTransition className="nav-brand" aria-label={`${SITE.name}, home`}>
         <img src="/icons/mark.svg" alt="" width="26" height="26" className="nav-mark" />
         <span className="nav-name">{SITE.name}</span>
       </Link>
       <nav className="nav-links" aria-label="Main">
         {NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} className={isOn(n.to) ? 'on' : ''} end={n.to === '/'}>
+          <NavLink key={n.to} to={n.to} viewTransition className={isOn(n.to) ? 'on' : ''} end={n.to === '/'}>
             {n.label}
           </NavLink>
         ))}
@@ -37,7 +37,7 @@ export default function Nav({ overlay, onEmergency }) {
         </button>
       </div>
       <div id="nav-sheet" className="nav-sheet" inert={!open} aria-hidden={!open}>
-        {FOOTER_NAV.map((n, i) => <NavLink key={n.to} to={n.to} end style={{ '--i': i }}>{n.label}</NavLink>)}
+        {FOOTER_NAV.map((n, i) => <NavLink key={n.to} to={n.to} viewTransition end style={{ '--i': i }}>{n.label}</NavLink>)}
         {install && (
           <button type="button" className="nav-install" style={{ '--i': FOOTER_NAV.length }} onClick={() => (install === 'prompt' ? promptInstall() : setIosTip((t) => !t))}>
             <img src="/icons/icon-192.png" alt="" width="28" height="28" />

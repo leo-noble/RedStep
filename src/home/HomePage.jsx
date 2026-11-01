@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import MarsGlobeHero from './MarsGlobeHero.jsx';
 import Badge from './Badge.jsx';
-import FeatureArt from './FeatureArt.jsx';
 import { deviceTier } from '../lib/quality.js';
 import { createMotionEngine, windowed, smoothstep } from './motionEngine.js';
 import { marsTime, localSolarTime, solarElevation, earthMarsLightTime, formatHM } from './mars24.js';
@@ -27,6 +26,7 @@ export default function HomePage() {
   const rootRef = useRef(null);
   const trackRef = useRef(null);
   const heroRef = useRef(null);
+  const walkRef = useRef(null);
   const tele = useRef({});
   // mapOn: the Mars map is loaded (from the cruise on, so it is ready on arrival)
   // atMars: the rocket has arrived and the map is showing; mapReady: its first frame is drawn
@@ -130,6 +130,26 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, []);
 
+  // Walkthrough: the section's scroll position picks the step (0, 1, 2) and drives a slow zoom.
+  useEffect(() => {
+    const el = walkRef.current;
+    if (!el) return undefined;
+    let raf = 0;
+    const read = () => {
+      raf = 0;
+      const r = el.querySelector('.walk__track').getBoundingClientRect();
+      const span = r.height - window.innerHeight;
+      const p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
+      el.style.setProperty('--wp', p.toFixed(4));
+      el.dataset.step = String(Math.min(2, Math.floor(p * 3)));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
+    read();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
+  }, []);
+
   // While the map covers the 3D scene, the scene stops drawing.
   useEffect(() => {
     heroRef.current?.setPaused(atMars && mapReady);
@@ -163,7 +183,6 @@ export default function HomePage() {
           {/* ---- 00 · Hero (reference frame) ---- */}
           <div className="hero-copy chapter" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
             <p className="kicker reveal" style={{ '--at': 0.55 }}>
-              <span className="kicker__dot" aria-hidden="true" />
               {HOME.kicker}
             </p>
             <h1 className="display">
@@ -320,57 +339,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="features" aria-labelledby="features-title">
-        <header className="features__head">
-          <p className="eyebrow">{HOME.features.eyebrow}</p>
-          <h2 id="features-title" className="h2">
-            {HOME.features.title}
-          </h2>
-          <p className="features__lead">{HOME.features.lead}</p>
-        </header>
-        <ul className="features__grid">
-          {HOME.features.cards.map((c) => (
-            <li key={c.art} className="feature">
-              <div className="feature__art">
-                <FeatureArt kind={c.art} />
-              </div>
-              <h3 className="feature__title">{c.title}</h3>
-              <p className="feature__body">{c.body}</p>
-              <Link to={c.link} className="feature__link">
-                {c.cta} <span aria-hidden="true">→</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <dl className="facts">
-          <div className="fact">
-            <dt>Sharpest photo of the ground</dt>
-            <dd>
-              25 <small>cm per pixel</small>
-            </dd>
-            <Badge kind="nasa" source="hirise" />
+      <section className="walk" ref={walkRef} aria-labelledby="walk-title">
+        <h2 id="walk-title" className="walk__title">How a walk gets planned</h2>
+        <div className="walk__track">
+          <div className="walk__sticky">
+            <ol className="walk__steps">
+              {HOME.walkthrough.map((w, i) => (
+                <li key={w.title} className="walk__step" style={{ '--i': i }}>
+                  <h3>{w.title}</h3>
+                  <p>{w.body}</p>
+                  <Link to={w.link} className="walk__link">
+                    {w.cta} <span aria-hidden="true">→</span>
+                  </Link>
+                  <img className="walk__shot-inline" src={w.img} alt={w.alt} loading="lazy" width="1600" height="900" />
+                </li>
+              ))}
+            </ol>
+            <div className="walk__screen" aria-hidden="true">
+              {HOME.walkthrough.map((w, i) => (
+                <img key={w.img} className="walk__shot" style={{ '--i': i }} src={w.img} alt="" loading="lazy" width="1600" height="900" />
+              ))}
+              <span className="walk__tap" />
+              <img className="walk__verdict" src="/home/verdict.webp" alt="" loading="lazy" width="800" height="680" />
+            </div>
           </div>
-          <div className="fact">
-            <dt>Radiation on the surface</dt>
-            <dd>
-              {CONSTANTS.radSurface.value} <small>{CONSTANTS.radSurface.unit}</small>
-            </dd>
-            <Badge kind="nasa" source="rad" />
-          </div>
-          <div className="fact">
-            <dt>A message to Earth takes, now</dt>
-            <dd>
-              <span ref={ref('lightBand')}>—</span> <small>min</small>
-            </dd>
-            <Badge kind="derived" source="ephemeris" align="end" />
-          </div>
-          <div className="fact">
-            <dt>Landing sites to explore</dt>
-            <dd>{LANDING_SITES.length}</dd>
-            <Badge kind="nasa" source="sites" align="end" />
-          </div>
-        </dl>
+        </div>
       </section>
+
 
       <footer className="home-end">
         <div className="home-end__top">
