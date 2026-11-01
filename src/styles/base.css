@@ -330,3 +330,12 @@ input[type='range'] {
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none; }
 }
+
+/* Section headings on content pages are real headings, not tiny coloured labels. */
+:is(.page, .guide) h2.micro {
+  font: 600 clamp(20px, 1.6vw, 24px) / 1.25 var(--font);
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  text-transform: none;
+  margin-bottom: var(--s-4);
+}

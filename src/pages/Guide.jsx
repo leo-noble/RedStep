@@ -87,7 +87,7 @@ export default function Guide() {
           <div className="g-two">
             {s.facts.length > 0 && (
               <section className="g-facts">
-                <h2 className="micro"><i className="g-dot g-dot-ice" />What we know <Badge kind="nasa" /></h2>
+                <h2 className="micro">What we know <Badge kind="nasa" /></h2>
                 <ul>
                   {s.facts.map((f) => <li key={f.text}>{f.text} <Source k={f.source} badge="nasa" /></li>)}
                 </ul>
@@ -95,7 +95,7 @@ export default function Guide() {
             )}
             {s.procedure.length > 0 && (
               <section className="g-proc">
-                <h2 className="micro"><i className="g-dot g-dot-rust" />What you would do <span className="g-hypo">proposed, never tested on Mars</span></h2>
+                <h2 className="micro">What you would do <span className="g-hypo">proposed, never tested on Mars</span></h2>
                 <ol>
                   {s.procedure.map((p) => <li key={p}>{p}</li>)}
                 </ol>

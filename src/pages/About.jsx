@@ -35,7 +35,7 @@ export default function About() {
       <section className="about-map">
         <h2 className="micro">How it answers the challenge</h2>
         <ol>
-          {MAP.map(([t, d], i) => <li key={t}><span className="mono">0{i + 1}</span><b>{t}</b><p>{d}</p></li>)}
+          {MAP.map(([t, d]) => <li key={t}><b>{t}</b><p>{d}</p></li>)}
         </ol>
       </section>
 
