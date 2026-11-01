@@ -5,3 +5,6 @@ data-raw
 .vercel
 .claude
 .env*
+
+# launch videos made with /brag (large; kept locally)
+brag-output*/
