@@ -11,7 +11,7 @@
   --lg-radius: 20px;
 }
 
-:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock, .xp-clock, .xp-zoom, .xp-searchpill, .sb-reopen, .g-rail-open, .nav-links, .mw-home .chapter--left, .mw-home .telemetry, .mw-home .btn--ghost, .skip-intro) {
+:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock, .xp-clock, .xp-zoom, .xp-searchpill, .sb-reopen, .g-rail-open, .nav-links, .mw-home .btn--ghost, .skip-intro) {
   background: var(--lg-film), var(--lg-tint);
   -webkit-backdrop-filter: var(--lg-blur);
   backdrop-filter: var(--lg-blur);
@@ -19,7 +19,7 @@
   box-shadow: var(--lg-shadow);
 }
 
-:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock, .mw-home .chapter--left, .mw-home .telemetry) {
+:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock) {
   border-radius: var(--lg-radius);
 }
 

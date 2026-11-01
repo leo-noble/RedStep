@@ -1904,3 +1904,261 @@
   .mw-home .walk__shot { transform: none; }
   .mw-home .walk__tap { animation: none; }
 }
+
+/* =========================================================================================
+   Redesign: type-led and cinematic. Unbounded for headlines, Geist for reading, Geist Mono
+   for live numbers. No boxes over the scene: words sit on the picture, with a veil.
+   ========================================================================================= */
+.mw-home {
+  font-family: var(--font);
+}
+
+.mw-home :is(.hero2__title, .h2, .walk__title, .walk__step h3, .home-end__title) {
+  font-family: var(--font-head);
+  font-weight: 600;
+}
+
+/* ---- hero ---- */
+.mw-home .hero2 {
+  left: 54%;
+  right: calc(var(--margin) + 36px);
+  bottom: 132px;
+  max-width: 44rem;
+}
+
+.mw-home .hero2__over {
+  margin: 0 0 var(--s-5);
+  font: 500 12px/1.4 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.mw-home .hero2__title {
+  margin: 0;
+  font-size: clamp(44px, 5.4vw, 98px);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.mw-home .hero2__mars {
+  color: var(--ember);
+}
+
+.mw-home .hero2__lead {
+  margin: var(--s-5) 0 0;
+  max-width: 30ch;
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.mw-home .hero2 .cta-row {
+  margin-top: var(--s-6);
+}
+
+/* ---- live strip ---- */
+.mw-home .strip {
+  position: absolute;
+  z-index: var(--z-copy);
+  left: var(--margin);
+  right: calc(var(--margin) + 36px);
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--mono);
+  opacity: calc(var(--r) * var(--w-hero));
+}
+
+.mw-home .strip__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+
+.mw-home .strip__live i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ember);
+  animation: mwh-blink 2.4s var(--ease-in-out) infinite;
+}
+
+.mw-home .strip__item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.mw-home .strip__item small {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.mw-home .strip__item b {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.mw-home .strip .badge {
+  margin-left: auto;
+}
+
+.mw-home .scroll-cue {
+  display: none;
+}
+
+/* ---- story chapters: words on the picture, no panel ---- */
+.mw-home .chapter--left {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding: 0;
+  left: var(--margin);
+  margin-left: 0;
+  max-width: min(34rem, 40vw);
+}
+
+.mw-home .chapter--left .eyebrow {
+  font: 500 12px/1.4 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+
+.mw-home .chapter--left .h2 {
+  font-size: clamp(34px, 3.4vw, 58px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--s-5);
+}
+
+.mw-home .chapter--left .body {
+  font-size: 17px;
+  color: var(--ink-2);
+}
+
+.mw-home .stage-veil::before {
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.55) 32%, rgb(0 0 0 / 0) 58%);
+}
+
+.mw-home .chips {
+  gap: 6px;
+}
+
+.mw-home .chip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.mw-home .chip__mission,
+.mw-home .chip__res,
+.mw-home .stat__value {
+  font-family: var(--mono);
+}
+
+/* ---- walkthrough and closing ---- */
+.mw-home .walk__title {
+  font-size: clamp(32px, 3.6vw, 60px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.mw-home .walk__step h3 {
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.mw-home .home-end__title {
+  font-size: clamp(32px, 4.4vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+/* ---- phones ---- */
+@media (max-width: 860px), (max-aspect-ratio: 1/1) {
+  .mw-home .hero2 {
+    left: var(--margin);
+    right: var(--margin);
+    top: calc(var(--nav-h) + var(--s-5));
+    bottom: auto;
+  }
+
+  .mw-home .hero2__title {
+    font-size: clamp(40px, 12.5vw, 64px);
+  }
+
+  .mw-home .hero2__lead {
+    font-size: 16px;
+    margin-top: var(--s-4);
+  }
+
+  .mw-home .hero2 .cta-row {
+    margin-top: var(--s-5);
+  }
+
+  .mw-home .strip {
+    left: var(--margin);
+    right: var(--margin);
+    bottom: 14px;
+    gap: 6px 14px;
+    flex-wrap: wrap;
+  }
+
+  /* Phones: "Mars now · season", then the site's clock on its own line. */
+  .mw-home .strip__item:nth-of-type(3),
+  .mw-home .strip__item:nth-of-type(2) small,
+  .mw-home .strip .badge {
+    display: none;
+  }
+
+  .mw-home .strip__item:nth-of-type(4) {
+    flex-basis: 100%;
+  }
+
+  .mw-home .strip__item small,
+  .mw-home .strip__live {
+    font-size: 10px;
+  }
+
+  .mw-home .strip__item b {
+    font-size: 12px;
+  }
+
+  .mw-home .chapter--left {
+    left: var(--margin);
+    right: var(--margin);
+    bottom: 28px;
+    max-width: none;
+  }
+
+  .mw-home .chapter--left .h2 {
+    font-size: clamp(28px, 8vw, 40px);
+  }
+
+  .mw-home .chapter--left .body {
+    font-size: 15px;
+  }
+
+  .mw-home .stage-veil::before {
+    background: linear-gradient(0deg, rgb(0 0 0 / 0.92) 0%, rgb(0 0 0 / 0.65) 42%, rgb(0 0 0 / 0) 70%);
+  }
+}

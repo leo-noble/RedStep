@@ -31,10 +31,15 @@ figure {
 }
 
 h1,
+h2 {
+  font-family: var(--font-head);
+}
+
+h1,
 h2,
 h3 {
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
   line-height: 0.98;
 }
 

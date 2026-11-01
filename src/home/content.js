@@ -54,7 +54,7 @@ export const HOME = {
   kicker: 'NASA Space Apps Challenge 2026',
   titleLines: ['Plan the first', 'walk on '],
   titleAccent: 'Mars.',
-  lead: 'One map built from NASA missions (height, steepness, dust, rock or sand, radiation and sunlight) that turns a landing site into a safe, science-rich Marswalk you can defend.',
+  lead: 'Plan it with real NASA mission data, and get a straight answer: GO or NO-GO, and why.',
   ctaPrimary: 'Choose a landing site',
   ctaWalk: 'Plan a walk at Jezero',
   ctaWalkShort: 'Plan a walk',

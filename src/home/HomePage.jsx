@@ -180,23 +180,15 @@ export default function HomePage() {
           <MarsGlobeHero ref={heroRef} engine={engine} sites={LANDING_SITES} />
           <div className="stage-veil" aria-hidden="true" />
 
-          {/* ---- 00 · Hero (reference frame) ---- */}
-          <div className="hero-copy chapter" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
-            <p className="kicker reveal" style={{ '--at': 0.55 }}>
-              {HOME.kicker}
-            </p>
-            <h1 className="display">
-              <span className="reveal-line" style={{ '--at': 0.6 }}>
-                {HOME.titleLines[0]}
-              </span>
-              <span className="reveal-line" style={{ '--at': 0.66 }}>
-                {HOME.titleLines[1]}
-                <em>{HOME.titleAccent}</em>
-              </span>
+          {/* ---- Hero: the title, one line of what it does, two ways in ---- */}
+          <div className="hero2 chapter" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
+            <p className="hero2__over reveal" style={{ '--at': 0.55 }}>{HOME.kicker}</p>
+            <h1 className="hero2__title">
+              <span className="reveal-line" style={{ '--at': 0.6 }}>The first</span>
+              <span className="reveal-line" style={{ '--at': 0.65 }}>walk on</span>
+              <span className="reveal-line hero2__mars" style={{ '--at': 0.7 }}>Mars.</span>
             </h1>
-            <p className="lead reveal" style={{ '--at': 0.74 }}>
-              {HOME.lead}
-            </p>
+            <p className="hero2__lead reveal" style={{ '--at': 0.76 }}>{HOME.lead}</p>
             <div className="cta-row reveal" style={{ '--at': 0.8 }}>
               <button type="button" className="btn btn--primary" onClick={goChoose}>
                 {HOME.ctaPrimary}
@@ -210,31 +202,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ---- Telemetry HUD (Earth night side) ---- */}
-          <aside className="telemetry glass reveal" data-chapter="hero" style={{ '--at': 0.86 }} aria-label="Mars time, computed in your browser">
-            <header className="telemetry__head">
-              <span className="micro">
-                <span className="live-dot" aria-hidden="true" />
-                {HOME.telemetryTitle}
-              </span>
-              <Badge kind="derived" source="mars24" align="start" note={HOME.telemetryNote} />
-            </header>
-            <dl className="telemetry__grid">
-              <div className="telemetry__wide">
-                <dt>Season</dt>
-                <dd ref={ref('season')}>—</dd>
-              </div>
-              <div className="telemetry__wide">
-                <dt>Message to Earth</dt>
-                <dd ref={ref('light')}>—</dd>
-              </div>
-              <div className="telemetry__wide telemetry__site">
-                <dt ref={ref('siteName')}>—</dt>
-                <dd>
-                  <span ref={ref('ltst')}>—</span> · <span ref={ref('daynight')}>—</span>
-                </dd>
-              </div>
-            </dl>
+          {/* ---- Live strip: Mars right now, worked out in the browser ---- */}
+          <aside className="strip reveal" data-chapter="hero" style={{ '--at': 0.86 }} aria-label="Mars right now, computed in your browser">
+            <span className="strip__live"><i aria-hidden="true" />Mars now</span>
+            <span className="strip__item"><small>Season</small><b ref={ref('season')}>—</b></span>
+            <span className="strip__item"><small>Message to Earth</small><b ref={ref('light')}>—</b></span>
+            <span className="strip__item"><small ref={ref('siteName')}>—</small><b><span ref={ref('ltst')}>—</span> · <span ref={ref('daynight')}>—</span></b></span>
+            <Badge kind="derived" source="mars24" align="end" note={HOME.telemetryNote} />
           </aside>
 
           {/* ---- 01 · Layers ---- */}

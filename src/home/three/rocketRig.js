@@ -61,7 +61,7 @@ function letteringTexture() {
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.fillStyle = '#000';
-    ctx.font = '700 96px Montserrat, "Helvetica Neue", Arial, sans-serif';
+    ctx.font = '700 88px "Unbounded Variable", "Helvetica Neue", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if ('letterSpacing' in ctx) ctx.letterSpacing = '14px';
@@ -69,7 +69,7 @@ function letteringTexture() {
     tex.needsUpdate = true;
   };
   draw();
-  document.fonts?.load('700 96px Montserrat').then(draw, () => {});
+  document.fonts?.load('700 88px "Unbounded Variable"').then(draw, () => {});
   return tex;
 }
 
