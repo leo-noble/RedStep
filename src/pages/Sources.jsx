@@ -12,7 +12,7 @@ export default function Sources() {
   return (
     <div className="page">
       <header className="page-head">
-        <h1>Where every number comes from.</h1>
+        <h1>Where every number <em>comes from.</em></h1>
         <p className="page-lead">Nothing here is live telemetry. Maps and measurements come from NASA missions and are bundled with the app. After your first visit, the walk planner and its Jezero data are saved in your browser, so they keep working without a connection; world-map close-ups are saved as you look at them. We label every number with one of three tags:</p>
         <p className="src-data-source">Data source in use: <b>{dataSource.label}</b>.</p>
         <ul className="badge-key">

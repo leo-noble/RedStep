@@ -80,7 +80,7 @@ export default function Brief() {
         <header className="br-head">
           <div>
             <p className="micro">Marswalk brief · {site.name} · {b.date} · Mars sol {a.mars.sol.toLocaleString()}</p>
-            <h1>{site.name} walk</h1>
+            <h1>{site.name} <em>walk</em></h1>
             <p className="br-sub">{(a.tripDistance / 1000).toFixed(1)} km {a.loop ? 'loop' : 'out and back'} · {fmtH(a.hours)} · leave {fmtHours(a.sun.start.ltst)} Mars time · back {fmtHours(a.sun.end.ltst)}</p>
           </div>
           <div className="br-verdict">

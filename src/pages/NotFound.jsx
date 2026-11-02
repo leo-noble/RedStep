@@ -7,7 +7,7 @@ export default function NotFound() {
       <div>
         <Orbits className="nf-orbits" />
         <p className="micro" style={{ marginTop: 24 }}>Signal lost</p>
-        <h1 style={{ fontSize: 'var(--t-2)', margin: '12px 0 24px' }}>This page drifted off course.</h1>
+        <h1 style={{ fontSize: 'var(--t-2)', margin: '12px 0 24px' }}>This page drifted <em>off course.</em></h1>
         <Link to="/" className="btn btn-primary">Back to Mars <span className="arrow">→</span></Link>
       </div>
     </section>

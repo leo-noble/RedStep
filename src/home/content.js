@@ -71,23 +71,23 @@ export const HOME = {
   story: {
     layers: {
       eyebrow: 'Layered + integrated',
-      title: 'Five missions. One map.',
+      title: 'Five missions. *One map.*',
       body: 'MOLA height, HiRISE and CTX photos, THEMIS rock-or-dust infrared, TES dust and the Viking colour mosaic, plus Perseverance’s real path: stacked and blended on one Mars map, each layer labelled with its mission, instrument and resolution.',
       chips: ['mola', 'hirise', 'ctx', 'themis', 'tes', 'mdim', 'mmgis'],
     },
     cruise: {
       eyebrow: 'The trip is the first hazard',
-      title: 'Every number shows its source.',
+      title: 'Every number shows its *source.*',
       body: 'Curiosity’s RAD measured the dose on the way and on the ground. Mission Control is minutes away, so the plan has to be right before the hatch opens.',
     },
     arrive: {
       eyebrow: 'Plan a successful Marswalk',
-      title: 'Walk out. Do science. Walk back.',
+      title: 'Walk out. Do science. *Walk back.*',
       body: 'Slope limits, suit air with a safety reserve, a walk-back circle and science stops worth the risk. You get a GO, CAUTION or NO-GO answer with its reasons.',
     },
     choose: {
       eyebrow: 'New science along the way',
-      title: 'Choose your landing site.',
+      title: 'Choose your *landing site.*',
       body: 'Drag the globe or pick a site. Walk planning is ready at Jezero Crater; the other sites open on the map.',
     },
   },

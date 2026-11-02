@@ -44,11 +44,15 @@
   --blur: 20px;
 
   /* type */
-  /* Type: Unbounded for display (wide, instrument-panel feel), Geist for reading, Geist Mono
-     for data. The same three on every device. */
-  --font: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-head: 'Unbounded Variable', 'Geist Variable', system-ui, sans-serif;
-  --mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* Type, four voices with one job each:
+       Big Shoulders Display = headlines (condensed poster capitals, like stencilled hardware)
+       Instrument Serif italic = the one emphasised word in a headline
+       Bricolage Grotesque = reading text
+       Martian Mono = numbers, labels and data readouts */
+  --font: 'Bricolage Grotesque Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Big Shoulders Display Variable', 'Arial Narrow', Impact, sans-serif;
+  --font-serif: 'Instrument Serif', 'Times New Roman', Georgia, serif;
+  --mono: 'Martian Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   /* Type: one modular scale (ratio 1.25, base 16 px), so every level is a clear step from
      the next: micro 12 · small 14 · body 16 · 5: 20 · 4: 25 · 3: 31 · 2: 39–49 · 1: 49–61 ·

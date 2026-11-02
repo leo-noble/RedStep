@@ -1,0 +1,305 @@
+/* =========================================================================================
+   Redstep theme: "mission dossier". Loaded after every other sheet, so it sets the look of
+   the whole site in one place.
+     · warm black and warm paper-white instead of pure black and blue-white
+     · condensed poster capitals for headlines, one serif italic word for emphasis
+     · Martian Mono for every label, number and button
+     · hairlines, corner ticks and square-ish corners instead of soft glass bubbles
+   ========================================================================================= */
+:root {
+  --void: #070504;
+  --ink: #f4ece1;
+  --ink-2: rgba(244, 236, 225, 0.7);
+  --ink-3: rgba(244, 236, 225, 0.48);
+  --ink-4: rgba(244, 236, 225, 0.26);
+  --rule: rgba(244, 236, 225, 0.16);
+  --rule-soft: rgba(244, 236, 225, 0.08);
+
+  --rust: #ff6a2c;
+  --ember: #ffb069;
+
+  --lg-tint: rgba(16, 12, 10, 0.8);
+  --lg-rim: rgba(244, 236, 225, 0.12);
+  --lg-radius: 12px;
+
+  --r-2: 4px;
+  --r-3: 8px;
+
+  /* a small L at each corner of a framed block */
+  --ticks:
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top left / 10px 1px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top left / 1px 10px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top right / 10px 1px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top right / 1px 10px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom left / 10px 1px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom left / 1px 10px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom right / 10px 1px,
+    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom right / 1px 10px;
+}
+
+body {
+  font-variation-settings: 'wdth' 100;
+}
+
+/* Film grain over everything, very faint, so flat darks feel like a printed photograph.
+   Desktop only: phones keep every frame for the 3D scene. */
+@media (hover: hover) and (pointer: fine) {
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* ---------------------------------------------------------------- type ---------------- */
+:root h1,
+:root h2 {
+  font-family: var(--font-head);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+:root h3 {
+  font-family: var(--font);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+/* the one emphasised word: a real serif italic, in ember */
+:root .serif,
+:root :is(h1, h2, .h2, .walk__title, .home-end__title, .hero2__title) em {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--ember);
+  padding-right: 0.04em;
+}
+
+/* labels: mono capitals, the instrument-panel voice */
+:root .micro {
+  font: 500 10.5px / 1.5 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* page titles: tall poster capitals */
+:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 {
+  font-size: clamp(46px, 8.6vw, 148px);
+  line-height: 0.86;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 em {
+  font-size: 1.04em;
+  line-height: 0.8;
+}
+
+/* section headings on content pages: condensed capitals over a hairline */
+:root :is(.page, .guide) h2.micro,
+:root .page h2 {
+  font: 800 clamp(26px, 2.6vw, 40px) / 0.95 var(--font-head);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: var(--s-4);
+}
+
+:root .page-lead {
+  font-size: clamp(17px, 0.6vw + 14px, 22px);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* ---------------------------------------------------------------- buttons ------------- */
+:root .btn,
+:root .mw-home .btn {
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 4px;
+  font: 600 11.5px / 1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:root .btn-small {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 10.5px;
+}
+
+:root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary) {
+  background: var(--rust);
+  color: #160602;
+  box-shadow: none;
+}
+
+:root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {
+  background: var(--ink);
+}
+
+:root:not([data-platform='windows']) .mw-home .btn--ghost {
+  background: rgba(7, 5, 4, 0.4);
+  border: 1px solid var(--rule);
+  box-shadow: none;
+}
+
+:root:not([data-platform='windows']) .mw-home .btn--ghost:hover {
+  border-color: var(--ink);
+}
+
+/* honesty tags: squared, like stamped labels */
+:root .chip,
+:root .badge__chip {
+  border-radius: 2px;
+}
+
+/* panels: squarer corners, warm tint */
+:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock) {
+  border-radius: var(--lg-radius);
+}
+
+/* framed blocks on content pages get corner ticks */
+:root :is(.about-team, .src-assume > div, .hab-summary, .g-try, .brief-card) {
+  background: var(--ticks);
+  background-repeat: no-repeat;
+}
+
+/* ---------------------------------------------------------------- nav ----------------- */
+:root .nav-name {
+  font: 800 22px / 1 var(--font-head);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 941px) {
+  :root:not([data-platform='windows']) .nav .nav-links {
+    background: none;
+    border: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    gap: 6px;
+  }
+
+  :root .nav-links a {
+    position: relative;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 0;
+    font: 500 11px / 1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  :root .nav-links a.on {
+    background: none;
+    color: var(--ink);
+  }
+
+  :root .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 4px;
+    height: 1px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 320ms var(--ease);
+  }
+
+  :root .nav-links a:hover::after,
+  :root .nav-links a.on::after {
+    transform: scaleX(1);
+  }
+}
+
+:root .nav-sos {
+  border-radius: 4px;
+  font: 600 10.5px / 1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:root .nav-sheet a {
+  font: 800 30px / 1 var(--font-head);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 940px) {
+  :root .nav,
+  :root .nav.nav-overlay {
+    border-radius: 14px;
+  }
+
+  :root .nav.nav-open {
+    border-radius: 16px;
+  }
+
+  :root .nav-sheet a {
+    font-size: 26px;
+  }
+}
+
+/* ---------------------------------------------------------------- footer -------------- */
+:root .footer-name {
+  font: 800 28px / 1 var(--font-head);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:root .footer-links a {
+  font: 500 11px / 1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* the name, as wide as the page, cut off at the bottom edge */
+:root .wordmark {
+  margin: var(--s-7) 0 calc(-0.2 * var(--wm-size));
+  --wm-size: 27vw;
+  font: 900 var(--wm-size) / 0.8 var(--font-head);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(244, 236, 225, 0.22);
+  background: linear-gradient(180deg, rgba(255, 106, 44, 0.32), rgba(255, 106, 44, 0) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  user-select: none;
+  overflow: hidden;
+}
+
+:root .footer,
+:root .home-end {
+  overflow: hidden;
+}
+
+/* phones: long mono button labels wrap instead of pushing the page sideways */
+@media (max-width: 480px) {
+  :root .btn {
+    max-width: 100%;
+    padding: 12px 16px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  :root .actionbar .btn {
+    padding: 0 14px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+}

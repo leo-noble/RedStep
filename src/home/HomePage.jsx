@@ -17,6 +17,8 @@ const CHAPTER_WINDOWS = {
   arrive: [0.63, 0.68, 0.76, 0.82],
   choose: [0.84, 0.91, 2, 3],
 };
+const JEZERO = getSite(DEFAULT_SITE_ID);
+const HUD_COORD = `${JEZERO.name} · ${Math.abs(JEZERO.lat).toFixed(2)}°${JEZERO.lat >= 0 ? 'N' : 'S'} ${Math.abs(JEZERO.lon).toFixed(2)}°${JEZERO.lon >= 0 ? 'E' : 'W'}`;
 const RAIL = [0, 0.27, 0.51, 0.95];
 // The end of the story is the real Mars map: the same component as the /map page.
 const Explorer = lazy(() => import('../components/Explorer.jsx'));
@@ -179,6 +181,13 @@ export default function HomePage() {
         <div className="stage">
           <MarsGlobeHero ref={heroRef} engine={engine} sites={LANDING_SITES} />
           <div className="stage-veil" aria-hidden="true" />
+          <div className="hud" aria-hidden="true">
+            <span className="hud__c hud__c--tl" />
+            <span className="hud__c hud__c--tr" />
+            <span className="hud__c hud__c--bl" />
+            <span className="hud__c hud__c--br" />
+            <span className="hud__coord">{HUD_COORD}</span>
+          </div>
 
           {/* ---- Hero: the title, one line of what it does, two ways in ---- */}
           <div className="hero2 chapter" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
@@ -186,7 +195,7 @@ export default function HomePage() {
             <h1 className="hero2__title">
               <span className="reveal-line" style={{ '--at': 0.6 }}>The first</span>
               <span className="reveal-line" style={{ '--at': 0.65 }}>walk on</span>
-              <span className="reveal-line hero2__mars" style={{ '--at': 0.7 }}>Mars.</span>
+              <span className="reveal-line hero2__mars" style={{ '--at': 0.7 }}><em>Mars.</em></span>
             </h1>
             <p className="hero2__lead reveal" style={{ '--at': 0.76 }}>{HOME.lead}</p>
             <div className="cta-row reveal" style={{ '--at': 0.8 }}>
@@ -214,7 +223,7 @@ export default function HomePage() {
           {/* ---- 01 · Layers ---- */}
           <div className="chapter chapter--left" data-chapter="layers" style={{ '--w': 'var(--w-layers)' }}>
             <p className="eyebrow">{HOME.story.layers.eyebrow}</p>
-            <h2 className="h2">{HOME.story.layers.title}</h2>
+            <h2 className="h2">{rich(HOME.story.layers.title)}</h2>
             <p className="body">{HOME.story.layers.body}</p>
             <ul className="chips">
               {HOME.story.layers.chips.map((id) => {
@@ -234,7 +243,7 @@ export default function HomePage() {
           {/* ---- 02 · Cruise ---- */}
           <div className="chapter chapter--left" data-chapter="cruise" style={{ '--w': 'var(--w-cruise)' }}>
             <p className="eyebrow">{HOME.story.cruise.eyebrow}</p>
-            <h2 className="h2">{HOME.story.cruise.title}</h2>
+            <h2 className="h2">{rich(HOME.story.cruise.title)}</h2>
             <p className="body">{HOME.story.cruise.body}</p>
             <div className="stats">
               <Stat value={CONSTANTS.radCruise.value} unit={CONSTANTS.radCruise.unit} label="Dose in cruise · RAD" badge={<Badge kind="nasa" source="rad" />} />
@@ -251,7 +260,7 @@ export default function HomePage() {
           {/* ---- 03 · Arrive ---- */}
           <div className="chapter chapter--left" data-chapter="arrive" style={{ '--w': 'var(--w-arrive)' }}>
             <p className="eyebrow">{HOME.story.arrive.eyebrow}</p>
-            <h2 className="h2">{HOME.story.arrive.title}</h2>
+            <h2 className="h2">{rich(HOME.story.arrive.title)}</h2>
             <p className="body">{HOME.story.arrive.body}</p>
             <ul className="slope-legend" aria-label="Default slope thresholds">
               <li className="slope slope--go">
@@ -314,7 +323,7 @@ export default function HomePage() {
       </section>
 
       <section className="walk" ref={walkRef} aria-labelledby="walk-title">
-        <h2 id="walk-title" className="walk__title">How a walk gets planned</h2>
+        <h2 id="walk-title" className="walk__title">How a walk gets <em>planned.</em></h2>
         <div className="walk__track">
           <div className="walk__sticky">
             <ol className="walk__steps">
@@ -343,7 +352,7 @@ export default function HomePage() {
 
       <footer className="home-end">
         <div className="home-end__top">
-          <p className="home-end__title">Ready to plan a walk?</p>
+          <p className="home-end__title">Ready to plan <em>a walk?</em></p>
           <div className="home-end__actions">
             <Link to="/map" className="btn btn--primary">
               Open the Mars map <span aria-hidden="true">→</span>
@@ -364,9 +373,15 @@ export default function HomePage() {
           {SITE.name} · {SITE.by} · {SITE.challenge}. {SITE.disclaimer} Mission data courtesy of NASA, JPL-Caltech, USGS
           Astrogeology, ASU and ESA, credited on the <Link to="/sources">Data &amp; sources</Link> page.
         </p>
+        <p className="wordmark" aria-hidden="true">{SITE.name}</p>
       </footer>
     </div>
   );
+}
+
+/** Headline copy marks its one emphasised phrase with *stars*; it renders in the serif italic. */
+function rich(text) {
+  return text.split(/\*([^*]+)\*/).map((part, i) => (i % 2 ? <em key={i}>{part}</em> : part));
 }
 
 function Stat({ value, valueRef, unit, label, badge }) {

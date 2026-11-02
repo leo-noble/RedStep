@@ -17,7 +17,7 @@ export default function About() {
   return (
     <div className="page">
       <header className="page-head">
-        <h1>A survival guide you can walk.</h1>
+        <h1>A survival guide you can <em>walk.</em></h1>
         <p className="page-lead">{SITE.name} is our answer to NASA Space Apps 2026 &ldquo;Interplanetary Survival Guide: Martian Map&rdquo;: a layered Mars map that helps a human explorer plan a safe walk and do new science on the way.</p>
       </header>
 

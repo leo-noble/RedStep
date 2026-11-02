@@ -26,6 +26,7 @@ export default function Footer() {
           : <button type="button" className="footer-motion-btn" aria-pressed={moving} onClick={() => ambientMotion.set(!moving)}>Background motion: {moving ? 'on' : 'off'}</button>}
       </p>
       <p className="footer-legal">{SITE.disclaimer} Mission data courtesy of NASA, JPL-Caltech, USGS Astrogeology, ASU and ESA, credited on the <Link to="/sources">Data &amp; sources</Link> page.</p>
+      <p className="wordmark" aria-hidden="true">{SITE.name}</p>
     </footer>
   )
 }
