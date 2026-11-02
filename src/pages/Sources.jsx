@@ -4,6 +4,7 @@ import { BADGES } from '../content/site.js'
 import { DATA, FACT_SOURCES } from '../content/sources.js'
 import { WALK, SITES, backtest, dataSource, sitePanoramas } from '../data/index.js'
 import { BASE } from '../content/habitat.js'
+import PictureBand from '../components/PictureBand.jsx'
 import './page.css'
 
 const groups = [...new Set(DATA.map((d) => d.group))]
@@ -12,13 +13,15 @@ export default function Sources() {
   return (
     <div className="page">
       <header className="page-head">
-        <h1>Where every number <em>comes from.</em></h1>
+        <h1>Where every number comes from</h1>
         <p className="page-lead">Nothing here is live telemetry. Maps and measurements come from NASA missions and are bundled with the app. After your first visit, the walk planner and its Jezero data are saved in your browser, so they keep working without a connection; world-map close-ups are saved as you look at them. We label every number with one of three tags:</p>
         <p className="src-data-source">Data source in use: <b>{dataSource.label}</b>.</p>
         <ul className="badge-key">
           {Object.entries(BADGES).map(([k, b]) => <li key={k}><Badge kind={k} /> <span>{b.long}</span></li>)}
         </ul>
       </header>
+
+      <PictureBand ids={['hirise', 'ctx', 'themis', 'viking']} />
 
       {groups.map((g) => (
         <section key={g} className="src-group">
@@ -43,7 +46,8 @@ export default function Sources() {
       ))}
 
       <section className="src-group">
-        <h2 className="micro">Street view panoramas <Badge kind="nasa" /></h2>
+        <h2 className="micro">Street view panoramas</h2>
+        <p className="h-tag"><Badge kind="nasa" /></p>
         <ul className="src-facts">
           {SITES.flatMap((st) => sitePanoramas(st.id)).map((p) => (
             <li key={p.id}><a href={p.page} target="_blank" rel="noreferrer">{p.pia}: {p.title} ↗</a> · {p.rover} {p.instrument}, sol {p.sol} ({p.date}) · {p.credit}</li>
@@ -60,7 +64,8 @@ export default function Sources() {
       </section>
 
       <section className="src-group">
-        <h2 className="micro">What we calculate ourselves <Badge kind="derived" /></h2>
+        <h2 className="micro">What we calculate ourselves</h2>
+        <p className="h-tag"><Badge kind="derived" /></p>
         <ul className="src-methods">
           <li><b>Steepness</b> from the CTX height map, using Horn&rsquo;s 3&times;3 method on a 40 m grid (the 20 m map averaged 2&times;2).</li>
           <li><b>Safe paths</b> by searching the grid (A* and Dijkstra, 8 directions, no corner cutting). Ground above your &ldquo;too steep&rdquo; limit is blocked; amber ground and loose ground (dark in THEMIS night infrared) cost more.</li>
@@ -76,7 +81,8 @@ export default function Sources() {
       <Backtest />
 
       <section className="src-group">
-        <h2 className="micro">Assumptions you can change <Badge kind="illustrative" /></h2>
+        <h2 className="micro">Assumptions you can change</h2>
+        <p className="h-tag"><Badge kind="illustrative" /></p>
         <div className="src-assume">
           {[...Object.values(WALK), ...Object.values(BASE).filter((b) => b.badge === 'illustrative')].map((a) => (
             <div key={a.label}><b>{a.label}</b><span className="mono">{a.value} {a.unit}</span>{a.note && <small>{a.note}</small>}</div>
@@ -106,7 +112,8 @@ function Backtest() {
   const st = b.steepness, t = b.tiltCheck, air = b.air
   return (
     <section className="src-group">
-      <h2 className="micro">Checking the planner against Perseverance <Badge kind="derived" /></h2>
+      <h2 className="micro">Checking the planner against Perseverance</h2>
+      <p className="h-tag"><Badge kind="derived" /></p>
       <ul className="src-methods">
         <li><b>{st.passesPct}% of Perseverance’s real {st.pathKm} km path passes our steepness rule</b> (ground at or under {b.limits.redSlope}°). {st.pctTooSteep}% is flagged as too steep, in {st.flaggedStretches} stretches, all on the climb from the delta to the crater rim ({st.flagged.map((f) => `sols ${f.sols}`).slice(0, 3).join(', ')}…). A rover can drive slopes a walking crew should avoid, so these flags are expected, not errors.</li>
         <li><b>Our slope from orbit matches the rover’s own measured tilt:</b> at {t.waypoints} rover stops the correlation is {t.correlation}, with a median difference of {t.medianAbsDiff}°. Our 40 m map reads a little flatter than the ground under the rover (median {t.medianOurSlope}° vs {t.medianRoverTilt}°). Where the rover tilted more than {b.limits.redSlope}° ({t.roverTiltOver15} stops), we call {t.weCallTooSteep} too steep and {t.weCallCarefulOrSteep} at least “careful”.</li>

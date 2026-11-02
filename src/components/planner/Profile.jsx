@@ -47,8 +47,8 @@ export default function Profile({ analysis, stops = [], onHover, limits = { gree
       <svg ref={svg} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" onPointerMove={move} onPointerLeave={leave} role="img" aria-hidden="true">
         <defs>
           <linearGradient id="pf-fill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="#ec7d45" stopOpacity=".45" />
-            <stop offset="1" stopColor="#ec7d45" stopOpacity="0" />
+            <stop offset="0" stopColor="#ff5a1f" stopOpacity=".45" />
+            <stop offset="1" stopColor="#ff5a1f" stopOpacity="0" />
           </linearGradient>
         </defs>
         {analysis.bands.map((b, i) => (

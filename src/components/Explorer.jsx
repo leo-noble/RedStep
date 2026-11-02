@@ -240,6 +240,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
       const w = n[0].length * (n[4] === 1 ? 9.5 : 6.6) + 12, h = 18
       const x0 = n[4] === 0 ? p.x + 6 : p.x - w / 2
       const box = [x0, p.y - h / 2, x0 + w, p.y + h / 2]
+      if (box[0] < 16 || box[2] > W - 16) continue // keep labels off the screen edge
       if (hit(box)) continue
       boxes.push(box)
       const d = document.createElement('span')
@@ -381,7 +382,8 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
       <Sidebar
         open={sbOpen}
         onToggle={() => setSbOpen((o) => !o)}
-        title="Mars"
+        title={embedded ? 'Mars' : 'Mars map'}
+        titleAs={embedded ? 'p' : 'h1'}
         label="Places on Mars"
         header={(
           <div className="xp-search">
@@ -400,9 +402,9 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
           </SbSection>
         ) : card || (
           <>
-            <p className="xp-welcome">Tap a place to learn about it. <span className="xp-star">★</span> marks where you can plan a walk.</p>
+            <p className="xp-welcome">Tap a place to learn about it. <span className="xp-star">◆</span> marks where you can plan a walk.</p>
             <SbSection title="Mission sites">
-              {SITES.map((s) => <SbRow key={s.id} icon={s.planner ? '★' : '●'} tone={s.planner ? 'rust' : 'grey'} title={s.name} sub={s.short} onClick={() => selectSite(s)} />)}
+              {SITES.map((s) => <SbRow key={s.id} icon={s.planner ? '◆' : '●'} tone={s.planner ? 'rust' : 'grey'} title={s.name} sub={s.short} onClick={() => selectSite(s)} />)}
             </SbSection>
             <SbSection title="Famous places">
               {famous.map((n) => <SbRow key={n[0]} icon="⌖" tone="ice" title={n[0]} sub={famousByName[n[0]]?.short || n[3]} onClick={() => selectName(n)} />)}

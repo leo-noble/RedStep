@@ -23,7 +23,7 @@
   --rust-900: #2a130b;
   --rust-700: #6e2f17;
   --rust-500: #c8592e;
-  --rust: #ec7d45;
+  --rust: #ff5a1f;
   --ember: #ffb25b;
 
   /* data, water, ice */
@@ -44,15 +44,10 @@
   --blur: 20px;
 
   /* type */
-  /* Type, four voices with one job each:
-       Big Shoulders Display = headlines (condensed poster capitals, like stencilled hardware)
-       Instrument Serif italic = the one emphasised word in a headline
-       Bricolage Grotesque = reading text
-       Martian Mono = numbers, labels and data readouts */
-  --font: 'Bricolage Grotesque Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-head: 'Big Shoulders Display Variable', 'Arial Narrow', Impact, sans-serif;
-  --font-serif: 'Instrument Serif', 'Times New Roman', Georgia, serif;
-  --mono: 'Martian Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  /* Type: Switzer for everything (declared in theme.css). */
+  --font: 'Switzer', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: var(--font);
+  --mono: var(--font);
 
   /* Type: one modular scale (ratio 1.25, base 16 px), so every level is a clear step from
      the next: micro 12 · small 14 · body 16 · 5: 20 · 4: 25 · 3: 31 · 2: 39–49 · 1: 49–61 ·

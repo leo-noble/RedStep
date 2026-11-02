@@ -1,305 +1,686 @@
 /* =========================================================================================
-   Redstep theme: "mission dossier". Loaded after every other sheet, so it sets the look of
+   Redstep theme: "the printed annual". Loaded after every other sheet, so it sets the look of
    the whole site in one place.
-     · warm black and warm paper-white instead of pure black and blue-white
-     · condensed poster capitals for headlines, one serif italic word for emphasis
-     · Martian Mono for every label, number and button
-     · hairlines, corner ticks and square-ish corners instead of soft glass bubbles
+     · one typeface (Switzer) for everything, numbers included, with tabular figures
+     · basalt black ground, white ink, one Mars-orange accent for actions, a deep rust field
+     · flat surfaces separated by tone, never by lines, shadows, blur or gradients
+     · square corners on every button, tag and panel
    ========================================================================================= */
+@font-face {
+  font-family: 'Switzer';
+  src: url('./fonts/switzer-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Switzer';
+  src: url('./fonts/switzer-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Switzer';
+  src: url('./fonts/switzer-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+
 :root {
-  --void: #070504;
-  --ink: #f4ece1;
-  --ink-2: rgba(244, 236, 225, 0.7);
-  --ink-3: rgba(244, 236, 225, 0.48);
-  --ink-4: rgba(244, 236, 225, 0.26);
-  --rule: rgba(244, 236, 225, 0.16);
-  --rule-soft: rgba(244, 236, 225, 0.08);
+  --font: 'Switzer', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: var(--font);
+  --mono: var(--font);
 
-  --rust: #ff6a2c;
-  --ember: #ffb069;
+  /* colour: taken from Mars itself (basalt, rust dust, the orange of the ground in a HiRISE frame) */
+  --void: #0b0807;
+  --surface-1: #17110e;
+  --surface-2: #231a15;
+  --field-rust: #5c2312;
+  --paper: #ffffff;
+  --paper-ink: #14100e;
+  --ink: #ffffff;
+  --ink-2: rgba(255, 255, 255, 0.86);
+  --ink-3: #a39a94;
+  --ink-4: rgba(255, 255, 255, 0.34);
+  --rule: transparent;
+  --rule-soft: transparent;
+  --rust: #ff5a1f;
+  --ember: #ffa36e;
 
-  --lg-tint: rgba(16, 12, 10, 0.8);
-  --lg-rim: rgba(244, 236, 225, 0.12);
-  --lg-radius: 12px;
+  /* the five type steps */
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --step-display: clamp(3.5rem, 1rem + 7vw, 8.5rem);
 
-  --r-2: 4px;
-  --r-3: 8px;
+  --t-hero: var(--step-display);
+  --t-1: var(--step-display);
+  --t-2: var(--step-head);
+  --t-3: var(--step-lead);
+  --t-4: var(--step-lead);
+  --t-5: var(--step-lead);
+  --t-body: var(--step-body);
+  --t-small: var(--step-small);
+  --t-micro: var(--step-small);
 
-  /* a small L at each corner of a framed block */
-  --ticks:
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top left / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top left / 1px 10px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top right / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top right / 1px 10px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom left / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom left / 1px 10px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom right / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom right / 1px 10px;
+  /* the column line the editorial pages hang from */
+  --axis: 42%;
+
+  /* panels: solid tone steps, no glass */
+  --lg-film: none;
+  --lg-tint: var(--surface-1);
+  --lg-blur: none;
+  --lg-rim: transparent;
+  --lg-shadow: none;
+  --lg-radius: 0px;
+  --glass: var(--surface-1);
+  --glass-strong: var(--surface-1);
+  --glass-edge: transparent;
+  --surface: var(--surface-1);
+  --surface-strong: var(--surface-1);
+  --surface-line: transparent;
+
+  --r-1: 0px;
+  --r-2: 0px;
+  --r-3: 0px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-body {
-  font-variation-settings: 'wdth' 100;
-}
-
-/* Film grain over everything, very faint, so flat darks feel like a printed photograph.
-   Desktop only: phones keep every frame for the 3D scene. */
-@media (hover: hover) and (pointer: fine) {
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0.07;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
+:root body {
+  font: 400 var(--step-body) / 1.5 var(--font);
+  letter-spacing: -0.005em;
+  font-feature-settings: 'tnum' 1;
+  color: var(--ink);
 }
 
 /* ---------------------------------------------------------------- type ---------------- */
-:root h1,
-:root h2 {
-  font-family: var(--font-head);
-  font-weight: 800;
-  letter-spacing: 0;
+:root :is(h1, h2) {
+  font-family: var(--font);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-transform: none;
 }
 
 :root h3 {
   font-family: var(--font);
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-/* the one emphasised word: a real serif italic, in ember */
-:root .serif,
-:root :is(h1, h2, .h2, .walk__title, .home-end__title, .hero2__title) em {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: -0.01em;
-  color: var(--ember);
-  padding-right: 0.04em;
+/* emphasis in a heading carries no styling of its own: the words do the work */
+:root :is(h1, h2, h3) em {
+  font: inherit;
+  color: inherit;
 }
 
-/* labels: mono capitals, the instrument-panel voice */
+/* small notes: sentence case at a readable size */
 :root .micro {
-  font: 500 10.5px / 1.5 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 500 var(--step-small) / 1.45 var(--font);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--ink-3);
 }
 
-/* page titles: tall poster capitals */
-:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 {
-  font-size: clamp(46px, 8.6vw, 148px);
-  line-height: 0.86;
-  text-transform: uppercase;
-  letter-spacing: 0;
+:root .mono {
+  font-family: var(--font);
+  font-feature-settings: 'tnum' 1;
 }
 
-:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 em {
-  font-size: 1.04em;
-  line-height: 0.8;
+:root .accent {
+  color: inherit;
 }
 
-/* section headings on content pages: condensed capitals over a hairline */
-:root :is(.page, .guide) h2.micro,
-:root .page h2 {
-  font: 800 clamp(26px, 2.6vw, 40px) / 0.95 var(--font-head);
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: var(--ink);
-  margin-bottom: var(--s-4);
-}
-
-:root .page-lead {
-  font-size: clamp(17px, 0.6vw + 14px, 22px);
-  line-height: 1.5;
-  color: var(--ink-2);
+:root .rule {
+  height: 0;
+  background: none;
+  margin: var(--s-6) 0;
 }
 
 /* ---------------------------------------------------------------- buttons ------------- */
-:root .btn,
-:root .mw-home .btn {
-  min-height: 50px;
-  padding: 0 22px;
-  border-radius: 4px;
-  font: 600 11.5px / 1 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-:root .btn-small {
-  min-height: 38px;
-  padding: 0 14px;
-  font-size: 10.5px;
+:root :is(.btn, .mw-home .btn) {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 0;
+  border: 0;
+  font: 500 16px / 1 var(--font);
+  letter-spacing: -0.005em;
+  text-transform: none;
+  background: var(--surface-2);
+  color: var(--ink);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: transform 140ms var(--ease-out), background-color 200ms ease, color 200ms ease;
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary) {
   background: var(--rust);
-  color: #160602;
+  color: #0b0807;
   box-shadow: none;
-}
-
-:root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {
-  background: var(--ink);
 }
 
 :root:not([data-platform='windows']) .mw-home .btn--ghost {
-  background: rgba(7, 5, 4, 0.4);
-  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--paper-ink);
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root :is(.btn, .mw-home .btn):active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {
+    background: #ff7a45;
+  }
+
+  :root:not([data-platform='windows']) :is(.btn:not(.btn-primary), .mw-home .btn--ghost):hover {
+    background: #e9e3df;
+    color: var(--paper-ink);
+  }
+}
+
+:root .btn-small {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+/* honesty tags: small filled labels; their words stay exactly NASA DATA / DERIVED / ILLUSTRATIVE */
+:root :is(.chip, .badge__chip) {
+  border-radius: 0;
+  letter-spacing: 0.01em;
+  font-family: var(--font);
+}
+
+/* ---------------------------------------------------------------- panels -------------- */
+:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock, .xp-clock, .xp-zoom, .xp-searchpill, .sb-reopen, .g-rail-open, .skip-intro) {
+  background: var(--surface-1);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 0;
+  border-radius: 0;
   box-shadow: none;
 }
 
-:root:not([data-platform='windows']) .mw-home .btn--ghost:hover {
-  border-color: var(--ink);
-}
-
-/* honesty tags: squared, like stamped labels */
-:root .chip,
-:root .badge__chip {
-  border-radius: 2px;
-}
-
-/* panels: squarer corners, warm tint */
-:root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock) {
-  border-radius: var(--lg-radius);
-}
-
-/* framed blocks on content pages get corner ticks */
-:root :is(.about-team, .src-assume > div, .hab-summary, .g-try, .brief-card) {
-  background: var(--ticks);
-  background-repeat: no-repeat;
-}
-
 /* ---------------------------------------------------------------- nav ----------------- */
-:root .nav-name {
-  font: 800 22px / 1 var(--font-head);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+/* A plain bar: wordmark, four links, one action. */
+:root .nav {
+  background: var(--void);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 0;
 }
 
-@media (min-width: 941px) {
-  :root:not([data-platform='windows']) .nav .nav-links {
-    background: none;
-    border: 0;
-    box-shadow: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    gap: 6px;
-  }
+:root .nav.nav-overlay {
+  background: transparent;
+}
 
-  :root .nav-links a {
-    position: relative;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 0;
-    font: 500 11px / 1 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+:root .nav-name {
+  font: 600 19px / 1 var(--font);
+  letter-spacing: -0.03em;
+}
 
-  :root .nav-links a.on {
-    background: none;
+:root:not([data-platform='windows']) .nav .nav-links {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  gap: 4px;
+  padding: 0;
+}
+
+:root .nav-links a {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 0;
+  font: 500 15px / 1 var(--font);
+  letter-spacing: -0.005em;
+  text-transform: none;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.35em;
+  text-decoration-thickness: 2px;
+  transition: color 200ms ease, text-decoration-color 200ms ease;
+}
+
+:root .nav-links a.on {
+  background: none;
+  color: var(--ink);
+  text-decoration-color: var(--rust);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root .nav-links a:hover {
     color: var(--ink);
-  }
-
-  :root .nav-links a::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 4px;
-    height: 1px;
-    background: var(--rust);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 320ms var(--ease);
-  }
-
-  :root .nav-links a:hover::after,
-  :root .nav-links a.on::after {
-    transform: scaleX(1);
   }
 }
 
 :root .nav-sos {
-  border-radius: 4px;
-  font: 600 10.5px / 1 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 500 15px / 1 var(--font);
+  letter-spacing: -0.005em;
+  text-transform: none;
 }
 
 :root .nav-sheet a {
-  font: 800 30px / 1 var(--font-head);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font: 600 30px / 1 var(--font);
+  letter-spacing: -0.03em;
+  text-transform: none;
+  border: 0;
 }
 
 @media (max-width: 940px) {
   :root .nav,
   :root .nav.nav-overlay {
-    border-radius: 14px;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) 8px 0 16px;
+    border-radius: 0;
+    background: var(--void);
+    border: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    grid-template-rows: 56px 1fr;
   }
 
   :root .nav.nav-open {
-    border-radius: 16px;
+    height: calc(56px + var(--items, 6) * 56px + 32px);
+    border-radius: 0;
+    background: var(--void);
   }
 
-  :root .nav-sheet a {
+  :root .nav-sheet a,
+  :root .nav-install {
+    min-height: 56px;
     font-size: 26px;
+    border: 0;
   }
+}
+
+/* ---------------------------------------------------------------- content pages ------- */
+/* The report layout: the title runs from the left margin; the standfirst and the body hang
+   from a column line at 42%. Phones collapse it to the left margin. */
+:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 {
+  font-size: clamp(36px, 0.6rem + 5.6vw, 88px);
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  text-transform: none;
+  max-width: 16ch;
+}
+
+@media (min-width: 900px) {
+  :root .page-head > :not(h1) {
+    margin-left: var(--axis);
+  }
+}
+
+:root :is(.page, .guide) h2.micro,
+:root .page h2 {
+  font: 600 var(--step-head) / 1 var(--font);
+  letter-spacing: -0.04em;
+  text-transform: none;
+  color: var(--ink);
+  margin-bottom: var(--s-5);
+}
+
+:root .page > section + section {
+  margin-top: clamp(96px, 9vw, 160px);
+}
+
+:root .page-lead {
+  max-width: 34em;
+  font-size: var(--step-lead);
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+:root :is(.page, .g-main) p,
+:root :is(.page, .g-main) li {
+  max-width: 36em;
+  color: var(--ink);
+}
+
+:root :is(.page, .g-main) :is(p, li, dd, span) {
+  font-size: max(1em, 16px);
+}
+
+/* the opening of a content page rises in as it loads */
+@media (prefers-reduced-motion: no-preference) {
+  :root :is(.page-head, .g-head) > * {
+    animation: page-rise 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  :root :is(.page-head, .g-head) > :nth-child(2) { animation-delay: 70ms; }
+  :root :is(.page-head, .g-head) > :nth-child(3) { animation-delay: 140ms; }
+  :root :is(.page-head, .g-head) > :nth-child(4) { animation-delay: 210ms; }
+
+  :root .band__grid img {
+    animation: page-rise 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  :root .band__cell:nth-child(2) img { animation-delay: 90ms; }
+  :root .band__cell:nth-child(3) img { animation-delay: 180ms; }
+  :root .band__cell:nth-child(4) img { animation-delay: 270ms; }
+}
+
+@keyframes page-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* a band of four real pictures, butted together */
+:root .band {
+  margin: clamp(48px, 6vw, 96px) 0;
+}
+
+:root .band__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.4fr;
+  height: clamp(240px, 30vw, 440px);
+  overflow: hidden;
+}
+
+:root .band__cell {
+  min-width: 0;
+  overflow: hidden;
+}
+
+:root .band__grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:root .band figcaption {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+@media (max-width: 700px) {
+  :root .band__grid {
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+  }
+
+  :root .band__cell {
+    aspect-ratio: 1;
+  }
+}
+
+/* habitat: each figure first, its label under it */
+:root .hab-totals > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+:root .hab-totals dd {
+  font: 600 var(--step-head) / 1 var(--font);
+  letter-spacing: -0.04em;
+}
+
+:root .hab-totals dt {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* sources: column labels in sentence case at a readable size */
+:root .src-th,
+:root .src-th span {
+  font: 500 14px / 1.4 var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+:root .src-row,
+:root .src-row :is(span, small, a) {
+  font-size: max(1em, 14px);
+  border-color: transparent;
+}
+
+:root .src-row:nth-child(even) {
+  background: var(--surface-1);
+}
+
+/* guide: flat surfaces, no rules */
+:root .g-widget {
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-1);
+}
+
+:root .g-refs {
+  border: 0;
+  border-radius: 0;
+}
+
+:root .g-hypo {
+  font-size: 15px;
+  color: var(--ink-3);
+  margin: -8px 0 16px;
+}
+
+:root .wp-bar i {
+  background: var(--ice);
+}
+
+:root .wp-mars i {
+  background: var(--rust);
 }
 
 /* ---------------------------------------------------------------- footer -------------- */
+:root .footer {
+  background: var(--field-rust);
+  border: 0;
+  padding-top: clamp(96px, 9vw, 140px);
+}
+
+:root .footer-orbits {
+  display: none;
+}
+
+:root .footer :is(p, a, button, .micro) {
+  color: var(--ink);
+}
+
 :root .footer-name {
-  font: 800 28px / 1 var(--font-head);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: 600 28px / 1 var(--font);
+  letter-spacing: -0.03em;
 }
 
 :root .footer-links a {
-  font: 500 11px / 1.4 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 500 15px / 1.4 var(--font);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-/* the name, as wide as the page, cut off at the bottom edge */
+/* the name returns at full width at the end of every page, cut by the bottom edge */
 :root .wordmark {
-  margin: var(--s-7) 0 calc(-0.2 * var(--wm-size));
-  --wm-size: 27vw;
-  font: 900 var(--wm-size) / 0.8 var(--font-head);
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  text-align: center;
+  margin: var(--s-8) 0 -0.16em;
+  font: 600 25.5vw / 0.8 var(--font);
+  letter-spacing: -0.06em;
   white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(244, 236, 225, 0.22);
-  background: linear-gradient(180deg, rgba(255, 106, 44, 0.32), rgba(255, 106, 44, 0) 70%);
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--ink);
   user-select: none;
+}
+
+:root :is(.footer, .home-end) {
   overflow: hidden;
 }
 
-:root .footer,
-:root .home-end {
-  overflow: hidden;
+/* ---------------------------------------------------------------- motion -------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root .rv {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* phones: long mono button labels wrap instead of pushing the page sideways */
-@media (max-width: 480px) {
-  :root .btn {
-    max-width: 100%;
-    padding: 12px 16px;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.35;
+/* ---------------------------------------------------------------- data tags ----------- */
+/* The three honesty tags as small filled labels: readable size, no outline, no dashes.
+   Their words stay exactly NASA DATA / DERIVED / ILLUSTRATIVE. */
+:root .mw-home .badge__chip,
+:root .chip {
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--c, currentColor) 16%, transparent);
+  font: 600 13px / 1 var(--font);
+  letter-spacing: 0.01em;
+}
+
+:root .chip.tag-nasa { --c: var(--ice); }
+:root .chip.tag-derived { --c: var(--ember); }
+:root .chip.tag-illustrative { --c: var(--ink-3); border-style: none; }
+
+:root .mw-home .badge__mark {
+  display: none;
+}
+
+/* nothing meant to be read goes under 13px */
+:root :is(.page, .guide) small,
+:root .g-rail :is(p, a) {
+  font-size: 14px;
+}
+
+:root body :is(.page, .guide) .chip {
+  font-size: 13px;
+}
+
+:root .page svg text {
+  font-size: 13px;
+}
+
+/* a tag that belongs to a section heading sits on its own line under it */
+:root .h-tag {
+  margin: -8px 0 var(--s-5);
+}
+
+/* habitat: the crew slider and the totals read as two separate things */
+:root .hab-totals dd {
+  font-size: clamp(28px, 2.4vw, 40px);
+}
+
+:root .hab-crew {
+  margin-bottom: var(--s-6);
+}
+
+/* the guide's fixed step list never covers the footer */
+:root .footer {
+  z-index: 30;
+}
+
+@media (max-width: 700px) {
+  :root .hab-totals {
+    row-gap: var(--s-7);
+  }
+}
+
+@media (max-width: 900px) {
+  :root .hab-totals {
+    row-gap: 88px;
+  }
+}
+
+/* blocks further down a content page rise in as they enter (browsers with scroll timelines) */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    :root .page section > :is(div, ol, ul, p, h2) {
+      animation: page-lift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+
+/* movement only, so a block is never hidden while it waits to enter */
+@keyframes page-lift {
+  from { transform: translateY(32px); }
+  to { transform: none; }
+}
+
+/* calculators: the figure first, then its unit, then what it is */
+:root .big {
+  display: flex;
+  flex-direction: column;
+}
+
+:root .big b {
+  order: -2;
+}
+
+:root .big small {
+  order: -1;
+}
+
+/* stacked on narrow screens: clear space between the last control and the first result */
+@media (max-width: 900px) {
+  :root .calc-out {
+    margin-top: 48px;
+  }
+}
+
+/* each result reads as one line: the figure, and beside it its unit and what it is */
+:root .big {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 16px;
+  align-items: end;
+}
+
+:root .big b {
+  grid-row: 1 / 3;
+}
+
+:root .big small,
+:root .big .micro {
+  grid-column: 2;
+}
+
+@media (max-width: 900px) {
+  :root .hab-crew {
+    margin-bottom: 88px;
+  }
+}
+
+:root {
+  --hud: var(--ink);
+}
+
+/* app screens: tags stay legible inside small print */
+:root body .chip.chip {
+  font-size: 12px;
+}
+
+@media (max-width: 820px) {
+  :root .actionbar {
+    scroll-padding-inline: 16px;
   }
 
-  :root .actionbar .btn {
-    padding: 0 14px;
-    font-size: 10px;
-    white-space: nowrap;
+  :root .ab-tools {
+    padding-right: 16px;
   }
 }

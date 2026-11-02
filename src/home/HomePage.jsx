@@ -2,24 +2,25 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import MarsGlobeHero from './MarsGlobeHero.jsx';
 import Badge from './Badge.jsx';
+import HomeSections from './HomeSections.jsx';
+import { PANORAMAS } from '../content/panoramas.js';
 import { deviceTier } from '../lib/quality.js';
 import { createMotionEngine, windowed, smoothstep } from './motionEngine.js';
 import { marsTime, localSolarTime, solarElevation, earthMarsLightTime, formatHM } from './mars24.js';
-import { FOOTER_NAV } from '../content/site.js';
-import { HOME, SITE, LANDING_SITES, DEFAULT_SITE_ID, SOURCES, CONSTANTS, SLOPE_THRESHOLDS, EVA_DEFAULTS, getSite } from './content.js';
+import { HOME, SITE, LANDING_SITES, DEFAULT_SITE_ID, CONSTANTS, SLOPE_THRESHOLDS, EVA_DEFAULTS, getSite } from './content.js';
 import './boundary.css';
 import './home.css';
+import './annual.css';
 
 const CHAPTER_WINDOWS = {
-  hero: [-1, -0.5, 0.07, 0.14],
-  layers: [0.15, 0.21, 0.33, 0.39],
-  cruise: [0.4, 0.46, 0.56, 0.62],
+  hero: [-1, -0.5, 0.2, 0.27],
+  layers: [2, 2, 2, 2],
+  cruise: [0.3, 0.36, 0.56, 0.62],
   arrive: [0.63, 0.68, 0.76, 0.82],
   choose: [0.84, 0.91, 2, 3],
 };
-const JEZERO = getSite(DEFAULT_SITE_ID);
-const HUD_COORD = `${JEZERO.name} · ${Math.abs(JEZERO.lat).toFixed(2)}°${JEZERO.lat >= 0 ? 'N' : 'S'} ${Math.abs(JEZERO.lon).toFixed(2)}°${JEZERO.lon >= 0 ? 'E' : 'W'}`;
-const RAIL = [0, 0.27, 0.51, 0.95];
+const VANZYL = PANORAMAS.find((p) => p.id === 'vanzyl');
+const RAIL = [0, 0.4, 0.7, 0.95];
 // The end of the story is the real Mars map: the same component as the /map page.
 const Explorer = lazy(() => import('../components/Explorer.jsx'));
 
@@ -28,7 +29,6 @@ export default function HomePage() {
   const rootRef = useRef(null);
   const trackRef = useRef(null);
   const heroRef = useRef(null);
-  const walkRef = useRef(null);
   const tele = useRef({});
   // mapOn: the Mars map is loaded (from the cruise on, so it is ready on arrival)
   // atMars: the rocket has arrived and the map is showing; mapReady: its first frame is drawn
@@ -42,14 +42,8 @@ export default function HomePage() {
     engine.attach(trackRef.current);
     if (import.meta.env.DEV) window.__marswalk = engine;
 
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem('mw:intro') === '1';
-    } catch {
-      /* storage unavailable */
-    }
-    if (seen || window.scrollY > 8) engine.skipIntro();
-    else engine.playIntro();
+    // The story sits below the first screen, so the rocket is already on its way when it arrives.
+    engine.skipIntro();
 
     let lastChoose = null;
     let lastIntroDone = null;
@@ -123,33 +117,13 @@ export default function HomePage() {
       write('lightBig', lt.minutes.toFixed(1));
       write('lightBand', lt.minutes.toFixed(1));
       write('siteName', site.name.split(' ·')[0]);
-      write('ltst', `${formatHM(localSolarTime(m, site.lon))} local time`);
+      write('ltst', formatHM(localSolarTime(m, site.lon)));
       const el = solarElevation(m, site.lat, site.lon);
-      write('daynight', el > 0 ? 'Daylight' : el > -6 ? 'Twilight' : 'Night');
+      write('daynight', el > 0 ? 'in daylight' : el > -6 ? 'in twilight' : 'at night');
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []);
-
-  // Walkthrough: the section's scroll position picks the step (0, 1, 2) and drives a slow zoom.
-  useEffect(() => {
-    const el = walkRef.current;
-    if (!el) return undefined;
-    let raf = 0;
-    const read = () => {
-      raf = 0;
-      const r = el.querySelector('.walk__track').getBoundingClientRect();
-      const span = r.height - window.innerHeight;
-      const p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
-      el.style.setProperty('--wp', p.toFixed(4));
-      el.dataset.step = String(Math.min(2, Math.floor(p * 3)));
-    };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
-    read();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf); };
   }, []);
 
   // While the map covers the 3D scene, the scene stops drawing.
@@ -170,218 +144,118 @@ export default function HomePage() {
     return () => (window.cancelIdleCallback || clearTimeout)(id);
   }, []);
 
-  const goChoose = () => engine.scrollToProgress(0.97);
   const ref = (k) => (el) => {
     tele.current[k] = el;
   };
 
   return (
-    <div className="mw-home" ref={rootRef} data-choose="false" data-intro-done="false">
-      <section className="story" ref={trackRef} aria-label="Redstep introduction">
+    <div className="mw-home" ref={rootRef} data-choose="false" data-intro-done="true">
+      {/* ---- First screen: a board of tiles. The name, Perseverance's own view of Jezero, what
+           Redstep does, and Jezero right now (worked out in the browser). ---- */}
+      <header className="board" aria-labelledby="home-title">
+        <div className="board__name">
+          <h1 id="home-title">{SITE.name}</h1>
+        </div>
+        <figure className="board__pic board__pic--a shutter">
+          <img src="/data/panoramas/vanzyl-3k.webp" alt={VANZYL.alt} width="3000" height="1500" fetchPriority="high" />
+        </figure>
+        <figure className="board__pic board__pic--b">
+          <img src="/data/panoramas/vanzyl-3k.webp" alt="" width="3000" height="1500" />
+        </figure>
+        <div className="board__say">
+          <p>{HOME.boardSay}</p>
+          <div className="board__actions">
+            <Link to="/site/jezero" className="btn btn--primary">
+              {HOME.ctaWalk} <span aria-hidden="true">→</span>
+            </Link>
+            <Link to="/map" className="board__link">
+              {HOME.ctaMap}
+            </Link>
+          </div>
+        </div>
+        <div className="board__now" aria-live="off">
+          <p>
+            Right now at Jezero Crater it is <b ref={ref('ltst')}>—</b> Mars time, <span ref={ref('daynight')}>—</span>. A radio message to Earth takes{' '}
+            <b ref={ref('light')}>—</b>.
+          </p>
+          <Badge kind="derived" source="mars24" align="end" note={HOME.telemetryNote} />
+        </div>
+      </header>
+
+      <section className="story" ref={trackRef} aria-labelledby="story-title">
         <div className="stage">
           <MarsGlobeHero ref={heroRef} engine={engine} sites={LANDING_SITES} />
           <div className="stage-veil" aria-hidden="true" />
-          <div className="hud" aria-hidden="true">
-            <span className="hud__c hud__c--tl" />
-            <span className="hud__c hud__c--tr" />
-            <span className="hud__c hud__c--bl" />
-            <span className="hud__c hud__c--br" />
-            <span className="hud__coord">{HUD_COORD}</span>
-          </div>
 
-          {/* ---- Hero: the title, one line of what it does, two ways in ---- */}
-          <div className="hero2 chapter" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
-            <p className="hero2__over reveal" style={{ '--at': 0.55 }}>{HOME.kicker}</p>
-            <h1 className="hero2__title">
-              <span className="reveal-line" style={{ '--at': 0.6 }}>The first</span>
-              <span className="reveal-line" style={{ '--at': 0.65 }}>walk on</span>
-              <span className="reveal-line hero2__mars" style={{ '--at': 0.7 }}><em>Mars.</em></span>
-            </h1>
-            <p className="hero2__lead reveal" style={{ '--at': 0.76 }}>{HOME.lead}</p>
-            <div className="cta-row reveal" style={{ '--at': 0.8 }}>
-              <button type="button" className="btn btn--primary" onClick={goChoose}>
-                {HOME.ctaPrimary}
-                <span aria-hidden="true">↓</span>
-              </button>
-              <Link to="/site/jezero" className="btn btn--ghost" aria-label={HOME.ctaWalk}>
-                <span className="cta-long">{HOME.ctaWalk}</span>
-                <span className="cta-short">{HOME.ctaWalkShort}</span>
-                <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* ---- Live strip: Mars right now, worked out in the browser ---- */}
-          <aside className="strip reveal" data-chapter="hero" style={{ '--at': 0.86 }} aria-label="Mars right now, computed in your browser">
-            <span className="strip__live"><i aria-hidden="true" />Mars now</span>
-            <span className="strip__item"><small>Season</small><b ref={ref('season')}>—</b></span>
-            <span className="strip__item"><small>Message to Earth</small><b ref={ref('light')}>—</b></span>
-            <span className="strip__item"><small ref={ref('siteName')}>—</small><b><span ref={ref('ltst')}>—</span> · <span ref={ref('daynight')}>—</span></b></span>
-            <Badge kind="derived" source="mars24" align="end" note={HOME.telemetryNote} />
-          </aside>
-
-          {/* ---- 01 · Layers ---- */}
-          <div className="chapter chapter--left" data-chapter="layers" style={{ '--w': 'var(--w-layers)' }}>
-            <p className="eyebrow">{HOME.story.layers.eyebrow}</p>
-            <h2 className="h2">{rich(HOME.story.layers.title)}</h2>
-            <p className="body">{HOME.story.layers.body}</p>
-            <ul className="chips">
-              {HOME.story.layers.chips.map((id) => {
-                const s = SOURCES[id];
-                return (
-                  <li key={id} className="chip">
-                    <span className="chip__mission">{s.mission}</span>
-                    <span className="chip__inst">{s.instrument}</span>
-                    <span className="chip__res">{s.resolution.split(' ·')[0]}</span>
-                  </li>
-                );
-              })}
-            </ul>
-            <Badge kind="nasa" source="mola" note="Each layer in the planner names its mission, instrument and resolution." />
+          {/* ---- 01 · Leave Earth ---- */}
+          <div className="chapter chapter--left" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
+            <h2 className="h2" id="story-title">{HOME.story.launch.title}</h2>
+            <p className="body">{HOME.story.launch.body}</p>
           </div>
 
           {/* ---- 02 · Cruise ---- */}
           <div className="chapter chapter--left" data-chapter="cruise" style={{ '--w': 'var(--w-cruise)' }}>
-            <p className="eyebrow">{HOME.story.cruise.eyebrow}</p>
-            <h2 className="h2">{rich(HOME.story.cruise.title)}</h2>
+            <h2 className="h2">{HOME.story.cruise.title}</h2>
             <p className="body">{HOME.story.cruise.body}</p>
             <div className="stats">
-              <Stat value={CONSTANTS.radCruise.value} unit={CONSTANTS.radCruise.unit} label="Dose in cruise · RAD" badge={<Badge kind="nasa" source="rad" />} />
-              <Stat value={CONSTANTS.radSurface.value} unit={CONSTANTS.radSurface.unit} label="Dose on the surface · RAD" badge={<Badge kind="nasa" source="rad" />} />
-              <Stat
-                valueRef={ref('lightBig')}
-                unit="min"
-                label="Light time to Earth, now"
-                badge={<Badge kind="derived" source="ephemeris" note={`Range over a synodic cycle: ${CONSTANTS.lightTimeRange.value} min.`} />}
-              />
+              <Stat value={CONSTANTS.radCruise.value} unit={CONSTANTS.radCruise.unit} label="A day in deep space, measured by Curiosity's RAD" badge={<Badge kind="nasa" source="rad" />} />
+              <Stat value={CONSTANTS.radSurface.value} unit={CONSTANTS.radSurface.unit} label="A day on the surface of Mars, same instrument" badge={<Badge kind="nasa" source="rad" />} />
             </div>
           </div>
 
           {/* ---- 03 · Arrive ---- */}
           <div className="chapter chapter--left" data-chapter="arrive" style={{ '--w': 'var(--w-arrive)' }}>
-            <p className="eyebrow">{HOME.story.arrive.eyebrow}</p>
-            <h2 className="h2">{rich(HOME.story.arrive.title)}</h2>
+            <h2 className="h2">{HOME.story.arrive.title}</h2>
             <p className="body">{HOME.story.arrive.body}</p>
-            <ul className="slope-legend" aria-label="Default slope thresholds">
+            <ul className="slope-legend" aria-label="Default slope limits">
               <li className="slope slope--go">
-                <i aria-hidden="true" />
-                <b>&lt; {SLOPE_THRESHOLDS.go}°</b>
+                <b>Under {SLOPE_THRESHOLDS.go}°</b>
                 <span>GO</span>
               </li>
               <li className="slope slope--caution">
-                <i aria-hidden="true" />
                 <b>
                   {SLOPE_THRESHOLDS.go}–{SLOPE_THRESHOLDS.caution}°
                 </b>
                 <span>CAUTION</span>
               </li>
               <li className="slope slope--nogo">
-                <i aria-hidden="true" />
-                <b>&gt; {SLOPE_THRESHOLDS.caution}°</b>
+                <b>Over {SLOPE_THRESHOLDS.caution}°</b>
                 <span>NO-GO</span>
               </li>
             </ul>
             <p className="fine">
-              Walk-back radius {EVA_DEFAULTS.walkBackRadiusKm} km · reserve {Math.round(EVA_DEFAULTS.reserveFraction * 100)} % · all
-              editable <Badge kind="illustrative" source="assumption" note="Thresholds and suit budgets are engineering assumptions you can change in the planner." />
+              Walk-back radius {EVA_DEFAULTS.walkBackRadiusKm} km and a {Math.round(EVA_DEFAULTS.reserveFraction * 100)} % air reserve, both
+              yours to change <Badge kind="illustrative" source="assumption" note="Thresholds and suit budgets are engineering assumptions you can change in the planner." />
             </p>
           </div>
 
           {/* ---- 04 · Arrival: the real Mars map takes over (the same one as /map) ---- */}
           {mapOn && (
-            <div className={`home-map ${atMars ? 'on' : ''}`} inert={!atMars} aria-hidden={!atMars}>
+            <div className={`home-map ${atMars ? 'on' : ''}`} data-ui inert={!atMars} aria-hidden={!atMars}>
               <Suspense fallback={null}>
                 <Explorer visible={atMars} embedded onReady={() => setMapReady(true)} />
               </Suspense>
             </div>
           )}
 
-          {/* ---- Progress rail ---- */}
-          <nav className="rail" aria-label="Story chapters">
+          {/* ---- Where you are in the trip ---- */}
+          <nav className="rail" aria-label="The trip">
             {HOME.chapters.map((c, i) => (
               <button key={c.id} type="button" className="rail__item" data-rail data-state="next" onClick={() => engine.scrollToProgress(RAIL[i] + (i === 3 ? 0.02 : 0))}>
-                <span className="rail__n">{c.n}</span>
                 <span className="rail__label">{c.label}</span>
               </button>
             ))}
           </nav>
 
-          <p className="scroll-cue micro" aria-hidden="true">
-            <span className="scroll-cue__line" />
-            {HOME.scrollCue}
+          <p className="schematic-note">
+            Drawn to explain, not to scale <Badge kind="illustrative" source="schematic" align="end" />
           </p>
-
-          <p className="schematic-note micro">
-            Schematic · not to scale <Badge kind="illustrative" source="schematic" align="end" />
-          </p>
-
-          <button type="button" className="skip-intro" onClick={() => engine.skipIntro()}>
-            {HOME.skipIntro}
-            <span aria-hidden="true"> ⏭</span>
-          </button>
         </div>
       </section>
 
-      <section className="walk" ref={walkRef} aria-labelledby="walk-title">
-        <h2 id="walk-title" className="walk__title">How a walk gets <em>planned.</em></h2>
-        <div className="walk__track">
-          <div className="walk__sticky">
-            <ol className="walk__steps">
-              {HOME.walkthrough.map((w, i) => (
-                <li key={w.title} className="walk__step" style={{ '--i': i }}>
-                  <h3>{w.title}</h3>
-                  <p>{w.body}</p>
-                  <Link to={w.link} className="walk__link">
-                    {w.cta} <span aria-hidden="true">→</span>
-                  </Link>
-                  <img className="walk__shot-inline" src={w.img} alt={w.alt} loading="lazy" width="1600" height="900" />
-                </li>
-              ))}
-            </ol>
-            <div className="walk__screen" aria-hidden="true">
-              {HOME.walkthrough.map((w, i) => (
-                <img key={w.img} className="walk__shot" style={{ '--i': i }} src={w.img} alt="" loading="lazy" width="1600" height="900" />
-              ))}
-              <span className="walk__tap" />
-              <img className="walk__verdict" src="/home/verdict.webp" alt="" loading="lazy" width="800" height="680" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      <footer className="home-end">
-        <div className="home-end__top">
-          <p className="home-end__title">Ready to plan <em>a walk?</em></p>
-          <div className="home-end__actions">
-            <Link to="/map" className="btn btn--primary">
-              Open the Mars map <span aria-hidden="true">→</span>
-            </Link>
-            <Link to="/site/jezero" className="btn btn--ghost">
-              Plan a walk at Jezero
-            </Link>
-          </div>
-        </div>
-        <nav className="home-end__links" aria-label="Footer">
-          {FOOTER_NAV.map((n) => (
-            <Link key={n.to} to={n.to}>
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-        <p className="home-end__legal">
-          {SITE.name} · {SITE.by} · {SITE.challenge}. {SITE.disclaimer} Mission data courtesy of NASA, JPL-Caltech, USGS
-          Astrogeology, ASU and ESA, credited on the <Link to="/sources">Data &amp; sources</Link> page.
-        </p>
-        <p className="wordmark" aria-hidden="true">{SITE.name}</p>
-      </footer>
+      <HomeSections teleRef={ref} />
     </div>
   );
-}
-
-/** Headline copy marks its one emphasised phrase with *stars*; it renders in the serif italic. */
-function rich(text) {
-  return text.split(/\*([^*]+)\*/).map((part, i) => (i % 2 ? <em key={i}>{part}</em> : part));
 }
 
 function Stat({ value, valueRef, unit, label, badge }) {

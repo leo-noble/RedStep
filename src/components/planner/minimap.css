@@ -1,6 +1,6 @@
 /* Minimap: a small mission-control style overlay (mono labels, faint grid and scanlines). */
 .mm {
-  --mm-line: rgba(0, 229, 255, 0.28);
+  --mm-line: rgba(255, 255, 255, 0.28);
   position: absolute;
   z-index: 7;
   top: calc(var(--nav-h) + 12px);
@@ -43,10 +43,9 @@
 }
 
 .mm-title {
-  font: 700 11px / 1 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #7fe9ff;
+  font: 600 13px / 1 var(--font);
+  letter-spacing: 0;
+  color: var(--ink);
 }
 
 .mm-expand,
@@ -66,7 +65,7 @@
 .mm-expand:hover,
 .mm-close:hover,
 .mm-toggle:hover {
-  background: rgba(0, 229, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .mm-canvas {
@@ -118,7 +117,7 @@
   width: min(720px, calc(100vw - 24px));
   max-height: calc(100svh - 24px);
   padding: 0;
-  border: 1px solid rgba(0, 229, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--r-3);
   background: #03090c;
   color: var(--ink);
@@ -148,7 +147,7 @@
   margin: 0;
   padding: 12px 14px;
   list-style: none;
-  border-top: 1px solid rgba(0, 229, 255, 0.28);
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
   font-size: 12.5px;
   color: var(--ink);
 }

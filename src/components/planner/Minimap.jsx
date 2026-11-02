@@ -144,7 +144,7 @@ const Minimap = forwardRef(function Minimap({ profile = [], analysis: a, stops, 
     ctx.setLineDash([])
 
     // places
-    ctx.font = '600 10px "Martian Mono Variable", ui-monospace, monospace'
+    ctx.font = '600 10px "Switzer", system-ui, sans-serif'
     for (const s of stops) {
       const on = visited.includes(s.id)
       if (!on && mode === 'follow') continue

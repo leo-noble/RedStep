@@ -15,7 +15,7 @@ export function SidebarIcon() {
   )
 }
 
-export function Sidebar({ open, onToggle, title, side = 'left', className = '', header, children, footer, label, reopenBadge }) {
+export function Sidebar({ open, onToggle, title, titleAs: Title = 'p', side = 'left', className = '', header, children, footer, label, reopenBadge }) {
   const keys = shortcut('Shift', 'S')
   useEffect(() => {
     const key = (e) => {
@@ -32,7 +32,7 @@ export function Sidebar({ open, onToggle, title, side = 'left', className = '', 
           <button type="button" className="sb-toggle" onClick={onToggle} aria-label="Hide sidebar" title={`Hide sidebar (${keys})`}>
             <SidebarIcon />
           </button>
-          {title && <p className="sb-title">{title}</p>}
+          {title && <Title className="sb-title">{title}</Title>}
         </div>
         {header && <div className="sb-header">{header}</div>}
         <div className="sb-body">{children}</div>

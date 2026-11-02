@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { STEPS } from '../content/survival.js'
-import { Badge, Eyebrow, Source } from '../components/Atoms.jsx'
+import { Badge, Source } from '../components/Atoms.jsx'
 import { SidebarIcon } from '../components/Sidebar.jsx'
 import { factSource } from '../content/sources.js'
 import { WIDGETS } from '../components/guide/Widgets.jsx'
 import { useStored } from '../lib/hooks.js'
 import Orbits from '../components/Orbits.jsx'
+import PictureBand from '../components/PictureBand.jsx'
 import './guide.css'
+
+// Real pictures shown with each step, starting from a different one each time.
+const GUIDE_PICS = ['butler', 'hirise', 'vanzyl', 'themis', 'mercou', 'ctx', 'viking', 'planner']
 
 function lastWalkDose() {
   try { return JSON.parse(sessionStorage.getItem('mw-brief'))?.result?.analysis?.dose ?? null } catch { return null }
@@ -49,6 +53,7 @@ export default function Guide() {
           <p className="g-progress"><b>{finished}</b> of {STEPS.length - 1} quizzes passed</p>
           <div className="g-progress-bar"><i style={{ width: `${(finished / (STEPS.length - 1)) * 100}%` }} /></div>
         </div>
+        <nav aria-label="Steps">
         <ol className="g-steps">
           {STEPS.map((x, i) => (
             <li key={x.id}>
@@ -59,6 +64,7 @@ export default function Guide() {
             </li>
           ))}
         </ol>
+        </nav>
         {s.facts.length > 0 && (
           <details className="g-refs">
             <summary>References for this step</summary>
@@ -72,11 +78,12 @@ export default function Guide() {
 
       <article className="g-main" key={s.id}>
         <header className="g-head">
-          <Eyebrow>Step {idx + 1} of {STEPS.length}</Eyebrow>
           <h1 tabIndex={-1} ref={head}>{s.title}</h1>
           <p className="g-question">{s.question}</p>
           <p className="g-lead">{s.lead}</p>
         </header>
+
+        <PictureBand ids={GUIDE_PICS.slice(idx % GUIDE_PICS.length).concat(GUIDE_PICS).slice(0, 4)} />
 
         <section className="g-widget" aria-label="Try it">
           <p className="micro g-try">Try it</p>
@@ -87,7 +94,8 @@ export default function Guide() {
           <div className="g-two">
             {s.facts.length > 0 && (
               <section className="g-facts">
-                <h2 className="micro">What we know <Badge kind="nasa" /></h2>
+                <h2 className="micro">What we know</h2>
+                <p className="h-tag"><Badge kind="nasa" /></p>
                 <ul>
                   {s.facts.map((f) => <li key={f.text}>{f.text} <Source k={f.source} badge="nasa" /></li>)}
                 </ul>
@@ -95,7 +103,8 @@ export default function Guide() {
             )}
             {s.procedure.length > 0 && (
               <section className="g-proc">
-                <h2 className="micro">What you would do <span className="g-hypo">proposed, never tested on Mars</span></h2>
+                <h2 className="micro">What you would do</h2>
+                <p className="g-hypo">Proposed, never tested on Mars.</p>
                 <ol>
                   {s.procedure.map((p) => <li key={p}>{p}</li>)}
                 </ol>

@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { Badge, Slider } from '../components/Atoms.jsx'
 import { FarmCalc, OxygenCalc, ShelterCalc, useBase, useBaseTotals } from '../components/guide/Base.jsx'
 import { BASE } from '../content/habitat.js'
+import PictureBand from '../components/PictureBand.jsx'
 import './page.css'
 
 export default function Habitat() {
@@ -10,9 +11,11 @@ export default function Habitat() {
   return (
     <div className="page">
       <header className="page-head">
-        <h1>What does a crew need to <em>live?</em></h1>
+        <h1>What does a crew need to live?</h1>
         <p className="page-lead">Change the crew size and every assumption. Air, water, food and shelter update together. Numbers marked <Badge kind="nasa" /> come from missions; numbers marked <Badge kind="illustrative" /> are planning guesses you can change.</p>
       </header>
+
+      <PictureBand ids={['butler', 'hirise', 'vanzyl', 'ctx']} />
 
       <section className="hab-summary glass">
         <div className="hab-crew">
@@ -27,15 +30,15 @@ export default function Habitat() {
       </section>
 
       <section className="hab-block">
-        <h2><span className="mono">01</span> Air</h2>
+        <h2>Air</h2>
         <OxygenCalc b={b} set={set} />
       </section>
       <section className="hab-block">
-        <h2><span className="mono">02</span> Water and food</h2>
+        <h2>Water and food</h2>
         <FarmCalc b={b} set={set} />
       </section>
       <section className="hab-block">
-        <h2><span className="mono">03</span> Shelter</h2>
+        <h2>Shelter</h2>
         <ShelterCalc b={b} set={set} />
       </section>
 

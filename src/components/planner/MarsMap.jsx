@@ -86,7 +86,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       m.addLayer({ id: 'radius-fill', type: 'fill', source: 'radius', paint: { 'fill-color': '#7fb0ff', 'fill-opacity': 0.035 } })
       m.addLayer({ id: 'radius', type: 'line', source: 'radius', paint: { 'line-color': '#7fb0ff', 'line-opacity': 0.7, 'line-width': 1.2, 'line-dasharray': [2, 3] } })
       m.addLayer({ id: 'traverse', type: 'line', source: 'traverse', paint: { 'line-color': '#dfe8ff', 'line-opacity': L.traverse.opacity, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.8, 14, 1.6], 'line-dasharray': [2, 2] }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
-      m.addLayer({ id: 'route-glow', type: 'line', source: 'route', paint: { 'line-color': '#ec7d45', 'line-opacity': 0.35, 'line-width': 10, 'line-blur': 6 }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
+      m.addLayer({ id: 'route-glow', type: 'line', source: 'route', paint: { 'line-color': '#ff5a1f', 'line-opacity': 0.35, 'line-width': 10, 'line-blur': 6 }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
       m.addLayer({ id: 'route', type: 'line', source: 'route', paint: { 'line-color': '#ffb25b', 'line-width': 3 }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
       m.addLayer({ id: 'stops-ring', type: 'circle', source: 'stops', paint: { 'circle-radius': ['case', ['get', 'visited'], 11, 8], 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': ['case', ['get', 'visited'], '#7fe0a8', '#7fb0ff'], 'circle-stroke-width': 1.5 } })
       m.addLayer({ id: 'stops', type: 'circle', source: 'stops', paint: { 'circle-radius': 4, 'circle-color': ['case', ['get', 'visited'], '#7fe0a8', '#7fb0ff'] } })
