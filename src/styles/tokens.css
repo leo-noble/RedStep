@@ -23,7 +23,7 @@
   --rust-900: #2a130b;
   --rust-700: #6e2f17;
   --rust-500: #c8592e;
-  --rust: #ff5a1f;
+  --rust: #ec7d45;
   --ember: #ffb25b;
 
   /* data, water, ice */
@@ -44,9 +44,11 @@
   --blur: 20px;
 
   /* type */
-  /* Type: Switzer for everything (declared in theme.css). */
+  /* Type: Switzer for everything (its files are declared in theme.css). Headlines use the
+     heavy weights in capitals; labels and buttons use small spaced capitals. */
   --font: 'Switzer', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-head: var(--font);
+  --font-serif: var(--font);
   --mono: var(--font);
 
   /* Type: one modular scale (ratio 1.25, base 16 px), so every level is a clear step from

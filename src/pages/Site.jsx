@@ -464,7 +464,7 @@ function Planner({ site }) {
       )}
 
       {/* action bar */}
-      <div ref={actionbarRef} className="actionbar glass" role="toolbar" aria-label="Walk tools" data-ui>
+      <div ref={actionbarRef} className="actionbar glass" role="toolbar" aria-label="Walk tools">
         <button type="button" className="btn btn-primary ab-main" onClick={() => suggest()} disabled={!grid || busy} aria-busy={!grid || busy}>
           {(!grid || busy) && <i className="spinner spinner-dark" aria-hidden="true" />}
           {!grid ? 'Loading terrain…' : busy ? 'Finding a safe path…' : a ? 'Suggest another walk' : 'Suggest a safe walk'}
@@ -500,7 +500,6 @@ function Planner({ site }) {
             open={sbOpen}
             onToggle={() => setSbOpen((o) => !o)}
             title={site.name}
-            titleAs={narrow ? 'p' : 'h1'}
             label="Map layers, settings and manual"
             className="planner-sb"
             header={(
@@ -535,12 +534,10 @@ function Planner({ site }) {
         </>
       ) : (
         <div className={`sheet ${sheetOpen ? 'open' : ''}`}>
-          <div className="sheet-grip">
+          <button type="button" className="sheet-grip" aria-expanded={sheetOpen} onClick={() => setSheetOpen((o) => !o)}>
             <span aria-hidden="true" />
-            <h1 className="sheet-title">{site.name}</h1>
             {a ? <><Verdict status={a.status} /> <span className="micro">{(a.tripDistance / 1000).toFixed(1)} km · {fmtH(a.hours)}</span></> : <span className="sheet-label">Your walk</span>}
-            <button type="button" className="sheet-toggle" aria-expanded={sheetOpen} aria-label={sheetOpen ? 'Hide the walk details' : 'Show the walk details'} onClick={() => setSheetOpen((o) => !o)} />
-          </div>
+          </button>
           <div className="tabs" role="tablist">
             {[['verdict', 'Answer'], ['science', 'Science'], ['profile', 'Hills'], ['advisor', 'Tips'], ['more', 'More']].map(([k, l]) => (
               <button key={k} role="tab" aria-selected={sheet === k} onClick={() => { setSheet(k); setSheetOpen(true) }}>{l}</button>

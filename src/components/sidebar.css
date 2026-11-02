@@ -68,10 +68,7 @@
 }
 
 .sb-title {
-  margin: 0;
-  font-family: var(--font);
-  line-height: 1.2;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--ink-2);

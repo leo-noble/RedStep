@@ -226,8 +226,9 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 6px;
-  font: 500 13px / 1.4 var(--font);
-  letter-spacing: 0;
+  font: 400 11px / 1.4 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--ink-3);
 }
 

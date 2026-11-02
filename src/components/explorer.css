@@ -45,9 +45,8 @@
   white-space: nowrap;
   font: 500 11px / 1 var(--font);
   letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.9);
-  padding: 3px 6px;
-  background: rgba(11, 8, 7, 0.72);
+  color: rgba(245, 247, 251, 0.82);
+  text-shadow: 0 0 3px #000, 0 1px 6px rgba(0, 0, 0, 0.9);
   will-change: transform;
   pointer-events: auto;
   cursor: pointer;
@@ -65,10 +64,10 @@
 }
 
 .xl-r1 {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: rgba(245, 247, 251, 0.62);
 }
 
@@ -240,7 +239,7 @@
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.85);
   background: #111;
-  box-shadow: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   transition: transform var(--d-ui) var(--ease);
 }
 
@@ -371,8 +370,7 @@
   gap: 16px;
   font-size: 10px;
   color: var(--ink-2);
-  padding: 4px 8px;
-  background: rgba(11, 8, 7, 0.72);
+  text-shadow: 0 1px 4px #000;
   pointer-events: none;
 }
 

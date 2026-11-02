@@ -61,7 +61,7 @@ function letteringTexture() {
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.fillStyle = '#000';
-    ctx.font = '600 104px "Switzer", "Helvetica Neue", Arial, sans-serif';
+    ctx.font = '800 96px "Switzer", "Helvetica Neue", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if ('letterSpacing' in ctx) ctx.letterSpacing = '14px';
@@ -69,7 +69,7 @@ function letteringTexture() {
     tex.needsUpdate = true;
   };
   draw();
-  document.fonts?.load('600 104px "Switzer"').then(draw, () => {});
+  document.fonts?.load('800 96px "Switzer"').then(draw, () => {});
   return tex;
 }
 

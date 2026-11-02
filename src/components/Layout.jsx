@@ -25,7 +25,7 @@ export default function Layout() {
     if (immersive || typeof IntersectionObserver === 'undefined') return undefined
     let io
     const id = requestAnimationFrame(() => {
-      const els = document.querySelectorAll('#main .page > *, #main .page section > *, #main .page section > ol > li, #main .g-main > *')
+      const els = document.querySelectorAll('#main .page > *, #main .page section > *, #main .g-main > *')
       io = new IntersectionObserver((entries) => {
         for (const e of entries) if (e.isIntersecting) { e.target.classList.add('rv-in'); io.unobserve(e.target) }
       }, { rootMargin: '0px 0px -8% 0px' })
@@ -36,7 +36,7 @@ export default function Layout() {
       })
     })
     // never leave content hidden if the observer is slow or paused
-    const safety = setTimeout(() => document.querySelectorAll('#main .rv').forEach((el) => el.classList.add('rv-in')), 9000)
+    const safety = setTimeout(() => document.querySelectorAll('#main .rv').forEach((el) => el.classList.add('rv-in')), 3000)
     return () => { cancelAnimationFrame(id); clearTimeout(safety); io?.disconnect() }
   }, [pathname, immersive])
 
