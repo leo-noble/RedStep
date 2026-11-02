@@ -1574,3 +1574,39 @@
   .ab-after { display: contents; }
   .actionbar .btn-small { min-height: 40px; }
 }
+
+/* The tools after the walk-length switch. On wide screens they sit inline in the bar. */
+.ab-more {
+  display: contents;
+}
+
+@media (max-width: 1180px) {
+  .ab-more > * { flex: none; }
+}
+
+/* Phones: two rows. The main button on top; walk length and the other tools in a row of their
+   own you can swipe, with Save the plan and Fly along next so they are never off-screen. */
+@media (max-width: 600px) {
+  .actionbar {
+    flex-wrap: wrap;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .actionbar > .ab-main { flex: 1 1 100%; }
+  .ab-more {
+    display: flex;
+    flex: 1 1 100%;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+  }
+  .ab-more::-webkit-scrollbar { display: none; }
+  .ab-more > *, .ab-more .ab-after > * { flex: none; }
+  .ab-more .ab-appetite { order: -3; }
+  .ab-more .ab-brief { order: -2; }
+  .ab-more .ab-after > :first-child { order: -1; }
+}

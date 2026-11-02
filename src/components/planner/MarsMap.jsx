@@ -10,6 +10,30 @@ const fc = (features) => ({ type: 'FeatureCollection', features })
 const pt = (lon, lat, props = {}) => ({ type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: [lon, lat] } })
 const line = (coords, props = {}) => ({ type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: coords } })
 
+/** Padding that frames a route in the part of the map the nav, tool bar and panels leave clear,
+ *  measured from the page as it is (sidebar open or shut, phone sheet up or down). */
+function clearArea(m) {
+  const root = m.getContainer().closest('.planner') || m.getContainer()
+  const R = root.getBoundingClientRect()
+  const box = (el) => {
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return r.width && r.height && getComputedStyle(el).visibility !== 'hidden' ? r : null
+  }
+  const gap = 24
+  let top = R.top + gap, bottom = R.bottom - gap, left = R.left + gap, right = R.right - gap
+  for (const r of [box(document.querySelector('.nav')), box(root.querySelector('.actionbar'))]) if (r) top = Math.max(top, r.bottom + gap)
+  for (const r of [box(root.querySelector('.sheet')), box(root.querySelector('.profile-dock'))]) if (r && r.top > R.top + R.height / 3) bottom = Math.min(bottom, r.top - gap)
+  const sb = box(root.querySelector('.sb-left.sb-open'))
+  if (sb && sb.right > R.left && sb.right < R.left + R.width / 2) left = Math.max(left, sb.right + gap)
+  const side = box(root.querySelector('.side-right'))
+  if (side && side.left > R.left + R.width / 2) right = Math.min(right, side.left - gap)
+  // too little room left (a tall phone sheet, a tiny window): keep a fair share of the map
+  if (bottom - top < 160) bottom = Math.max(top + 160, R.top + R.height * 0.55)
+  if (right - left < 160) { left = R.left + gap; right = R.right - gap }
+  return { top: top - R.top, bottom: Math.max(gap, R.bottom - bottom), left: left - R.left, right: R.right - right }
+}
+
 /**
  * The layered Mars map. Parent drives it through the ref:
  *   setLayer(id, on, opacity) · setImage(id, url) · setRoute(line, waypoints) · setStops(stops, visited)
@@ -220,8 +244,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       const m = map.current
       if (!m || !coords?.length) return
       const b = coords.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]))
-      const pad = window.innerWidth < 820 ? { top: 90, bottom: window.innerHeight * 0.5, left: 30, right: 30 } : { top: 110, bottom: 260, left: 400, right: 440 }
-      m.fitBounds(b, { padding: pad, duration: prefersReducedMotion() ? 0 : 1400, maxZoom: 13.4 })
+      m.fitBounds(b, { padding: clearArea(m), duration: prefersReducedMotion() ? 0 : 1400, maxZoom: 13.4 })
     },
     /**
      * Demo street view: a ground-level 3D look from orbital data (photo on the height map, true

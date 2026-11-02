@@ -139,6 +139,10 @@ export default function HomePage() {
     let raf = 0;
     const read = () => {
       raf = 0;
+      // Once the pinned story starts scrolling away, the nav turns solid (home.css) so the map
+      // and the sections below don't slide under a see-through bar.
+      const past = trackRef.current ? trackRef.current.getBoundingClientRect().bottom < window.innerHeight - 1 : false;
+      if (rootRef.current) rootRef.current.dataset.past = past ? 'true' : 'false';
       const r = el.querySelector('.walk__track').getBoundingClientRect();
       const span = r.height - window.innerHeight;
       const p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;

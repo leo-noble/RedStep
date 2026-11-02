@@ -31,6 +31,13 @@ const gc = (a, b) => {
   const x = Math.sin((la2 - la1) / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dl / 2) ** 2
   return 2 * R_MARS * Math.asin(Math.min(1, Math.sqrt(x)))
 }
+/** The point `deg` degrees of arc from `p` ([lon, lat]) heading along compass bearing `brg`. */
+const dest = (p, deg, brg) => {
+  const la1 = p[1] * D, lo1 = p[0] * D, d = deg * D, b = brg * D
+  const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(b))
+  const lo2 = lo1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2))
+  return [((lo2 / D + 540) % 360) - 180, la2 / D]
+}
 const fmtLat = (v) => `${Math.abs(v).toFixed(2)}°${v >= 0 ? 'N' : 'S'}`
 const fmtLon = (v) => `${Math.abs(v).toFixed(2)}°${v >= 0 ? 'E' : 'W'}`
 const season = (Ls) => ['Northern spring', 'Northern summer', 'Northern autumn', 'Northern winter'][Math.floor((((Ls % 360) + 360) % 360) / 90)]
@@ -131,9 +138,9 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
 
       m.addSource('rovers', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addLayer({ id: 'rovers', type: 'line', source: 'rovers', minzoom: 6, paint: { 'line-color': '#ffb25b', 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1, 12, 2.4], 'line-opacity': 0.9 }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
-      m.addSource('sites', { type: 'geojson', data: { type: 'FeatureCollection', features: SITES.map((s) => ({ type: 'Feature', properties: { id: s.id, planner: s.planner }, geometry: { type: 'Point', coordinates: [s.lon, s.lat] } })) } })
-      m.addLayer({ id: 'sites-halo', type: 'circle', source: 'sites', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 9, 8, 16], 'circle-color': '#ffb25b', 'circle-opacity': 0.18, 'circle-pitch-alignment': 'map' } })
-      m.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 4, 8, 6], 'circle-color': ['case', ['get', 'planner'], '#ffb25b', '#f5f7fb'], 'circle-stroke-color': '#000', 'circle-stroke-width': 1.5 } })
+      m.addSource('sites', { type: 'geojson', promoteId: 'id', data: { type: 'FeatureCollection', features: SITES.map((s) => ({ type: 'Feature', properties: { id: s.id, planner: s.planner }, geometry: { type: 'Point', coordinates: [s.lon, s.lat] } })) } })
+      m.addLayer({ id: 'sites-halo', type: 'circle', source: 'sites', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 9, 8, 16], 'circle-color': '#ffb25b', 'circle-opacity': ['case', ['boolean', ['feature-state', 'rim'], false], 0, 0.18], 'circle-pitch-alignment': 'map' } })
+      m.addLayer({ id: 'sites', type: 'circle', source: 'sites', paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 4, 8, 6], 'circle-color': ['case', ['get', 'planner'], '#ffb25b', '#f5f7fb'], 'circle-stroke-color': '#000', 'circle-stroke-width': 1.5, 'circle-opacity': ['case', ['boolean', ['feature-state', 'rim'], false], 0, 1], 'circle-stroke-opacity': ['case', ['boolean', ['feature-state', 'rim'], false], 0, 1] } })
       m.addSource('pin', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
       m.addLayer({ id: 'pin', type: 'circle', source: 'pin', paint: { 'circle-radius': 7, 'circle-color': '#00e5ff', 'circle-stroke-color': '#000', 'circle-stroke-width': 2 } })
 
@@ -223,6 +230,29 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
     const horizon = 80 // degrees from the centre: beyond this, points are on the far side of the globe
     const boxes = []
     const hit = (b) => boxes.some((o) => b[0] < o[2] && b[2] > o[0] && b[1] < o[3] && b[3] > o[1])
+    // The globe camera has perspective, so its visible edge sits well inside 90° and the last
+    // 20° or so are squeezed into a thin, mostly night-dark rim: labels there look like they
+    // float in space. On the whole-planet view, keep points inside 95% of the disk on screen.
+    let limb = null
+    if (z < 4) {
+      const pc = m.project(center)
+      let r = 0
+      for (const brg of [90, 270]) for (let a = 50; a <= 90; a += 4) {
+        const q = m.project(dest(center, a, brg))
+        r = Math.max(r, Math.hypot(q.x - pc.x, q.y - pc.y))
+      }
+      limb = { x: pc.x, y: pc.y, r }
+    }
+    const onDisk = (p) => !limb || Math.hypot(p.x - limb.x, p.y - limb.y) <= limb.r * 0.95
+    // the mission-site dots are drawn by the map: labels must not cover them, and on the rim
+    // they fade out with their labels
+    for (const s of SITES) {
+      const behind = gc(center, [s.lon, s.lat]) / R_MARS / D > horizon
+      const p = m.project([s.lon, s.lat])
+      const rim = !behind && !onDisk(p)
+      if (m.getSource('sites')) m.setFeatureState({ source: 'sites', id: s.id }, { rim })
+      if (!behind && !rim) boxes.push([p.x - 5, p.y - 5, p.x + 5, p.y + 5])
+    }
     const out = []
     for (const s of SITES) out.push([s.name, s.lon, s.lat, 'site', 0])
     for (const n of namesRef.current) {
@@ -234,16 +264,27 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
     for (const n of out) {
       if (count > 90) break
       if (gc(center, [n[1], n[2]]) / R_MARS / D > horizon) continue
-      const p = m.project([n[1], n[2]])
+      let p = m.project([n[1], n[2]])
+      if (!onDisk(p)) {
+        // the big regions (Hellas, Planum Boreum…) are wide enough to label just inside the rim
+        if (n[4] !== 1) continue
+        const k = (limb.r * 0.9) / Math.hypot(p.x - limb.x, p.y - limb.y)
+        p = { x: limb.x + (p.x - limb.x) * k, y: limb.y + (p.y - limb.y) * k }
+      }
       if (p.x < -40 || p.y < -20 || p.x > W + 40 || p.y > H + 20) continue
       // approximate label box (site labels sit to the right of their dot)
       const w = n[0].length * (n[4] === 1 ? 9.5 : 6.6) + 12, h = 18
       const x0 = n[4] === 0 ? p.x + 6 : p.x - w / 2
-      const box = [x0, p.y - h / 2, x0 + w, p.y + h / 2]
+      let box = [x0, p.y - h / 2, x0 + w, p.y + h / 2]
+      // a site label whose right side is taken tries the left of its dot
+      const left = n[4] === 0 && hit(box)
+      if (left) box = [p.x - 6 - w, p.y - h / 2, p.x - 6, p.y + h / 2]
       if (hit(box)) continue
+      // and a site label must not run off the planet either
+      if (n[4] === 0 && limb && Math.hypot((left ? box[0] : box[2]) - limb.x, p.y - limb.y) > limb.r) continue
       boxes.push(box)
       const d = document.createElement('span')
-      d.className = `xl xl-r${n[4]}`
+      d.className = `xl xl-r${n[4]}${left ? ' xl-left' : ''}`
       d.textContent = n[0]
       d.dataset.name = n[0]
       d.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`
@@ -369,6 +410,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
   return (
     <div className={`xp ${visible ? 'xp-in' : ''} ${ready ? 'xp-ready' : ''}`}>
       <div ref={el} className="xp-map" />
+      {!ready && <p className="xp-loading" role="status"><i className="spinner" aria-hidden="true" />Loading Mars imagery…</p>}
       <div ref={labelsEl} className="xp-labels" aria-hidden="true" onClick={(e) => {
         const nm = e.target.dataset?.name
         if (!nm) return

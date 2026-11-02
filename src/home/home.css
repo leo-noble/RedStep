@@ -2413,3 +2413,23 @@
   min-width: 0;
   flex: 1 1 100%;
 }
+
+/* Past the story: the pinned stage (and the Mars map on it) scrolls away under the nav, so the
+   see-through overlay nav turns solid, like on the other pages. */
+html:has(.mw-home[data-past='true']) .nav-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* slope thresholds stay on one line ("10–15°" used to break on phones) */
+.mw-home .slope b {
+  white-space: nowrap;
+}
+
+@media (max-width: 860px), (max-aspect-ratio: 1/1) {
+  .mw-home .slope b {
+    font-size: clamp(20px, 6vw, 28px);
+  }
+}

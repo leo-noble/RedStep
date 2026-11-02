@@ -469,6 +469,8 @@ function Planner({ site }) {
           {(!grid || busy) && <i className="spinner spinner-dark" aria-hidden="true" />}
           {!grid ? 'Loading terrain…' : busy ? 'Finding a safe path…' : a ? 'Suggest another walk' : 'Suggest a safe walk'}
         </button>
+        {/* the rest of the tools: inline on wide screens, their own swipeable row on phones */}
+        <div className="ab-more">
         <div className="ab-appetite" role="radiogroup" aria-label="Walk length">
           {APPETITE.map((x) => (
             <button key={x.id} type="button" role="radio" aria-checked={appetite === x.id} title={x.note} onClick={() => { setAppetite(x.id); if (result) suggest(x.id) }}>{x.label}</button>
@@ -490,6 +492,7 @@ function Planner({ site }) {
             <button type="button" className="btn btn-small ab-brief" onClick={exportBrief}>Save the plan <span className="arrow">→</span></button>
           </span>
         )}
+        </div>
       </div>
       {drawing && hint && <p className="draw-hint" role="status">Tap the map to add stops on your walk</p>}
       {suggestNote && <p className="draw-hint draw-warn">{suggestNote}</p>}
