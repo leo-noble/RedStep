@@ -30,25 +30,6 @@ NASA Space Apps Challenge 2026 · *Interplanetary Survival Guide: Martian Map* �
 
 Every number carries one of three labels: **NASA data** (measured), **Derived** (computed here from NASA data, method on /sources) or **Illustrative** (an editable assumption). Nothing is live telemetry. The advisor is a deterministic rule engine, labelled *Local rule engine — not a live AI model*. Lava tubes are never called confirmed; Mars soil is never called safe to farm.
 
-## Run it
-
-```bash
-npm install
-npm run dev
-```
-
-Offline demo: serve the build locally (below), or open the live site once; after the first visit the service worker keeps the app and the Jezero data, so the planner works with no connection:
-
-```bash
-npm run build && npm run preview
-```
-
-Tests (Mars24 against NASA GISS worked examples, Earth–Mars distance, slope on a synthetic ramp, safe path around a wall, real Jezero heights):
-
-```bash
-npm test
-```
-
 ## Data pipeline
 
 `npm run bake` downloads public NASA/USGS products once and writes everything the app needs into `public/data/` (about 11 MB), so the site runs offline:

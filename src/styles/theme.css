@@ -1,10 +1,11 @@
 /* =========================================================================================
-   Redstep theme: "mission dossier". Loaded after every other sheet, so it sets the look of
-   the whole site in one place.
-     · warm black and warm paper-white instead of pure black and blue-white
-     · one typeface, Switzer: heavy capitals for headlines, the key word in ember,
-       small spaced capitals for labels and buttons
-     · hairlines, corner ticks and square-ish corners instead of soft glass bubbles
+   Redstep theme: Apple's way. Loaded after every other sheet, so it sets the look of the
+   whole site in one place.
+     · clarity: Instrument Serif headlines and Switzer text, sentence case, generous space,
+       one thing per screen
+     · deference: black ground, neutral greys, colour only where it means something
+       (white for actions, Mars orange for links and the word that matters, the data tags)
+     · depth: one translucent bar on top; everything else is a flat, rounded surface
    ========================================================================================= */
 @font-face {
   font-family: 'Switzer';
@@ -34,306 +35,364 @@
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Switzer';
-  src: url('./fonts/switzer-800.woff2') format('woff2');
-  font-weight: 800;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Switzer';
-  src: url('./fonts/switzer-900.woff2') format('woff2');
-  font-weight: 900;
-  font-display: swap;
-}
-
 :root {
-  --void: #070504;
-  --ink: #f4ece1;
-  --ink-2: rgba(244, 236, 225, 0.7);
-  --ink-3: rgba(244, 236, 225, 0.48);
-  --ink-4: rgba(244, 236, 225, 0.26);
-  --rule: rgba(244, 236, 225, 0.16);
-  --rule-soft: rgba(244, 236, 225, 0.08);
+  /* Headlines in Instrument Serif, a fine high-contrast display serif; everything else in
+     Switzer, a precise neo-grotesk. Both are bundled, so every device sees the same type. */
+  --font: 'Switzer', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
+  --font-head: 'Instrument Serif', 'Times New Roman', Georgia, serif;
+  --font-serif: var(--font-head);
+  --mono: var(--font);
 
+  /* Apple's dark palette */
+  --void: #000;
+  --surface-1: #1d1d1f;
+  --surface-2: #2c2c2e;
+  --ink: #f5f5f7;
+  --ink-2: #a1a1a6;
+  --ink-3: #86868b;
+  --ink-4: #6e6e73;
+  --rule: rgba(255, 255, 255, 0.14);
+  --rule-soft: rgba(255, 255, 255, 0.08);
+  --link: #ff9f5a;
+  --link-hover: #ffb27d;
   --rust: #ff6a2c;
-  --ember: #ffb069;
+  --ember: #ff9f5a;
 
-  --lg-tint: rgba(16, 12, 10, 0.8);
-  --lg-rim: rgba(244, 236, 225, 0.12);
-  --lg-radius: 12px;
+  /* panels: Apple's rounded surfaces */
+  --lg-tint: rgba(29, 29, 31, 0.86);
+  --lg-rim: rgba(255, 255, 255, 0.08);
+  --lg-radius: 18px;
+  --r-1: 6px;
+  --r-2: 12px;
+  --r-3: 18px;
+  --r-tile: 28px;
 
-  --r-2: 4px;
-  --r-3: 8px;
-
-  /* a small L at each corner of a framed block */
-  --ticks:
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top left / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top left / 1px 10px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top right / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) top right / 1px 10px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom left / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom left / 1px 10px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom right / 10px 1px,
-    linear-gradient(var(--tick, var(--ink-3)), var(--tick, var(--ink-3))) bottom right / 1px 10px;
+  --ease: cubic-bezier(0.28, 0.11, 0.32, 1);
 }
 
-body {
-  font-variation-settings: 'wdth' 100;
-}
-
-/* Film grain over everything, very faint, so flat darks feel like a printed photograph.
-   Desktop only: phones keep every frame for the 3D scene. */
-@media (hover: hover) and (pointer: fine) {
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0.07;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
+:root body {
+  background: var(--void);
+  color: var(--ink);
+  font: 400 17px / 1.47 var(--font);
+  letter-spacing: -0.022em;
+  font-feature-settings: 'tnum' 0;
 }
 
 /* ---------------------------------------------------------------- type ---------------- */
-:root h1,
-:root h2 {
+:root :is(h1, h2) {
   font-family: var(--font-head);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+  text-transform: none;
 }
 
 :root h3 {
   font-family: var(--font);
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.17;
 }
 
-/* the one emphasised word: same face and weight, in ember */
+/* the word that matters: the serif's italic, in Mars orange */
 :root .serif,
 :root :is(h1, h2, .h2, .walk__title, .home-end__title, .hero2__title) em {
-  font: inherit;
+  font-family: var(--font-head);
+  font-style: italic;
+  font-weight: 400;
   color: var(--ember);
 }
 
-/* labels: mono capitals, the instrument-panel voice */
+/* small labels: sentence case, Apple grey, no letter-spacing */
 :root .micro {
-  font: 500 10.5px / 1.5 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 14px / 1.43 var(--font);
+  letter-spacing: -0.016em;
+  text-transform: none;
   color: var(--ink-3);
 }
 
-/* page titles: tall poster capitals */
-:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 {
-  font-size: clamp(38px, 6vw, 104px);
-  line-height: 0.9;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
+:root .mono {
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
 }
 
+:root :is(.page-head, .guide, .brief, .route-error, .nf) h1 {
+  font-size: clamp(48px, 6.4vw, 104px);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  text-transform: none;
+}
 
-
-/* section headings on content pages: condensed capitals over a hairline */
 :root :is(.page, .guide) h2.micro,
 :root .page h2 {
-  font: 800 clamp(22px, 2vw, 32px) / 1 var(--font-head);
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
+  font: 400 clamp(30px, 3vw, 48px) / 1.05 var(--font-head);
+  letter-spacing: -0.01em;
+  text-transform: none;
   color: var(--ink);
   margin-bottom: var(--s-4);
 }
 
 :root .page-lead {
-  font-size: clamp(17px, 0.6vw + 14px, 22px);
-  line-height: 1.5;
+  font-size: clamp(19px, 0.6vw + 15px, 24px);
+  line-height: 1.38;
+  letter-spacing: -0.02em;
   color: var(--ink-2);
 }
 
-/* ---------------------------------------------------------------- buttons ------------- */
-:root .btn,
-:root .mw-home .btn {
-  min-height: 50px;
-  padding: 0 22px;
-  border-radius: 4px;
-  font: 600 11.5px / 1 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+:root a {
+  text-underline-offset: 0.18em;
 }
 
-:root .btn-small {
-  min-height: 38px;
-  padding: 0 14px;
-  font-size: 10.5px;
+/* ---------------------------------------------------------------- buttons ------------- */
+/* pills: solid white for the main action, an outlined pill for the second one */
+:root :is(.btn, .mw-home .btn) {
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 980px;
+  border: 1px solid transparent;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 400 17px / 1 var(--font);
+  letter-spacing: -0.022em;
+  text-transform: none;
+  box-shadow: none;
+  transition: background-color 200ms var(--ease), color 200ms var(--ease), border-color 200ms var(--ease), transform 160ms var(--ease);
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary) {
-  background: var(--rust);
-  color: #160602;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #000;
   box-shadow: none;
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {
-  background: var(--ink);
+  background: #fff;
+  border-color: #fff;
 }
 
 :root:not([data-platform='windows']) .mw-home .btn--ghost {
-  background: rgba(7, 5, 4, 0.4);
-  border: 1px solid var(--rule);
+  background: transparent;
+  border: 1px solid rgba(245, 245, 247, 0.5);
+  color: var(--ink);
   box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 :root:not([data-platform='windows']) .mw-home .btn--ghost:hover {
+  background: var(--ink);
   border-color: var(--ink);
+  color: #000;
 }
 
-/* honesty tags: squared, like stamped labels */
-:root .chip,
-:root .badge__chip {
-  border-radius: 2px;
+:root :is(.btn, .mw-home .btn):active {
+  transform: scale(0.97);
 }
 
-/* panels: squarer corners, warm tint */
+:root .btn-small {
+  min-height: 34px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* data tags: small rounded labels; their words stay exactly NASA DATA / DERIVED / ILLUSTRATIVE */
+:root :is(.chip, .badge__chip) {
+  border-radius: 980px;
+  font-family: var(--font);
+  letter-spacing: 0.02em;
+}
+
+/* panels: rounded surfaces */
 :root:not([data-platform='windows']) :is(.sb, .g-rail, .side, .actionbar, .profile-dock) {
   border-radius: var(--lg-radius);
 }
 
-/* framed blocks on content pages get corner ticks */
-:root :is(.about-team, .src-assume > div, .hab-summary, .g-try, .brief-card) {
-  background: var(--ticks);
-  background-repeat: no-repeat;
-}
-
 /* ---------------------------------------------------------------- nav ----------------- */
-:root .nav-name {
-  font: 800 18px / 1 var(--font-head);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+/* Apple's global nav: a thin translucent bar, small quiet links */
+:root .nav {
+  height: calc(48px + env(safe-area-inset-top, 0px));
+  background: rgba(22, 22, 23, 0.8);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0;
 }
 
-@media (min-width: 941px) {
-  :root:not([data-platform='windows']) .nav .nav-links {
-    background: none;
-    border: 0;
-    box-shadow: none;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    gap: 6px;
-  }
+:root .nav.nav-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
 
-  :root .nav-links a {
-    position: relative;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 0;
-    font: 500 11px / 1 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+:root .nav-name {
+  font: 400 23px / 1 var(--font-head);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
 
-  :root .nav-links a.on {
-    background: none;
-    color: var(--ink);
-  }
+:root .nav-mark {
+  width: 22px;
+  height: 22px;
+}
 
-  :root .nav-links a::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 4px;
-    height: 1px;
-    background: var(--rust);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 320ms var(--ease);
-  }
+:root:not([data-platform='windows']) .nav .nav-links {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  gap: 4px;
+  padding: 0;
+}
 
-  :root .nav-links a:hover::after,
-  :root .nav-links a.on::after {
-    transform: scaleX(1);
+:root .nav-links a {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 0;
+  font: 400 12px / 1 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: rgba(245, 245, 247, 0.8);
+  background: none;
+  transition: color 200ms var(--ease);
+}
+
+:root .nav-links a.on {
+  background: none;
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root .nav-links a:hover {
+    color: #fff;
   }
 }
 
 :root .nav-sos {
-  border-radius: 4px;
-  font: 600 10.5px / 1 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 980px;
+  font: 400 12px / 1 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
-:root .nav-sheet a {
-  font: 800 26px / 1 var(--font-head);
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-}
-
+/* phones: a flat full-width bar, and a full-screen menu with large links */
 @media (max-width: 940px) {
   :root .nav,
   :root .nav.nav-overlay {
-    border-radius: 14px;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: calc(48px + env(safe-area-inset-top, 0px));
+    grid-template-rows: 48px 1fr;
+    padding: env(safe-area-inset-top, 0px) 8px 0 16px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: rgba(22, 22, 23, 0.8);
   }
 
   :root .nav.nav-open {
-    border-radius: 16px;
+    height: 100svh;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.96);
   }
 
-  :root .nav-sheet a {
-    font-size: 26px;
+  :root .nav-sheet {
+    padding: 16px 32px 32px 16px;
+  }
+
+  :root .nav-sheet a,
+  :root .nav-install {
+    min-height: 48px;
+    font: 400 34px / 1.1 var(--font-head);
+    letter-spacing: -0.01em;
+    text-transform: none;
+    border: 0;
   }
 }
 
 /* ---------------------------------------------------------------- footer -------------- */
+/* Apple's footer: small grey print on a slightly lighter ground */
+:root .footer {
+  background: var(--surface-1);
+  border-top: 0;
+  font-size: 12px;
+  line-height: 1.33;
+  color: var(--ink-3);
+}
+
+:root .footer-orbits {
+  display: none;
+}
+
 :root .footer-name {
-  font: 800 24px / 1 var(--font-head);
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  font: 600 14px / 1.2 var(--font);
+  letter-spacing: -0.016em;
+  text-transform: none;
+  color: var(--ink);
 }
 
 :root .footer-links a {
-  font: 500 11px / 1.4 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 12px / 1.4 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink-2);
+  text-decoration: none;
 }
 
-/* the name, as wide as the page, cut off at the bottom edge */
-:root .wordmark {
-  margin: var(--s-7) 0 calc(-0.2 * var(--wm-size));
-  --wm-size: 19vw;
-  font: 900 var(--wm-size) / 0.8 var(--font-head);
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-  text-align: center;
-  white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(244, 236, 225, 0.22);
-  background: linear-gradient(180deg, rgba(255, 106, 44, 0.32), rgba(255, 106, 44, 0) 70%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  user-select: none;
-  overflow: hidden;
+@media (hover: hover) and (pointer: fine) {
+  :root .footer-links a:hover {
+    text-decoration: underline;
+  }
 }
 
-:root .footer,
-:root .home-end {
-  overflow: hidden;
+:root :is(.footer-legal, .footer-motion) {
+  font-size: 12px;
+  color: var(--ink-3);
 }
 
-/* phones: long mono button labels wrap instead of pushing the page sideways */
+:root .footer .rule {
+  background: var(--rule);
+}
+
+/* phones: buttons may wrap rather than push the page sideways */
 @media (max-width: 480px) {
   :root .btn {
     max-width: 100%;
-    padding: 12px 16px;
     white-space: normal;
     text-align: center;
-    line-height: 1.35;
+    line-height: 1.25;
   }
 
   :root .actionbar .btn {
-    padding: 0 14px;
-    font-size: 10px;
     white-space: nowrap;
+    font-size: 15px;
+  }
+}
+
+/* ---------------------------------------------------------------- content tiles ------- */
+/* Apple's tiles: a rounded surface one step lighter than the page, no outline */
+:root :is(.g-widget, .hab-summary, .about-team, .src-assume > div) {
+  border: 0;
+  border-radius: var(--r-tile);
+  background: var(--surface-1);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+:root :is(.g-widget, .hab-summary, .about-team) {
+  padding: clamp(24px, 3vw, 48px);
+}
+
+/* links: Mars orange, underline on hover */
+:root :is(.page, .g-main) p a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root :is(.page, .g-main) p a:hover {
+    text-decoration: underline;
   }
 }

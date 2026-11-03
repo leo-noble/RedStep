@@ -2164,76 +2164,49 @@
 }
 
 /* =========================================================================================
-   Mission dossier (overrides the block above): heavy Switzer capitals with the key word in
-   ember, small spaced capitals for labels and numbers, a corner-tick frame over the scene.
+   Apple's way (overrides the blocks above): sentence-case headlines in Instrument Serif,
+   the product line in colour above them, quiet grey labels, pill buttons, rounded surfaces.
    ========================================================================================= */
+.mw-home {
+  font-family: var(--font);
+  letter-spacing: -0.022em;
+}
+
 .mw-home :is(.hero2__title, .h2, .walk__title, .walk__step h3, .home-end__title) {
   font-family: var(--font-head);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  text-transform: none;
 }
 
 .mw-home :is(.hero2__title, .h2, .walk__title, .home-end__title) em {
-  font-size: 1em;
-}
-
-/* ---- frame ---- */
-.mw-home .hud {
-  position: absolute;
-  inset: calc(var(--nav-h) + 8px) 18px 18px;
-  z-index: var(--z-copy);
-  pointer-events: none;
-}
-
-.mw-home .hud__c {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border: 0 solid var(--ink-4);
-}
-
-.mw-home .hud__c--tl { top: 0; left: 0; border-width: 1px 0 0 1px; }
-.mw-home .hud__c--tr { top: 0; right: 0; border-width: 1px 1px 0 0; }
-.mw-home .hud__c--bl { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
-.mw-home .hud__c--br { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
-
-.mw-home .hud__coord {
-  position: absolute;
-  top: 10px;
-  left: 34px;
-  font: 500 10px / 1 var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  opacity: var(--w-hero, 1);
+  font-family: var(--font-head);
+  font-style: italic;
+  color: var(--ember);
 }
 
 /* ---- hero ---- */
 .mw-home .hero2 {
-  left: 59%;
-  bottom: 118px;
+  left: 60%;
+  bottom: 120px;
 }
 
 .mw-home .hero2__over {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font: 500 11px / 1.4 var(--mono);
-  letter-spacing: 0.12em;
-  color: var(--ink-2);
+  display: block;
+  margin: 0 0 12px;
+  font: 500 clamp(15px, 1.1vw, 17px) / 1.3 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ember);
 }
 
 .mw-home .hero2__over::before {
-  content: '';
-  width: 36px;
-  height: 1px;
-  background: var(--rust);
+  content: none;
 }
 
 .mw-home .hero2__title {
-  font-size: clamp(52px, 6.2vw, 116px);
-  line-height: 0.84;
+  font-size: clamp(60px, 7vw, 124px);
+  line-height: 0.98;
 }
 
 .mw-home .hero2__mars {
@@ -2241,135 +2214,204 @@
 }
 
 .mw-home .hero2__lead {
-  max-width: 34ch;
-  font-size: 18px;
-  line-height: 1.5;
+  margin-top: 20px;
+  max-width: 30ch;
+  font-size: clamp(19px, 1.4vw, 24px);
+  line-height: 1.33;
+  letter-spacing: -0.02em;
+  color: var(--ink-2);
 }
 
-/* ---- strip ---- */
+.mw-home .hero2 .cta-row {
+  margin-top: 32px;
+  gap: 16px;
+}
+
+/* ---- live strip ---- */
 .mw-home .strip {
-  border-top-color: var(--rule);
+  border-top: 1px solid var(--rule-soft);
+  font-family: var(--font);
 }
 
 .mw-home .strip__live,
 .mw-home .strip__item small {
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font: 400 12px / 1.33 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+.mw-home .strip__live {
+  color: var(--ember);
+  font-weight: 600;
 }
 
 .mw-home .strip__item b {
-  font: 600 13px / 1 var(--mono);
+  font: 600 14px / 1.2 var(--font);
+  letter-spacing: -0.016em;
+  color: var(--ink);
 }
 
 /* ---- chapters ---- */
 .mw-home .chapter--left {
-  max-width: min(38rem, 42vw);
+  max-width: min(36rem, 42vw);
 }
 
 .mw-home .chapter--left .eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font: 500 11px / 1.4 var(--mono);
-  letter-spacing: 0.12em;
-  color: var(--rust);
+  display: block;
+  margin-bottom: 10px;
+  font: 500 clamp(15px, 1.1vw, 17px) / 1.3 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ember);
 }
 
 .mw-home .chapter--left .eyebrow::before {
-  content: '';
-  width: 36px;
-  height: 1px;
-  background: currentColor;
+  content: none;
 }
 
 .mw-home .chapter--left .h2 {
-  font-size: clamp(36px, 3.5vw, 64px);
-  line-height: 0.86;
+  font-size: clamp(48px, 4.8vw, 80px);
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.mw-home .chapter--left .body {
+  font-size: clamp(17px, 1.2vw, 19px);
+  line-height: 1.42;
+  color: var(--ink-2);
 }
 
 .mw-home .chip {
-  border-radius: 2px;
-  background: rgba(7, 5, 4, 0.5);
-  border-color: var(--rule);
+  border: 0;
+  border-radius: 14px;
+  background: rgba(29, 29, 31, 0.78);
+}
+
+.mw-home :is(.chip__mission, .chip__res) {
+  font-family: var(--font);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .mw-home .stat__value {
-  font: 800 clamp(40px, 3.6vw, 64px) / 0.9 var(--font-head);
-  letter-spacing: -0.03em;
+  font: 400 clamp(48px, 4.2vw, 68px) / 1 var(--font-head);
+  letter-spacing: -0.01em;
 }
 
 .mw-home .stat__value small {
-  font: 500 11px / 1 var(--mono);
-  letter-spacing: 0.06em;
+  font: 400 14px / 1 var(--font);
+  letter-spacing: -0.016em;
   color: var(--ink-3);
 }
 
 .mw-home .stat__label {
-  font: 500 10px / 1.5 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 12px / 1.33 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+.mw-home .slope {
+  border-radius: 14px;
 }
 
 .mw-home .slope b {
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: 28px;
+  font: 400 34px / 1 var(--font-head);
+  letter-spacing: -0.01em;
 }
 
-/* ---- walkthrough ---- */
+.mw-home .slope span {
+  font: 600 12px / 1 var(--font);
+  letter-spacing: 0;
+}
+
+.mw-home .rail__item,
+.mw-home .rail__label {
+  font: 400 12px / 1 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.mw-home .schematic-note {
+  font: 400 12px / 1.33 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+/* ---- walkthrough: the section title centred, the way Apple opens a section ---- */
 .mw-home .walk__title {
-  font-size: clamp(44px, 5.6vw, 104px);
-  line-height: 0.84;
+  font-size: clamp(52px, 6vw, 104px);
+  line-height: 1;
+  text-align: center;
 }
 
 .mw-home .walk__step h3 {
-  font-size: clamp(24px, 2vw, 32px);
-  line-height: 0.95;
+  font-size: clamp(30px, 2.4vw, 40px);
+  line-height: 1.05;
 }
 
 .mw-home .walk__link {
-  font: 600 11px / 1 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--rust);
+  font: 400 17px / 1.3 var(--font);
+  letter-spacing: -0.022em;
+  text-transform: none;
+  color: var(--link);
 }
 
 .mw-home .walk__screen {
-  border-radius: 6px;
+  border-radius: var(--r-tile);
 }
 
-/* ---- closing ---- */
+/* ---- the close ---- */
+.mw-home .home-end__top {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
 .mw-home .home-end__title {
-  font-size: clamp(48px, 7vw, 128px);
-  line-height: 0.84;
+  font-size: clamp(52px, 6vw, 104px);
+  line-height: 1;
+  min-width: 0;
+}
+
+.mw-home .home-end__actions {
+  justify-content: center;
+}
+
+.mw-home .home-end__links {
+  justify-content: center;
 }
 
 .mw-home .home-end__links a {
-  font: 500 11px / 1.4 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 12px / 1.4 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.mw-home .home-end__legal {
+  font-size: 12px;
+  line-height: 1.33;
+  color: var(--ink-3);
+  text-align: center;
+  margin-inline: auto;
 }
 
 /* ---- phones ---- */
 @media (max-width: 860px), (max-aspect-ratio: 1/1) {
   .mw-home .hero2 {
     left: var(--margin);
+    right: var(--margin);
   }
 
   .mw-home .hero2__title {
-    font-size: clamp(44px, 13vw, 76px);
+    font-size: clamp(52px, 14vw, 80px);
   }
 
   .mw-home .hero2__lead {
-    font-size: 16px;
-  }
-
-  .mw-home .hud {
-    inset: calc(var(--nav-h) + 14px) 8px 8px;
-  }
-
-  .mw-home .hud__coord {
-    display: none;
+    font-size: 17px;
+    max-width: none;
   }
 
   .mw-home .chapter--left {
@@ -2377,59 +2419,42 @@
   }
 
   .mw-home .chapter--left .h2 {
-    font-size: clamp(32px, 9.5vw, 48px);
+    font-size: clamp(40px, 10.5vw, 56px);
   }
 
   .mw-home .stat__value {
-    font-size: 32px;
+    font-size: 40px;
   }
 
   .mw-home .stat__value small {
     display: block;
     margin-top: 6px;
-    font-size: 10px;
-  }
-
-  .mw-home .stat__label {
-    font-size: 10px;
-    letter-spacing: 0.04em;
+    font-size: 12px;
   }
 
   .mw-home .strip__item b {
-    font-size: 11px;
+    font-size: 12px;
   }
 
-  .mw-home .walk__title {
-    font-size: clamp(36px, 10.5vw, 60px);
-  }
-
+  .mw-home .walk__title,
   .mw-home .home-end__title {
-    font-size: clamp(38px, 11vw, 68px);
+    font-size: clamp(40px, 11vw, 60px);
   }
 }
 
-/* the closing line wraps instead of pushing past the edge on mid-size windows */
-.mw-home .home-end__title {
-  min-width: 0;
-  flex: 1 1 100%;
+/* labels in the 3D scene: sentence case, Apple grey */
+.mw-home .body-label :is(b, em) {
+  font-family: var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
-/* Past the story: the pinned stage (and the Mars map on it) scrolls away under the nav, so the
-   see-through overlay nav turns solid, like on the other pages. */
-html:has(.mw-home[data-past='true']) .nav-overlay {
-  background: rgba(0, 0, 0, 0.7);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  backdrop-filter: blur(20px) saturate(1.4);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+.mw-home .body-label b {
+  font-size: 13px;
+  font-weight: 600;
 }
 
-/* slope thresholds stay on one line ("10–15°" used to break on phones) */
-.mw-home .slope b {
-  white-space: nowrap;
-}
-
-@media (max-width: 860px), (max-aspect-ratio: 1/1) {
-  .mw-home .slope b {
-    font-size: clamp(20px, 6vw, 28px);
-  }
+.mw-home .body-label em {
+  font-size: 12px;
+  color: var(--ink-3);
 }
