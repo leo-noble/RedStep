@@ -8,7 +8,7 @@ import './minimap.css'
 
 const R = 3396190
 const D = Math.PI / 180
-const COL = { you: '#00e5ff', easy: '#ffb25b', careful: '#ffd37a', steep: '#ff8d7a', home: '#f5f7fb', stop: '#7fb0ff', visited: '#7fe0a8', grid: 'rgba(0, 229, 255, 0.08)', text: 'rgba(245, 247, 251, 0.72)' }
+const COL = { you: '#ffffff', easy: '#ffb25b', careful: '#ffd37a', steep: '#ff8d7a', home: '#f5f5f7', stop: '#a1a1a6', visited: '#7fe0a8', grid: 'rgba(255, 255, 255, 0.05)', text: 'rgba(245, 245, 247, 0.78)' }
 const nice = (m) => [50, 100, 200, 250, 500, 1000, 2000, 5000].find((s) => s >= m) || 5000
 
 // ---- shapes, shared by the canvas and the legend ----
@@ -28,11 +28,11 @@ function shape(ctx, kind, x, y, s = 1) {
     ctx.fillStyle = '#000'; ctx.fillRect(-0.8, -2.5, 1.6, 4); ctx.fillRect(-0.8, 2.6, 1.6, 1.4)
   }
   if (kind === 'here') {
-    ctx.fillStyle = 'rgba(0, 229, 255, 0.18)'; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill()
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill()
     ctx.fillStyle = COL.you; ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, 7); ctx.fill(); ctx.stroke()
   }
   if (kind === 'you') {
-    ctx.fillStyle = 'rgba(0, 229, 255, 0.18)'; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill()
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill()
     ctx.fillStyle = COL.you; ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(5.5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5.5, 6); ctx.closePath(); ctx.fill(); ctx.stroke()
   }
   ctx.restore()

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Link } from 'react-router'
 import { Badge, HonestyDot, Pop, Source, Slider, Verdict } from '../Atoms.jsx'
 import { DATA } from '../../content/sources.js'
@@ -7,6 +7,7 @@ import { ICE_NOTE } from '../../content/layers.js'
 import { ADVISOR_LABEL } from '../../lib/advisor.js'
 import { fmtH, pct } from '../../compute/walk.js'
 import { fmtHours } from '../../lib/mars24.js'
+import { startWindow } from '../../lib/startWindow.js'
 import { useCountUp } from '../../lib/hooks.js'
 import { SbDisclosure } from '../Sidebar.jsx'
 
@@ -66,6 +67,52 @@ function Count({ value, format }) {
 const f1 = (x) => x.toFixed(1)
 const f0 = (x) => Math.round(x).toLocaleString()
 const fp = (x) => `${Math.round(x * 100)}`
+
+/** When to leave: the start times that keep the sun above the safe limit for this whole walk,
+ *  and the one with the kindest light. Worked out from the same Mars24 sun model as the verdict. */
+export function StartWindowPanel({ analysis: a, settings: s, site, dateMs, onApply }) {
+  const w = useMemo(
+    () => (a ? startWindow({ dateMs, lat: site.lat, lon: site.lon, hours: a.hours, minSun: s.minSun, from: WALK.startHour.min, to: WALK.startHour.max, step: WALK.startHour.step }) : null),
+    [a, dateMs, site.lat, site.lon, s.minSun],
+  )
+  if (!a) return null
+  const now = s.startHour
+  const inside = w && now >= w.earliest - 1e-6 && now <= w.latest + 1e-6
+  return (
+    <section className="sw" aria-labelledby="sw-title">
+      <div className="sw-head">
+        <h3 id="sw-title">Best time to leave</h3>
+        <Source k="mars24" note="Sun height along the walk from NASA GISS's Mars24 algorithm, for this sol and place." badge="derived" />
+      </div>
+      {w ? (
+        <>
+          <p className="sw-range">
+            <b>{fmtHours(w.earliest)}</b>
+            <span aria-hidden="true">–</span>
+            <b>{fmtHours(w.latest)}</b>
+            <small>Mars time</small>
+          </p>
+          <p className="sw-say">
+            Leave in this window and the sun stays above {s.minSun}° for the whole {fmtH(a.hours)} walk.
+            {' '}
+            {inside ? `Your start, ${fmtHours(now)}, is inside it.` : `Your start, ${fmtHours(now)}, is outside it.`}
+          </p>
+          {Math.abs(w.best - now) > 1e-6 ? (
+            <button type="button" className="btn btn-small sw-apply" onClick={() => onApply(w.best)}>
+              Leave at {fmtHours(w.best)}, sun never below {Math.floor(w.bestMin)}°
+            </button>
+          ) : (
+            <p className="sw-best">You already leave at the time with the highest sun.</p>
+          )}
+        </>
+      ) : (
+        <p className="sw-say">
+          No start time on this sol keeps the sun above {s.minSun}° for the whole {fmtH(a.hours)} walk. Make the walk shorter, or lower the sun limit in Settings.
+        </p>
+      )}
+    </section>
+  )
+}
 
 export function VerdictPanel({ analysis: a, settings: s, busy, onFix, onEmergency, visitedCount, snap }) {
   if (!a) {

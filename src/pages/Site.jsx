@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { siteById, sitePlaces, siteMeta, siteTraverse, siteHazards, sitePanoramas, WALK, FACTS } from '../data/index.js'
 import { LAYER_GROUPS } from '../content/layers.js'
@@ -13,7 +14,7 @@ import Minimap from '../components/planner/Minimap.jsx'
 import StreetView from '../components/StreetView.jsx'
 import StreetPicker from '../components/StreetPicker.jsx'
 import Ambient from '../components/Ambient.jsx'
-import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, VerdictPanel } from '../components/planner/Panels.jsx'
+import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, StartWindowPanel, VerdictPanel } from '../components/planner/Panels.jsx'
 import { Sidebar } from '../components/Sidebar.jsx'
 import { MANUAL } from '../content/manual.js'
 import { Verdict } from '../components/Atoms.jsx'
@@ -276,6 +277,7 @@ function Planner({ site }) {
     siteTraverse(site.id).then((t) => t && mapRef.current?.setTraverse(t.line)).catch(() => {})
   }, [mapReady, site.id])
   const visited = result?.analysis?.visited.map((v) => v.id) || []
+  const visitedStops = stops.filter((st) => visited.includes(st.id))
   useEffect(() => { if (mapReady) mapRef.current.setStops(stops, visited) }, [mapReady, stops, visited.join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (mapReady) mapRef.current.setRadius(habitat[0], habitat[1], settings.walkBack * 1000) }, [mapReady, habitat, settings.walkBack])
   useEffect(() => {
@@ -447,7 +449,12 @@ function Planner({ site }) {
   }
 
   const a = result?.analysis
-  const verdict = <VerdictPanel analysis={a} settings={settings} snap={snap} busy={busy} onFix={onFix} onEmergency={(f) => emergency.open(f)} visitedCount={visited.length} />
+  const verdict = (
+    <>
+      <VerdictPanel analysis={a} settings={settings} snap={snap} busy={busy} onFix={onFix} onEmergency={(f) => emergency.open(f)} visitedCount={visited.length} />
+      <StartWindowPanel analysis={a} settings={settings} site={site} dateMs={Date.parse(`${date}T12:00:00Z`)} onApply={(h) => setSettings((x) => ({ ...x, startHour: h }))} />
+    </>
+  )
   const science = <SciencePanel stops={stops} visited={visited} onAdd={toggleStop} onFocus={(sid) => setFocusStop((f) => (f === sid ? null : sid))} focus={focusStop} score={score} />
   const advisor = <AdvisorPanel tips={tips} onAction={onAdvisor} />
   const layerPanel = <LayerPanel groups={LAYER_GROUPS} state={layers} onToggle={(lid, on) => setLayers((L) => ({ ...L, [lid]: { ...L[lid], on } }))} onOpacity={(lid, o) => setLayers((L) => ({ ...L, [lid]: { ...L[lid], opacity: o } }))} />
@@ -476,7 +483,6 @@ function Planner({ site }) {
             <button key={x.id} type="button" role="radio" aria-checked={appetite === x.id} title={x.note} onClick={() => { setAppetite(x.id); if (result) suggest(x.id) }}>{x.label}</button>
           ))}
         </div>
-        <span className="ab-or">or</span>
         <button type="button" className={`btn btn-small ${drawing ? 'on' : ''}`} aria-pressed={drawing} disabled={!grid} onClick={() => setDrawing((d) => !d)}>{drawing ? 'Done drawing' : 'Draw my own'}</button>
         {(drawing || waypoints.length > 1) && (
           <>
@@ -484,14 +490,17 @@ function Planner({ site }) {
             <button type="button" className="btn btn-small ab-icon" onClick={clear} disabled={waypoints.length < 2} aria-label="Start over" title="Start over">×</button>
           </>
         )}
-        <button type="button" className="btn btn-small ab-risky" onClick={tryRisky} disabled={!grid || busy} title="Draws a straight walk across steep ground so you can see a NO-GO and why">Try a risky walk</button>
-        <button type="button" className="btn btn-small" onClick={() => setPicking(true)} disabled={!mapReady}>Street view</button>
-        {a && (
-          <span className="ab-after">
-            <button type="button" className="btn btn-small" onClick={follow}>Fly along in 3D</button>
-            <button type="button" className="btn btn-small ab-brief" onClick={exportBrief}>Save the plan <span className="arrow">→</span></button>
-          </span>
-        )}
+        <span className="ab-spacer" aria-hidden="true" />
+        <MoreMenu
+          items={[
+            { label: 'Street view', hint: 'Look around from where the rovers stood', onClick: () => setPicking(true), disabled: !mapReady },
+            { label: 'Fly along in 3D', hint: 'Follow the walk over the ground', onClick: follow, disabled: !a },
+            { label: 'Try a risky walk', hint: 'See a NO-GO and the reasons for it', onClick: tryRisky, disabled: !grid || busy },
+            { label: 'Download the route', hint: 'GeoJSON with heights, for GIS tools', onClick: () => downloadRoute(site, a, visitedStops), disabled: !a },
+            { label: 'Download the walk profile', hint: 'CSV: distance, height, slope, time, air', onClick: () => downloadProfile(site, a), disabled: !a },
+          ]}
+        />
+        {a && <button type="button" className="btn btn-small ab-brief" onClick={exportBrief}>Save the plan <span className="arrow">→</span></button>}
         </div>
       </div>
       {drawing && hint && <p className="draw-hint" role="status">Tap the map to add stops on your walk</p>}
@@ -601,4 +610,94 @@ function Planner({ site }) {
       )}
     </div>
   )
+}
+
+/* ---------------------------------------------------------------------------------------- */
+
+/** The toolbar's overflow menu. It opens below its button, outside the bar (which may scroll
+ *  sideways on phones), and works from the keyboard: arrows move, Escape closes. */
+function MoreMenu({ items }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState(null)
+  const btn = useRef(null)
+  const menu = useRef(null)
+  useEffect(() => {
+    if (!open) return undefined
+    const r = btn.current.getBoundingClientRect()
+    setPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
+    const off = (e) => { if (!menu.current?.contains(e.target) && !btn.current?.contains(e.target)) setOpen(false) }
+    const key = (e) => {
+      if (e.key === 'Escape') { setOpen(false); btn.current?.focus(); return }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+      const list = [...(menu.current?.querySelectorAll('button:not(:disabled)') || [])]
+      if (!list.length) return
+      e.preventDefault()
+      const i = list.indexOf(document.activeElement)
+      list[(i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length].focus()
+    }
+    const close = () => setOpen(false)
+    document.addEventListener('pointerdown', off)
+    document.addEventListener('keydown', key)
+    window.addEventListener('resize', close)
+    const id = requestAnimationFrame(() => menu.current?.querySelector('button:not(:disabled)')?.focus())
+    return () => {
+      document.removeEventListener('pointerdown', off)
+      document.removeEventListener('keydown', key)
+      window.removeEventListener('resize', close)
+      cancelAnimationFrame(id)
+    }
+  }, [open])
+  return (
+    <>
+      <button ref={btn} type="button" className="btn btn-small ab-moreb" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        More <span aria-hidden="true">⋯</span>
+      </button>
+      {open && pos && createPortal(
+        <div ref={menu} className="ab-menu" role="menu" aria-label="More walk tools" style={{ top: pos.top, right: pos.right }}>
+          {items.map((it) => (
+            <button key={it.label} type="button" role="menuitem" disabled={it.disabled} onClick={() => { setOpen(false); it.onClick() }}>
+              <span>{it.label}</span>
+              {it.hint && <small>{it.hint}</small>}
+            </button>
+          ))}
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
+/** Save a file the browser builds, without a server. */
+function saveFile(name, type, text) {
+  const url = URL.createObjectURL(new Blob([text], { type }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/** The walk as GeoJSON: the path with heights, and the science stops it visits. */
+function downloadRoute(site, a, stops) {
+  if (!a) return
+  const line = a.profile.map((p) => [+p[3].toFixed(6), +p[4].toFixed(6), +p[1].toFixed(1)])
+  const geo = {
+    type: 'FeatureCollection',
+    properties: { body: 'Mars', site: site.name, coordinates: 'longitude east, latitude (degrees), height (m)', made: new Date().toISOString(), by: 'Redstep' },
+    features: [
+      { type: 'Feature', geometry: { type: 'LineString', coordinates: line }, properties: { name: `${site.name} walk`, verdict: a.status.toUpperCase(), distance_m: Math.round(a.distance), hours: +a.hours.toFixed(2) } },
+      ...stops.map((st) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [st.lon, st.lat] }, properties: { name: st.name, kind: 'science stop' } })),
+    ],
+  }
+  saveFile(`redstep-${site.id}-walk.geojson`, 'application/geo+json', JSON.stringify(geo, null, 2))
+}
+
+/** The walk profile as CSV, one row per sample along the path. */
+function downloadProfile(site, a) {
+  if (!a) return
+  const head = 'distance_m,height_m,slope_deg,longitude_e,latitude,hours_out,suit_air_used_share'
+  const rows = a.profile.map((p) => [p[0].toFixed(0), p[1].toFixed(1), p[2].toFixed(1), p[3].toFixed(6), p[4].toFixed(6), p[5].toFixed(3), p[6].toFixed(3)].join(','))
+  saveFile(`redstep-${site.id}-profile.csv`, 'text/csv', [head, ...rows].join('\n') + '\n')
 }

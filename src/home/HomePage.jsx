@@ -121,7 +121,7 @@ export default function HomePage() {
       write('lightBig', lt.minutes.toFixed(1));
       write('lightBand', lt.minutes.toFixed(1));
       write('siteName', site.name.split(' ·')[0]);
-      write('ltst', `${formatHM(localSolarTime(m, site.lon))} local time`);
+      write('ltst', formatHM(localSolarTime(m, site.lon)));
       const el = solarElevation(m, site.lat, site.lon);
       write('daynight', el > 0 ? 'Daylight' : el > -6 ? 'Twilight' : 'Night');
     };
@@ -208,11 +208,15 @@ export default function HomePage() {
 
           {/* ---- Live strip: Mars right now, worked out in the browser ---- */}
           <aside className="strip reveal" data-chapter="hero" style={{ '--at': 0.86 }} aria-label="Mars right now, computed in your browser">
-            <span className="strip__live"><i aria-hidden="true" />Mars now</span>
-            <span className="strip__item"><small>Season</small><b ref={ref('season')}>—</b></span>
-            <span className="strip__item"><small>Message to Earth</small><b ref={ref('light')}>—</b></span>
-            <span className="strip__item"><small ref={ref('siteName')}>—</small><b><span ref={ref('ltst')}>—</span> · <span ref={ref('daynight')}>—</span></b></span>
-            <Badge kind="derived" source="mars24" align="end" note={HOME.telemetryNote} />
+            <div className="strip__head">
+              <span className="strip__live"><i aria-hidden="true" />Mars right now</span>
+              <Badge kind="derived" source="mars24" align="end" note={HOME.telemetryNote} />
+            </div>
+            <dl className="strip__grid">
+              <div><dt>Season</dt><dd ref={ref('season')}>—</dd></div>
+              <div><dt>Message to Earth</dt><dd ref={ref('light')}>—</dd></div>
+              <div><dt ref={ref('siteName')}>—</dt><dd><span ref={ref('ltst')}>—</span> · <span ref={ref('daynight')}>—</span></dd></div>
+            </dl>
           </aside>
 
           {/* ---- 01 · Layers ---- */}
@@ -306,7 +310,7 @@ export default function HomePage() {
           </p>
 
           <p className="schematic-note micro">
-            Schematic · not to scale <Badge kind="illustrative" source="schematic" align="end" />
+            Drawn to explain, not to scale <Badge kind="illustrative" source="schematic" />
           </p>
 
           <button type="button" className="skip-intro" onClick={() => engine.skipIntro()}>

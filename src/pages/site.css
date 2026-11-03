@@ -1610,3 +1610,272 @@
   .ab-more .ab-brief { order: -2; }
   .ab-more .ab-after > :first-child { order: -1; }
 }
+
+/* =========================================================================================
+   Apple's way for the planner (overrides the blocks above): one balanced toolbar row with a
+   More menu, calm panels without HUD grids or corner ticks, sentence-case labels.
+   ========================================================================================= */
+
+/* ---- toolbar: the main action and walk tools on the left, More and Save on the right ---- */
+.actionbar {
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 22px;
+}
+
+.ab-more {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ab-spacer {
+  flex: 1 1 auto;
+}
+
+:root .actionbar .ab-main {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+:root .actionbar .btn-small {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.ab-appetite {
+  flex: none;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ab-appetite button {
+  height: 30px;
+  font: 500 13px / 1 var(--font);
+  letter-spacing: -0.01em;
+}
+
+.ab-appetite button[aria-checked='true'] {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.ab-icon {
+  width: 36px;
+  padding: 0;
+}
+
+:root .actionbar .ab-brief {
+  border-color: rgba(245, 245, 247, 0.35);
+  color: var(--ink);
+}
+
+.ab-moreb span {
+  font-size: 16px;
+  line-height: 0;
+}
+
+:root .actionbar .ab-moreb[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* the menu: a frosted sheet below the More button */
+.ab-menu {
+  position: fixed;
+  z-index: 80;
+  display: grid;
+  gap: 2px;
+  min-width: 268px;
+  padding: 6px;
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(36, 36, 38, 0.9);
+  -webkit-backdrop-filter: saturate(160%) blur(24px);
+  backdrop-filter: saturate(160%) blur(24px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  animation: ab-menu-in 180ms var(--ease) both;
+}
+
+@keyframes ab-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+
+.ab-menu button {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  font: 500 15px / 1.25 var(--font);
+  letter-spacing: -0.016em;
+}
+
+.ab-menu button small {
+  font: 400 12px / 1.3 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--ink-3);
+}
+
+.ab-menu button:hover:not(:disabled),
+.ab-menu button:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.ab-menu button:disabled {
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ab-menu { animation: none; }
+}
+
+/* narrower windows: the bar scrolls sideways (a fade on the right says there is more) and the
+   spacer has no room to give */
+@media (max-width: 1280px) {
+  .actionbar {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    border-radius: 18px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+  }
+  .actionbar::-webkit-scrollbar { display: none; }
+  .actionbar > *,
+  .ab-more > * { flex: none; }
+  .ab-more { flex: none; }
+  .ab-spacer { display: none; }
+}
+
+/* phones: the main button on its own row, the tools in a row you can swipe below it */
+@media (max-width: 600px) {
+  .actionbar {
+    flex-wrap: wrap;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .actionbar > .ab-main { flex: 1 1 100%; }
+  .ab-more {
+    flex: 1 1 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+  }
+  .ab-more::-webkit-scrollbar { display: none; }
+  .ab-more .ab-appetite { order: -3; }
+  .ab-more .ab-moreb { order: -2; }
+  .ab-more .ab-brief { order: -1; }
+}
+
+/* ---- the answer panel: calm surfaces, no grids or ticks ---- */
+.vp-head {
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vp-head::before,
+.vp-head::after {
+  content: none;
+}
+
+.vp-key,
+.follow-hud {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  border-radius: 16px;
+}
+
+.vp-key dt,
+.vp-air-top .micro {
+  font: 400 12px / 1.3 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+.vp-key dd {
+  font-family: var(--font);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.vp-bar-fill {
+  background: var(--ink);
+}
+
+.pf-label {
+  font: 600 11px var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pf-tick {
+  font-family: var(--font);
+}
+
+/* ---- best time to leave ---- */
+.sw {
+  margin-top: 14px;
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sw-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sw-head h3 {
+  margin: 0;
+  font: 600 13px / 1.2 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+}
+
+.sw-range {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  font: 600 24px / 1.1 var(--font);
+  letter-spacing: -0.025em;
+}
+
+.sw-range small {
+  font: 400 13px / 1 var(--font);
+  color: var(--ink-3);
+}
+
+.sw-range span {
+  color: var(--ink-3);
+}
+
+.sw-say,
+.sw-best {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+:root .sw-apply {
+  margin-top: 12px;
+  width: 100%;
+}
