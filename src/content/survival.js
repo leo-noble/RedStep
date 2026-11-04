@@ -99,6 +99,21 @@ export const STEPS = [
     quiz: { q: 'Can you grow potatoes straight in Mars soil?', options: ['Yes, it is like desert sand', 'Not until toxic perchlorate salts are removed', 'Only at night'], answer: 1 },
   },
   {
+    id: 'farm',
+    title: 'Farmable land',
+    question: 'Where on Mars could you grow food?',
+    lead: 'Nowhere in the open air. But some places give a sealed greenhouse far more to work with: water you can dig up, and more sun for light and power.',
+    widget: 'land',
+    facts: [
+      { text: 'Mars gets about 43% of the sunlight Earth does: 586 W/m² on average above the air, against 1,361 W/m² at Earth.', source: 'nssdc' },
+      { text: 'Martian soil contains perchlorate, a toxic salt, at about half a percent at the Phoenix site. It has to be washed out before soil can grow food.', source: 'perchlorate' },
+      { text: 'When Curiosity heated Gale Crater soil, about 2% of its weight came off as water.', source: 'leshin' },
+      { text: 'Radar on MRO found buried glacier ice in the middle northern latitudes, at places like Deuteronilus Mensae.', source: 'ezWorkshop' },
+    ],
+    procedure: ['Land where water is within reach: buried ice first, water-rich minerals second.', 'Wash perchlorate out of any soil before plants touch it, or grow in water instead.', 'Build the farm sealed, pressurised and shielded, and add lamps when the sun is low or dust is high.'],
+    quiz: { q: 'What makes a landing site better for farming on Mars?', options: ['Open fields of rich soil', 'Water you can dig up, and plenty of sunlight', 'Being near the poles, where it is coldest'], answer: 1 },
+  },
+  {
     id: 'shelter',
     title: 'Shelter',
     question: 'How do I stay safe from radiation?',

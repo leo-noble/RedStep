@@ -40,14 +40,11 @@ export default function HomePage() {
     engine.attach(trackRef.current);
     if (import.meta.env.DEV) window.__marswalk = engine;
 
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem('mw:intro') === '1';
-    } catch {
-      /* storage unavailable */
-    }
-    if (seen || window.scrollY > 8) engine.skipIntro();
-    else engine.playIntro();
+    // Every visit opens with the launch: the page holds still at the top until the rocket is
+    // away, then the headline and the ways in appear. (Reduced motion skips straight to the end.)
+    window.scrollTo(0, 0);
+    document.documentElement.classList.add('intro-lock');
+    engine.playIntro();
 
     let lastChoose = null;
     let lastIntroDone = null;
@@ -84,6 +81,7 @@ export default function HomePage() {
       if (introDone !== lastIntroDone) {
         root.dataset.introDone = introDone ? 'true' : 'false';
         lastIntroDone = introDone;
+        if (introDone) document.documentElement.classList.remove('intro-lock');
         if (introDone) {
           try {
             sessionStorage.setItem('mw:intro', '1');
@@ -102,6 +100,7 @@ export default function HomePage() {
     return () => {
       unsub();
       engine.destroy();
+      document.documentElement.classList.remove('intro-lock');
     };
   }, [engine]);
 
@@ -186,14 +185,14 @@ export default function HomePage() {
 
           {/* ---- Hero: the title, one line of what it does, two ways in ---- */}
           <div className="hero2 chapter" data-chapter="hero" style={{ '--w': 'var(--w-hero)' }}>
-            <p className="hero2__over reveal" style={{ '--at': 0.55 }}>{HOME.kicker}</p>
+            <p className="hero2__over reveal" style={{ '--at': 0.86 }}>{HOME.kicker}</p>
             <h1 className="hero2__title">
-              <span className="reveal-line" style={{ '--at': 0.6 }}>The first</span>
-              <span className="reveal-line" style={{ '--at': 0.65 }}>walk on</span>
-              <span className="reveal-line hero2__mars" style={{ '--at': 0.7 }}><em>Mars.</em></span>
+              <span className="reveal-line" style={{ '--at': 0.87 }}>The first</span>
+              <span className="reveal-line" style={{ '--at': 0.885 }}>walk on</span>
+              <span className="reveal-line hero2__mars" style={{ '--at': 0.9 }}><em>Mars.</em></span>
             </h1>
-            <p className="hero2__lead reveal" style={{ '--at': 0.76 }}>{HOME.lead}</p>
-            <div className="cta-row reveal" style={{ '--at': 0.8 }}>
+            <p className="hero2__lead reveal" style={{ '--at': 0.91 }}>{HOME.lead}</p>
+            <div className="cta-row reveal" style={{ '--at': 0.92 }}>
               <button type="button" className="btn btn--primary" onClick={goChoose}>
                 {HOME.ctaPrimary}
                 <span aria-hidden="true">↓</span>
@@ -207,7 +206,7 @@ export default function HomePage() {
           </div>
 
           {/* ---- Live strip: Mars right now, worked out in the browser ---- */}
-          <aside className="strip reveal" data-chapter="hero" style={{ '--at': 0.86 }} aria-label="Mars right now, computed in your browser">
+          <aside className="strip reveal" data-chapter="hero" style={{ '--at': 0.93 }} aria-label="Mars right now, computed in your browser">
             <div className="strip__head">
               <span className="strip__live"><i aria-hidden="true" />Mars right now</span>
               <Badge kind="derived" source="mars24" align="end" note={HOME.telemetryNote} />
@@ -309,14 +308,7 @@ export default function HomePage() {
             {HOME.scrollCue}
           </p>
 
-          <p className="schematic-note micro">
-            Drawn to explain, not to scale <Badge kind="illustrative" source="schematic" />
-          </p>
 
-          <button type="button" className="skip-intro" onClick={() => engine.skipIntro()}>
-            {HOME.skipIntro}
-            <span aria-hidden="true"> ⏭</span>
-          </button>
         </div>
       </section>
 

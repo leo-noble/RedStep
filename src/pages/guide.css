@@ -493,3 +493,27 @@
   .guide:not(.rail-closed) .g-rail-head,
   .guide:not(.rail-closed) .g-steps li { animation: none; }
 }
+
+/* the fixed steps sidebar stops above the footer instead of covering it */
+@media (min-width: 981px) {
+  .g-rail {
+    bottom: calc(12px + var(--rail-lift, 0px));
+  }
+}
+
+/* section headings inside a step: modest, so they never shout over the content */
+:root .g-main h2.micro {
+  font: 700 clamp(22px, 1.8vw, 28px) / 1.15 var(--font-head);
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--ink);
+}
+
+:root .g-main .g-hypo {
+  display: block;
+  margin: 4px 0 14px;
+  font: 400 14px / 1.4 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink-3);
+}

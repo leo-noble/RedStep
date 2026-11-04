@@ -5,6 +5,8 @@ import { Badge, Slider, Source } from '../Atoms.jsx'
 import { FACTS } from '../../data/index.js'
 import { CHECKLIST, EMERGENCIES, PRIORITY, PRIORITY_LABEL, STEPS } from '../../content/survival.js'
 import { earthMars } from '../../lib/ephem.js'
+import { yearOfSun } from '../../lib/insolation.js'
+import { SITES } from '../../content/sites.js'
 import { prefersReducedMotion, useStored } from '../../lib/hooks.js'
 import { FarmCalc, OxygenCalc, ShelterCalc, useBase } from './Base.jsx'
 import './widgets.css'
@@ -281,11 +283,98 @@ function ShelterStep({ walkDose }) {
   )
 }
 
+/* Farmable land: what each landing site gives a sealed greenhouse */
+// Water at each site, from the site's own sources. "ice" = buried water ice, "minerals" = water
+// held in the ground that has to be baked out.
+const SITE_WATER = {
+  jezero: { kind: 'minerals', text: 'Clay and carbonate minerals in the old river delta hold water that would have to be baked out.', source: 'goudge' },
+  gale: { kind: 'minerals', text: 'Heat the soil: when Curiosity did, about 2% of its weight came off as water.', source: 'leshin' },
+  deuteronilus: { kind: 'ice', text: 'Buried glacier ice, found by radar on MRO. Dig, melt, filter.', source: 'ezWorkshop' },
+  protonilus: { kind: 'ice', text: 'Ice-rich valley fills, with water ice close to the surface.', source: 'ezWorkshop' },
+  mawrth: { kind: 'minerals', text: 'The largest exposed clay-rich rock on Mars; the clays hold water that would have to be baked out.', source: 'ezWorkshop' },
+}
+
+function FarmLand() {
+  const rows = useMemo(() => SITES.map((site) => ({ site, sun: yearOfSun(site.lat), water: SITE_WATER[site.id] })), [])
+  const [pick, setPick] = useState('deuteronilus')
+  const r = rows.find((x) => x.site.id === pick) || rows[0]
+  const maxSun = Math.max(...rows.map((x) => x.sun.max))
+  const byMean = [...rows].sort((a, b) => b.sun.mean - a.sun.mean)
+  const rank = byMean.findIndex((x) => x.site.id === r.site.id)
+  const ice = r.water?.kind === 'ice'
+  const lat = `${Math.abs(r.site.lat).toFixed(1)}°${r.site.lat >= 0 ? 'N' : 'S'}`
+  const sunWord = rank === 0 ? 'The most sunlight of the five sites.' : rank === rows.length - 1 ? 'The least sunlight of the five sites.' : `Ranks ${rank + 1} of ${rows.length} for sunlight.`
+  const verdict = ice
+    ? `${sunWord} Water is the easy part here: there is ice to dig. Plan for lamps and stored power through the darkest season.`
+    : `${sunWord} Light is easier, water is harder: it has to be baked out of the ground, which takes power.`
+  return (
+    <div className="w-land">
+      <div className="wl-sites" role="radiogroup" aria-label="Landing site">
+        {rows.map(({ site, water }) => (
+          <button key={site.id} type="button" role="radio" aria-checked={site.id === pick} className="wl-site" onClick={() => setPick(site.id)}>
+            <b>{site.name}</b>
+            <span>{water?.kind === 'ice' ? 'Buried ice' : 'Water in minerals'}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="wl-detail" aria-live="polite">
+        <div className="wl-head">
+          <h4>{r.site.name}</h4>
+          <span className="wl-lat">{lat}</span>
+        </div>
+        <p className="wl-why">{r.site.why}</p>
+
+        <div className="wl-grid">
+          <section className="wl-cell">
+            <p className="micro">Sunlight above the air <Source k="nssdc" badge="derived" note="Daily-mean sunlight on flat ground at this latitude, from Mars's real orbit (Mars24 declination and distance) and NASA's mean irradiance at Mars. Dust and air cut what reaches the ground." /></p>
+            <p className="wl-big">{Math.round(r.sun.mean)}<small>W/m² a year on average</small></p>
+            <div className="wl-bar" aria-hidden="true">
+              <i style={{ left: `${(r.sun.min / maxSun) * 100}%`, width: `${((r.sun.max - r.sun.min) / maxSun) * 100}%` }} />
+              <b style={{ left: `${(r.sun.mean / maxSun) * 100}%` }} />
+            </div>
+            <p className="wl-sub">Darkest season {Math.round(r.sun.min)} W/m² · brightest {Math.round(r.sun.max)} W/m²</p>
+          </section>
+
+          <section className="wl-cell">
+            <p className="micro">Water <Source k={r.water.source} badge="nasa" /></p>
+            <p className="wl-big wl-word">{ice ? 'Buried ice' : 'In minerals'}</p>
+            <p className="wl-sub">{r.water.text}</p>
+          </section>
+
+          <section className="wl-cell">
+            <p className="micro">Soil <Source k="perchlorate" badge="nasa" /></p>
+            <p className="wl-big wl-word">Wash first</p>
+            <p className="wl-sub">Like everywhere on Mars, the soil carries perchlorate, a toxic salt. Wash it out, or grow plants in water.</p>
+          </section>
+        </div>
+
+        <p className="wl-verdict">{verdict}</p>
+        <div className="wl-links">
+          <Link to="/map" className="btn btn-small">See it on the Mars map</Link>
+          {r.site.planner && <Link to={`/site/${r.site.id}`} className="btn btn-small btn-primary">Plan a walk here <span className="arrow">→</span></Link>}
+        </div>
+      </div>
+
+      <div className="wl-compare" aria-label="Sunlight at the five sites, yearly mean">
+        {byMean.map((x) => (
+          <button key={x.site.id} type="button" className={`wl-row ${x.site.id === pick ? 'on' : ''}`} onClick={() => setPick(x.site.id)}>
+            <span>{x.site.name}</span>
+            <span className="wl-track"><i style={{ width: `${(x.sun.mean / maxSun) * 100}%` }} /></span>
+            <b>{Math.round(x.sun.mean)}</b>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export const WIDGETS = {
   pressure: Pressure,
   edl: Edl,
   oxygen: OxygenStep,
   farm: FarmStep,
+  land: FarmLand,
   dose: ShelterStep,
   time: MarsTimeWidget,
   drill: Drill,

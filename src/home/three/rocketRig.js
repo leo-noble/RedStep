@@ -2,13 +2,14 @@
    Rocket rig
    A solid white heavy-lift rocket (core stage, black interstage band, nose
    fairing, two side boosters, three engine bells) drawn in one mesh with a
-   painted shader, plus the fading particle plume and nozzle glow.
+   painted shader with self-shadowing, a turbulent flame mesh per engine, soft smoke behind the
+   flames and a glow at each nozzle.
    Local units: rocket length = 1, engines at y = 0, nose at y = 1.
    ========================================================================== */
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { ROCKET_VERTEX, ROCKET_FRAGMENT, PLUME_VERTEX, PLUME_FRAGMENT, GLOW_VERTEX, GLOW_FRAGMENT } from './shaders.js';
+import { ROCKET_VERTEX, ROCKET_FRAGMENT, FLAME_VERTEX, FLAME_FRAGMENT, SMOKE_VERTEX, SMOKE_FRAGMENT, GLOW_VERTEX, GLOW_FRAGMENT } from './shaders.js';
 
 const CORE_R = 0.05;
 const BOOST_R = 0.031;
@@ -61,7 +62,7 @@ function letteringTexture() {
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.fillStyle = '#000';
-    ctx.font = '600 80px "Panchang", "Helvetica Neue", Arial, sans-serif';
+    ctx.font = '700 84px "Syne", "Helvetica Neue", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if ('letterSpacing' in ctx) ctx.letterSpacing = '14px';
@@ -69,7 +70,7 @@ function letteringTexture() {
     tex.needsUpdate = true;
   };
   draw();
-  document.fonts?.load('600 80px "Panchang"').then(draw, () => {});
+  document.fonts?.load('700 84px "Syne"').then(draw, () => {});
   return tex;
 }
 
@@ -111,6 +112,8 @@ export function createRocketRig({ quality = 'high' } = {}) {
     fragmentShader: ROCKET_FRAGMENT,
     uniforms: {
       uSunView: { value: new THREE.Vector3(0.6, 0.4, 0.7).normalize() },
+      uSunObj: { value: new THREE.Vector3(0.6, 0.4, 0.7).normalize() },
+      uBoostR: { value: BOOST_R },
       uFade: { value: 1 },
       uThrust: { value: 1 },
       uText: { value: text },
@@ -123,8 +126,47 @@ export function createRocketRig({ quality = 'high' } = {}) {
   vehicle.frustumCulled = false;
   body.add(vehicle);
 
-  /* ---- Plume ---- */
-  const COUNT = low ? 2600 : 5200;
+  /* ---- Flames: an inner white-hot core and an outer turbulent flame per engine ---- */
+  const nozzles = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(BOOST_X, 0, 0), new THREE.Vector3(-BOOST_X, 0, 0)];
+  const exitR = [CORE_R * 0.74, BOOST_R * 0.8, BOOST_R * 0.8];
+  const flames = [];
+  const flameMats = [];
+  const RAD = low ? 18 : 36;
+  const HSEG = low ? 12 : 28;
+  nozzles.forEach((n, k) => {
+    for (const hot of [0, 1]) {
+      // a cone from the nozzle (y = 0) down to y = -1; length is scaled in the shader
+      const r0 = exitR[k] * (hot ? 0.62 : 0.95);
+      const r1 = exitR[k] * (hot ? 0.35 : 2.6);
+      const g = new THREE.CylinderGeometry(r0, r1, 1, RAD, HSEG, true);
+      g.translate(0, -0.5, 0);
+      const m = new THREE.ShaderMaterial({
+        vertexShader: FLAME_VERTEX,
+        fragmentShader: FLAME_FRAGMENT,
+        uniforms: {
+          uTime: { value: 0 },
+          uThrust: { value: 1 },
+          uLen: { value: (k === 0 ? 0.42 : 0.34) * (hot ? 0.45 : 1) },
+          uHot: { value: hot },
+          uSeed: { value: k * 3.1 + hot * 1.7 },
+        },
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+      });
+      const mesh = new THREE.Mesh(g, m);
+      mesh.position.copy(n);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = 3;
+      body.add(mesh);
+      flames.push(mesh);
+      flameMats.push(m);
+    }
+  });
+
+  /* ---- Smoke: soft puffs that billow out where the flames thin ---- */
+  const COUNT = low ? 700 : 1500;
   const aNozzle = new Float32Array(COUNT);
   const aSeed = new Float32Array(COUNT * 4);
   const pos = new Float32Array(COUNT * 3);
@@ -142,25 +184,24 @@ export function createRocketRig({ quality = 'high' } = {}) {
   plumeGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   plumeGeo.setAttribute('aNozzle', new THREE.BufferAttribute(aNozzle, 1));
   plumeGeo.setAttribute('aSeed', new THREE.BufferAttribute(aSeed, 4));
-  const nozzles = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(BOOST_X, 0, 0), new THREE.Vector3(-BOOST_X, 0, 0)];
   const plumeMat = new THREE.ShaderMaterial({
-    vertexShader: PLUME_VERTEX,
-    fragmentShader: PLUME_FRAGMENT,
+    vertexShader: SMOKE_VERTEX,
+    fragmentShader: SMOKE_FRAGMENT,
     uniforms: {
       uTime: { value: 0 },
       uThrust: { value: 1 },
       uLen: { value: 1.05 },
       uPx: { value: 1000 },
       uNozzle: { value: nozzles },
-      uNozzleR: { value: [CORE_R * 0.75, BOOST_R * 0.8, BOOST_R * 0.8] },
+      uNozzleR: { value: exitR },
     },
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    blending: THREE.NormalBlending,
   });
   const plume = new THREE.Points(plumeGeo, plumeMat);
   plume.frustumCulled = false;
-  plume.renderOrder = 2;
+  plume.renderOrder = 1; // smoke first, the flames glow over it
   body.add(plume); // plume rolls with the body, matching nozzle positions
 
   const glowGeo = new THREE.BufferGeometry();
@@ -184,16 +225,22 @@ export function createRocketRig({ quality = 'high' } = {}) {
 
   const tmpV = new THREE.Vector3();
   const tmpM = new THREE.Matrix3();
+  const tmpInv = new THREE.Matrix4();
 
   return {
     group,
     body,
-    stats: { triangles: vehicleGeo.attributes.position.count / 3, particles: COUNT },
+    stats: { triangles: vehicleGeo.attributes.position.count / 3, particles: COUNT, flames: flames.length },
     /** Per-frame uniform writes only. */
     update({ time, thrust, px, fade, sunWorld, camera }) {
       plumeMat.uniforms.uTime.value = time;
-      plumeMat.uniforms.uThrust.value = thrust;
+      plumeMat.uniforms.uThrust.value = Math.min(1, thrust) * fade;
       plumeMat.uniforms.uPx.value = px;
+      for (const m of flameMats) {
+        m.uniforms.uTime.value = time;
+        m.uniforms.uThrust.value = thrust * fade;
+      }
+      for (const f of flames) f.visible = thrust * fade > 0.01;
       glowMat.uniforms.uTime.value = time;
       glowMat.uniforms.uThrust.value = thrust;
       glowMat.uniforms.uPx.value = px;
@@ -204,6 +251,9 @@ export function createRocketRig({ quality = 'high' } = {}) {
       // sun in view space for the paint shading
       tmpM.setFromMatrix4(camera.matrixWorldInverse);
       vehicleMat.uniforms.uSunView.value.copy(tmpV.copy(sunWorld).applyMatrix3(tmpM).normalize());
+      // and in the vehicle's own frame, for the shadows it casts on itself
+      tmpInv.copy(vehicle.matrixWorld).invert();
+      vehicleMat.uniforms.uSunObj.value.copy(sunWorld).transformDirection(tmpInv);
     },
     dispose() {
       vehicleGeo.dispose();
@@ -212,6 +262,8 @@ export function createRocketRig({ quality = 'high' } = {}) {
       plumeGeo.dispose();
       glowGeo.dispose();
       plumeMat.dispose();
+      for (const f of flames) f.geometry.dispose();
+      for (const m of flameMats) m.dispose();
       glowMat.dispose();
     },
   };

@@ -110,7 +110,6 @@ export function createMotionEngine({ smoothing = 5.5, introDuration = 6.5 } = {}
 
   const onScroll = () => {
     scrollDirty = true;
-    if (state.introPlaying) skipIntro();
     if (state.reduced) kick();
   };
 
@@ -133,7 +132,7 @@ export function createMotionEngine({ smoothing = 5.5, introDuration = 6.5 } = {}
   };
 
   const onKey = (e) => {
-    if (state.introPlaying && (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter')) skipIntro();
+    // the intro always plays to the end: the page waits for the rocket
   };
 
   const onReducedChange = () => {

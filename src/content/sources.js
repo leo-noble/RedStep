@@ -87,6 +87,8 @@ export const FACT_SOURCES = {
   issWater: { title: 'NASA: ISS achieves 98% water recovery (2023)', url: 'https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/' },
   o2Need: { title: 'NASA Life Support Baseline Values and Assumptions Document (BVAD), 2022: ~0.82–0.84 kg O₂ per crew member per day', url: 'https://ntrs.nasa.gov/citations/20210024855' },
   perchlorate: { title: 'Hecht et al. 2009, Detection of perchlorate at the Phoenix lander site, Science 325', url: 'https://doi.org/10.1126/science.1172466' },
+  leshin: { title: 'Leshin et al. 2013, Volatile, isotope, and organic analysis of martian fines with the Mars Curiosity rover, Science 341 (about 2% water by mass)', url: 'https://doi.org/10.1126/science.1238937' },
+  goudge: { title: 'Goudge et al. 2015, Assessing the mineralogy of the watershed and fan deposits of the Jezero crater paleolake system, JGR Planets 120', url: 'https://doi.org/10.1002/2014JE004782' },
   xray: { title: 'RadiologyInfo (ACR/RSNA): chest X-ray about 0.1 mSv', url: 'https://www.radiologyinfo.org/en/info/safety-xray' },
   emu: { title: 'NASA Office of Inspector General IG-17-018: the ISS suit backpack supplies oxygen for up to 7 hours', url: 'https://oig.nasa.gov/docs/IG-17-018.pdf' },
   soyuz: { title: 'NASA ISS blog, 30 Aug 2018: crew finds and seals a small leak in Soyuz MS-09', url: 'https://www.nasa.gov/blogs/spacestation/2018/08/30/international-space-station-status-3/' },

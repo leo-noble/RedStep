@@ -2136,7 +2136,7 @@
 }
 
 /* =========================================================================================
-   Apple's way (overrides the blocks above): sentence-case headlines in Panchang,
+   Apple's way (overrides the blocks above): sentence-case headlines in Syne,
    the product line in colour above them, quiet grey labels, pill buttons, rounded surfaces.
    ========================================================================================= */
 .mw-home {
@@ -2146,7 +2146,7 @@
 
 .mw-home :is(.hero2__title, .h2, .walk__title, .walk__step h3, .home-end__title) {
   font-family: var(--font-head);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.025em;
   text-transform: none;
 }
@@ -2271,7 +2271,7 @@
 }
 
 .mw-home .stat__value {
-  font: 600 clamp(32px, 2.8vw, 44px) / 1 var(--font-head);
+  font: 700 clamp(32px, 2.8vw, 44px) / 1 var(--font-head);
   letter-spacing: -0.03em;
 }
 
@@ -2293,7 +2293,7 @@
 }
 
 .mw-home .slope b {
-  font: 600 22px / 1 var(--font-head);
+  font: 700 22px / 1 var(--font-head);
   letter-spacing: -0.02em;
 }
 
@@ -2559,4 +2559,15 @@
   .mw-home .chips {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* the opening: the page holds still while the rocket launches, then the words arrive */
+html.intro-lock,
+html.intro-lock body {
+  overflow: hidden;
+}
+
+.mw-home .reveal,
+.mw-home .reveal-line {
+  --r: clamp(0, (var(--intro) - var(--at, 0)) * 14, 1);
 }

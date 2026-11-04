@@ -10,6 +10,8 @@ if (import.meta.env.DEV && sessionStorage.getItem('raf') === 'timer') {
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
+import '@fontsource/syne/600.css'
+import '@fontsource/syne/700.css'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/touch.css'

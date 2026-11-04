@@ -486,8 +486,8 @@ function Planner({ site }) {
         <button type="button" className={`btn btn-small ${drawing ? 'on' : ''}`} aria-pressed={drawing} disabled={!grid} onClick={() => setDrawing((d) => !d)}>{drawing ? 'Done drawing' : 'Draw my own'}</button>
         {(drawing || waypoints.length > 1) && (
           <>
-            <button type="button" className="btn btn-small ab-icon" onClick={undo} disabled={waypoints.length < 2} aria-label="Undo last point" title="Undo last point">↶</button>
-            <button type="button" className="btn btn-small ab-icon" onClick={clear} disabled={waypoints.length < 2} aria-label="Start over" title="Start over">×</button>
+            <button type="button" className="btn btn-small ab-icon" onClick={undo} disabled={waypoints.length < 2} aria-label="Undo last point" title="Undo last point"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M7.5 5 3.5 9l4 4M4 9h7.5a4.5 4.5 0 0 1 0 9H9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg></button>
+            <button type="button" className="btn btn-small ab-icon" onClick={clear} disabled={waypoints.length < 2} aria-label="Start over" title="Start over"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></button>
           </>
         )}
         <span className="ab-spacer" aria-hidden="true" />

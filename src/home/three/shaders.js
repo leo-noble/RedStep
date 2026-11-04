@@ -504,19 +504,24 @@ void main(){
 `;
 
 /* ---------- Rocket: solid painted vehicle -------------------------------- */
-// Lit by the scene's sun (view space) with a soft gloss, a cool rim from space and the
-// flame's warm light on the lower body. aPart: 0 core stage, 1 booster, 2 engine bell, 3 strut.
+// Painted metal lit by the scene's sun, with real self-shadowing: the boosters and the core
+// stage cast soft shadows on each other (rays traced against their cylinders in object space),
+// ambient occlusion where they meet, Fresnel reflections of the dark sky and blue earthshine,
+// and the flame's warm light on the lower body.
+// aPart: 0 core stage, 1 booster, 2 engine bell, 3 strut.
 export const ROCKET_VERTEX = /* glsl */ `
 attribute float aPart;
 varying vec3 vN;
 varying vec3 vV;
 varying vec3 vObj;
+varying vec3 vObjN;
 varying float vPart;
 void main(){
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   vN = normalize(normalMatrix * normal);
   vV = normalize(-mv.xyz);
   vObj = position;
+  vObjN = normal;
   vPart = aPart;
   gl_Position = projectionMatrix * mv;
 }
@@ -525,82 +530,215 @@ void main(){
 export const ROCKET_FRAGMENT = /* glsl */ `
 precision highp float;
 uniform vec3 uSunView;
+uniform vec3 uSunObj;
 uniform float uFade;
 uniform float uThrust;
 uniform sampler2D uText;
 uniform float uCoreR;
 uniform float uBoostX;
+uniform float uBoostR;
 varying vec3 vN;
 varying vec3 vV;
 varying vec3 vObj;
+varying vec3 vObjN;
 varying float vPart;
 
-// thin painted line at height h
 float seam(float y, float h, float w){ return 1.0 - smoothstep(0.0, w, abs(y - h)); }
+
+// Soft shadow from a vertical cylinder (axis at x = cx, z = 0) on a point p lit along L.
+float cylShadow(vec3 p, vec3 L, float cx, float R, float y0, float y1){
+  vec2 o = p.xz - vec2(cx, 0.0);
+  vec2 d = L.xz;
+  float a = dot(d, d);
+  if (a < 1e-6) return 0.0;
+  float t = -dot(o, d) / a;
+  if (t <= 0.0) return 0.0;
+  float dist = length(o + d * t);
+  float yy = p.y + L.y * t;
+  float inY = smoothstep(y0 - 0.01, y0 + 0.01, yy) * (1.0 - smoothstep(y1 - 0.01, y1 + 0.01, yy));
+  return (1.0 - smoothstep(R * 0.7, R * 1.25, dist)) * inY;
+}
 
 void main(){
   vec3 n = normalize(gl_FrontFacing ? vN : -vN);
   vec3 V = normalize(vV);
-  float y = vObj.y;
+  vec3 p = vObj;
+  float y = p.y;
   int part = int(vPart + 0.5);
 
-  vec3 white = vec3(0.9, 0.895, 0.88);
-  vec3 black = vec3(0.045, 0.05, 0.058);
+  vec3 white = vec3(0.86, 0.855, 0.84);
+  vec3 black = vec3(0.035, 0.038, 0.045);
   vec3 albedo = white;
-  float gloss = 48.0, specK = 0.32;
+  float rough = 0.42, metal = 0.0;
   float heat = 0.0;
 
   if (part == 0) {
-    // core stage: dark engine section, black interstage band, panel seams, fairing joint
-    if (y < 0.075) albedo = vec3(0.16, 0.16, 0.17);
-    if (y > 0.70 && y < 0.765) { albedo = black; specK = 0.5; gloss = 80.0; }
-    albedo *= 1.0 - 0.22 * (seam(y, 0.3, 0.0025) + seam(y, 0.52, 0.0025) + seam(y, 0.86, 0.0022));
-    albedo = mix(albedo, vec3(1.0, 0.62, 0.32), seam(y, 0.775, 0.003) * 0.9); // thin ember ring
-    // REDSTEP, written down the side
-    float ang = atan(vObj.z, vObj.x) - 1.5707963;
+    if (y < 0.075) { albedo = vec3(0.13, 0.13, 0.14); rough = 0.55; metal = 0.6; }
+    if (y > 0.70 && y < 0.765) { albedo = black; rough = 0.3; }
+    // stringers: fine vertical ribs on the interstage and the engine section
+    float ang0 = atan(p.z, p.x);
+    if ((y > 0.70 && y < 0.765) || y < 0.075) albedo *= 0.88 + 0.12 * smoothstep(0.2, 0.9, abs(sin(ang0 * 36.0)));
+    albedo *= 1.0 - 0.18 * (seam(y, 0.3, 0.0022) + seam(y, 0.52, 0.0022) + seam(y, 0.86, 0.002));
+    albedo = mix(albedo, vec3(1.0, 0.55, 0.25), seam(y, 0.775, 0.003) * 0.9);
+    float ang = ang0 - 1.5707963;
     ang = atan(sin(ang), cos(ang));
     float s = ang * uCoreR;
     if (y > 0.31 && y < 0.66 && abs(s) < 0.024) {
       vec2 uv = vec2((y - 0.31) / 0.35, 0.5 + s / 0.048);
       albedo = mix(albedo, black, texture2D(uText, uv).a);
     }
+    // soot from the boosters' exhaust on the lower core
+    albedo *= 1.0 - 0.35 * smoothstep(0.2, 0.06, y);
   } else if (part == 1) {
-    // side boosters: dark skirt, seams
-    if (y < 0.2) albedo = black;
-    albedo *= 1.0 - 0.2 * (seam(y, 0.33, 0.0025) + seam(y, 0.46, 0.0025));
+    if (y < 0.2) { albedo = black; rough = 0.35; }
+    albedo *= 1.0 - 0.16 * (seam(y, 0.33, 0.0022) + seam(y, 0.46, 0.0022));
+    albedo *= 1.0 - 0.3 * smoothstep(0.12, 0.05, y);
   } else if (part == 2) {
-    // engine bells: dark bronze metal, hot near the rim
     heat = smoothstep(0.045, 0.0, y);
-    albedo = vec3(0.2, 0.16, 0.13);
-    gloss = 24.0; specK = 0.6;
+    albedo = vec3(0.32, 0.24, 0.18);
+    rough = 0.32; metal = 1.0;
   } else {
-    albedo = vec3(0.35);
+    albedo = vec3(0.3);
+    metal = 0.5;
   }
 
+  /* ---- shadows and occlusion between core and boosters ---- */
+  vec3 Lo = normalize(uSunObj);
+  float sh = 0.0;
+  float ao = 1.0;
+  if (part == 0 || part == 3) {
+    sh = max(cylShadow(p, Lo, uBoostX, uBoostR, 0.05, 0.6), cylShadow(p, Lo, -uBoostX, uBoostR, 0.05, 0.6));
+    // the strip of core facing a booster sits in its shade
+    float face = max(abs(normalize(vObjN.xz).x), 0.0);
+    ao -= 0.45 * smoothstep(0.75, 1.0, face) * step(0.05, y) * (1.0 - step(0.6, y));
+  } else if (part == 1) {
+    float side = sign(p.x);
+    sh = max(cylShadow(p, Lo, 0.0, uCoreR, 0.045, 0.86), cylShadow(p, Lo, -side * uBoostX, uBoostR, 0.05, 0.6));
+    float inward = max(-side * vObjN.x, 0.0);
+    ao -= 0.45 * smoothstep(0.6, 1.0, inward);
+  }
+  sh = clamp(sh, 0.0, 1.0);
+
+  /* ---- light ---- */
   float ndl = dot(n, uSunView);
-  float diff = max((ndl + 0.12) / 1.12, 0.0);
-  // soft fill from the camera's upper left, so the side we see reads as white paint
-  vec3 K = normalize(vec3(-0.35, 0.45, 0.82));
-  float fill = max(dot(n, K), 0.0);
+  float wrap = max((ndl + 0.08) / 1.08, 0.0);
+  float lit = wrap * (1.0 - 0.9 * sh);
+
   vec3 H = normalize(uSunView + V);
-  float spec = pow(max(dot(n, H), 0.0), gloss) * specK * step(0.0, ndl);
-  float specFill = pow(max(dot(n, normalize(K + V)), 0.0), gloss * 0.5) * specK * 0.35;
-  float fres = pow(1.0 - max(dot(n, V), 0.0), 4.0);
-  vec3 amb = mix(vec3(0.05, 0.055, 0.07), vec3(0.12, 0.15, 0.22), n.y * 0.5 + 0.5);
+  float a2 = rough * rough;
+  float ndh = max(dot(n, H), 0.0);
+  float dd = ndh * ndh * (a2 * a2 - 1.0) + 1.0;
+  float D = (a2 * a2) / (3.14159 * dd * dd);
+  vec3 F0 = mix(vec3(0.04), albedo, metal);
+  float vdh = max(dot(V, H), 0.0);
+  vec3 F = F0 + (1.0 - F0) * pow(1.0 - vdh, 5.0);
+  vec3 spec = D * F * 0.25 * step(0.0, ndl) * (1.0 - sh);
 
-  vec3 col = albedo * (diff * 0.85 + fill * 0.55 + amb) + vec3(1.0, 0.97, 0.92) * (spec + specFill) + vec3(0.42, 0.56, 0.85) * fres * 0.22;
+  // earthshine from below-left, a faint cold sky above, the dark of space everywhere else
+  vec3 R = reflect(-V, n);
+  vec3 sky = mix(vec3(0.012, 0.016, 0.026), vec3(0.10, 0.17, 0.30), smoothstep(0.2, -0.8, R.y) * smoothstep(0.4, -0.6, R.x));
+  float fres = pow(1.0 - max(dot(n, V), 0.0), 5.0);
+  vec3 envSpec = sky * mix(0.04 + 0.96 * fres, 1.0, metal) * (1.0 - rough * 0.6);
+  vec3 bounce = vec3(0.07, 0.10, 0.16) * max(-n.y * 0.5 + 0.5, 0.0) * max(0.0, 0.6 - 0.4 * n.x);
+
+  vec3 diffuse = albedo * (1.0 - metal);
+  vec3 col = diffuse * (lit * vec3(1.0, 0.97, 0.92) * 1.25 + bounce * 1.6 + 0.035) * ao
+           + spec * vec3(1.0, 0.97, 0.92) * 2.2 * ao
+           + envSpec * ao;
+
   // the flame lights the bottom of the vehicle
-  col += albedo * vec3(1.0, 0.62, 0.32) * uThrust * 0.55 * smoothstep(0.24, 0.0, y);
-  // bell insides and rims glow while firing
-  if (part == 2) col += vec3(1.0, 0.55, 0.2) * heat * uThrust * (gl_FrontFacing ? 0.55 : 1.3);
-  if (!gl_FrontFacing && part != 2) col *= 0.25;
+  col += albedo * vec3(1.0, 0.55, 0.22) * uThrust * 0.75 * smoothstep(0.26, 0.0, y);
+  if (part == 2) col += vec3(1.0, 0.5, 0.16) * heat * uThrust * (gl_FrontFacing ? 0.7 : 1.6);
+  if (!gl_FrontFacing && part != 2) col *= 0.2;
 
+  // gentle filmic curve so highlights roll off like a photograph
+  col = col / (col + vec3(0.62)) * 1.62;
   gl_FragColor = vec4(col * uFade, uFade);
 }
 `;
 
-/* ---------- Exhaust plume (fading particle dots) ------------------------- */
-export const PLUME_VERTEX = /* glsl */ `
+/* ---------- Engine flame (a mesh per nozzle) ----------------------------- */
+// An open cone hanging from each nozzle. The fragment shader draws turbulent fire with scrolling
+// noise: white-hot and slightly blue at the throat, yellow then orange then deep red down the
+// plume, brightest where the cone is seen face-on (the thick middle), fading at the tail.
+export const FLAME_VERTEX = /* glsl */ `
+uniform float uTime;
+uniform float uThrust;
+uniform float uLen;
+varying vec3 vN;
+varying vec3 vV;
+varying float vT;
+varying float vAng;
+void main(){
+  // t: 0 at the nozzle, 1 at the tail (the cone runs from y = 0 down to y = -1)
+  float t = clamp(-position.y, 0.0, 1.0);
+  vec3 pos = position;
+  // the plume breathes and wavers
+  float w = sin(uTime * 23.0 + t * 9.0) * 0.06 + sin(uTime * 37.0 + t * 15.0) * 0.04;
+  pos.xz *= 1.0 + w * t;
+  pos.y *= uLen * (0.75 + 0.25 * uThrust);
+  vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+  vN = normalize(normalMatrix * normal);
+  vV = normalize(-mv.xyz);
+  vT = t;
+  vAng = atan(position.z, position.x);
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+export const FLAME_FRAGMENT = /* glsl */ `
+precision highp float;
+uniform float uTime;
+uniform float uThrust;
+uniform float uHot;   // 1 for the inner core, 0 for the outer flame
+uniform float uSeed;
+varying vec3 vN;
+varying vec3 vV;
+varying float vT;
+varying float vAng;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0, a = 0.5;
+  for (int k = 0; k < 4; k++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+
+void main(){
+  float t = vT;
+  // facing ratio: the middle of the cone is thick fire, the silhouette edge is thin
+  float face = abs(dot(normalize(vN), normalize(vV)));
+  float body = pow(face, mix(1.6, 0.9, uHot));
+
+  vec2 q = vec2(vAng * 2.2 + uSeed, t * 5.0 - uTime * 7.0);
+  float n = fbm(q + fbm(q * 1.7 + uTime * 0.6));
+  float turb = mix(0.55, 1.35, n);
+
+  // colour down the plume
+  vec3 c0 = vec3(0.85, 0.92, 1.0);   // white-blue at the throat
+  vec3 c1 = vec3(1.0, 0.93, 0.7);    // white-yellow
+  vec3 c2 = vec3(1.0, 0.62, 0.2);    // orange
+  vec3 c3 = vec3(0.75, 0.2, 0.05);   // deep red
+  vec3 col = mix(c0, c1, smoothstep(0.0, 0.08, t));
+  col = mix(col, c2, smoothstep(0.08, 0.4, t + (n - 0.5) * 0.2));
+  col = mix(col, c3, smoothstep(0.4, 0.85, t + (n - 0.5) * 0.25));
+
+  float fadeLen = mix(1.0 - smoothstep(0.35, 1.0, t), 1.0 - smoothstep(0.05, 0.45, t), uHot);
+  float a = body * fadeLen * turb * uThrust;
+  a *= mix(0.9, 1.6, uHot);
+  // ragged tail: the noise eats the end of the flame
+  a *= smoothstep(0.0, 0.25, n + 0.55 - t * 0.6);
+  gl_FragColor = vec4(col * a, 1.0);
+}
+`;
+
+/* ---------- Smoke behind the flame (soft billowing puffs) ----------------- */
+export const SMOKE_VERTEX = /* glsl */ `
 attribute float aNozzle;
 attribute vec4 aSeed;
 uniform float uTime;
@@ -611,47 +749,53 @@ uniform vec3 uNozzle[3];
 uniform float uNozzleR[3];
 varying float vAge;
 varying float vA;
-varying float vCore;
+varying vec4 vSeed;
 void main(){
   int i = int(aNozzle + 0.5);
   vec3 origin = uNozzle[i];
   float r0 = uNozzleR[i];
-  float rate = 1.1 + aSeed.x * 0.9;
-  float age = fract(uTime * rate + aSeed.w);
-  float len = uLen * (i == 0 ? 1.0 : 0.82) * (0.75 + 0.25 * uThrust) * (0.8 + 0.4 * aSeed.y);
+  float age = fract(uTime * (0.32 + aSeed.x * 0.22) + aSeed.w);
+  float len = uLen * (i == 0 ? 1.0 : 0.85) * (0.8 + 0.4 * aSeed.y);
   vec2 dir = normalize(aSeed.yz * 2.0 - 1.0 + vec2(1e-3));
-  float radial = sqrt(aSeed.z);
-  float spread = r0 * (0.5 + pow(age, 1.6) * 6.0) * radial;
-  vec3 pos = origin + vec3(dir.x * spread, -age * len, dir.y * spread);
-  pos.xz += vec2(sin(uTime * 9.0 + aSeed.w * 50.0), cos(uTime * 7.0 + aSeed.x * 50.0)) * 0.01 * age * uThrust;
+  float spread = r0 * (1.2 + pow(age, 0.8) * 9.0) * sqrt(aSeed.z);
+  float start = 0.22; // smoke starts where the flame thins out
+  vec3 pos = origin + vec3(dir.x * spread, -(start + age) * len * 0.75, dir.y * spread);
+  pos.xz += vec2(sin(uTime * 0.7 + aSeed.w * 40.0), cos(uTime * 0.6 + aSeed.x * 40.0)) * 0.03 * age;
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   vAge = age;
-  vCore = 1.0 - radial;
-  vA = (1.0 - age) * smoothstep(0.0, 0.03, age) * uThrust;
-  float size = (0.009 + pow(age, 1.3) * 0.034 * (0.5 + aSeed.x)) * (0.6 + 0.4 * uThrust);
-  gl_PointSize = max(1.0, size * uPx / -mv.z);
+  vSeed = aSeed;
+  vA = smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.55, 1.0, age)) * uThrust;
+  float size = (0.06 + age * 0.22) * (0.7 + 0.6 * aSeed.x);
+  gl_PointSize = max(2.0, size * uPx / -mv.z);
   gl_Position = projectionMatrix * mv;
 }
 `;
 
-export const PLUME_FRAGMENT = /* glsl */ `
+export const SMOKE_FRAGMENT = /* glsl */ `
 precision highp float;
+uniform float uTime;
 varying float vAge;
 varying float vA;
-varying float vCore;
+varying vec4 vSeed;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
 void main(){
-  float d = length(gl_PointCoord - 0.5);
-  float a = smoothstep(0.5, 0.0, d);
-  vec3 core  = vec3(0.992, 0.992, 0.984);  // #fdfdfb
-  vec3 warm  = vec3(1.0, 0.867, 0.671);    // #ffddab
-  vec3 ember = vec3(1.0, 0.698, 0.357);    // #ffb25b
-  vec3 smoke = vec3(0.984, 0.929, 0.878);  // #fbede0
-  float edge = 1.0 - vCore;
-  vec3 c = mix(core, warm, smoothstep(0.0, 0.1, vAge) * edge);
-  c = mix(c, ember, (1.0 - smoothstep(0.0, 0.14, vAge)) * smoothstep(0.55, 0.95, edge));
-  c = mix(c, smoke * 0.8, smoothstep(0.3, 0.8, vAge));
-  float glow = mix(0.85, 0.3, smoothstep(0.0, 0.7, vAge));
-  gl_FragColor = vec4(c * a * vA * glow, 1.0);
+  vec2 uv = gl_PointCoord - 0.5;
+  float d = length(uv) * 2.0;
+  // a lumpy cloud, not a dot: soft falloff broken up by noise that turns slowly
+  float ang = vSeed.w * 6.283 + uTime * 0.2;
+  vec2 r = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * uv * 3.0 + vSeed.xy * 10.0;
+  float n = noise(r) * 0.6 + noise(r * 2.1) * 0.4;
+  float a = smoothstep(1.0, 0.15, d + (n - 0.5) * 0.7);
+  // warm and lit by the flame near the engines, grey-blue in shadow further down
+  vec3 warm = vec3(0.95, 0.62, 0.36);
+  vec3 grey = vec3(0.42, 0.42, 0.46);
+  vec3 c = mix(warm, grey, smoothstep(0.0, 0.45, vAge)) * (0.75 + 0.35 * n);
+  gl_FragColor = vec4(c, a * vA * 0.32);
 }
 `;
 

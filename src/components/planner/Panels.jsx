@@ -42,7 +42,7 @@ export function LayerPanel({ groups, state, onToggle, onOpacity, iceNote = ICE_N
                   </Pop>
                 </div>
                 {st.on && l.kind !== 'stops' && l.kind !== 'radius' && (
-                  <input className="lp-opacity" type="range" min="0" max="1" step="0.05" value={st.opacity} aria-label={`${l.name} opacity`} onChange={(e) => onOpacity(l.id, Number(e.target.value))} />
+                  <input className="lp-opacity" type="range" min="0" max="1" step="0.05" value={st.opacity} style={{ '--pct': `${st.opacity * 100}%` }} aria-label={`${l.name} opacity`} onChange={(e) => onOpacity(l.id, Number(e.target.value))} />
                 )}
               </div>
             )

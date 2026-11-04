@@ -1,7 +1,7 @@
 /* =========================================================================================
    Redstep theme: Apple's way. Loaded after every other sheet, so it sets the look of the
    whole site in one place.
-     · clarity: Panchang headlines (wide, like spacecraft livery) and Switzer text,
+     · clarity: Syne headlines (wide and sharp) and Switzer text,
        sentence case, generous space,
        one thing per screen
      · deference: black ground, neutral greys, colour only where it means something
@@ -36,40 +36,11 @@
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Panchang';
-  src: url('./fonts/panchang-400.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Panchang';
-  src: url('./fonts/panchang-500.woff2') format('woff2');
-  font-weight: 500;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Panchang';
-  src: url('./fonts/panchang-600.woff2') format('woff2');
-  font-weight: 600;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Panchang';
-  src: url('./fonts/panchang-700.woff2') format('woff2');
-  font-weight: 700;
-  font-display: swap;
-}
-
 :root {
-  /* Headlines in Panchang, a wide engineered display face that reads like the lettering on a
-     spacecraft; everything else in Switzer, a precise neo-grotesk. Both are bundled, so every
-     device sees the same type. */
+  /* Headlines in Syne, a wide, sharp display face with real character; everything else in
+     Switzer, a precise neo-grotesk. Both are bundled, so every device sees the same type. */
   --font: 'Switzer', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
-  --font-head: 'Panchang', 'Switzer', system-ui, sans-serif;
+  --font-head: 'Syne', 'Switzer', system-ui, sans-serif;
   --font-serif: var(--font-head);
   --mono: var(--font);
 
@@ -113,7 +84,7 @@
 /* ---------------------------------------------------------------- type ---------------- */
 :root :is(h1, h2) {
   font-family: var(--font-head);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.08;
   text-transform: none;
@@ -174,46 +145,55 @@
 }
 
 /* ---------------------------------------------------------------- buttons ------------- */
-/* pills: solid white for the main action, an outlined pill for the second one */
+/* pills: Mars orange for the main action, smoked glass for everything else */
 :root :is(.btn, .mw-home .btn) {
   min-height: 44px;
   padding: 0 22px;
   border-radius: 980px;
-  border: 1px solid transparent;
-  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   color: var(--ink);
-  font: 400 17px / 1 var(--font);
-  letter-spacing: -0.022em;
+  font: 500 16px / 1 var(--font);
+  letter-spacing: -0.016em;
   text-transform: none;
   box-shadow: none;
-  transition: background-color 200ms var(--ease), color 200ms var(--ease), border-color 200ms var(--ease), transform 160ms var(--ease);
+  transition: background-color 200ms var(--ease), color 200ms var(--ease), border-color 200ms var(--ease), transform 160ms var(--ease), box-shadow 200ms var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root :is(.btn, .mw-home .btn):hover {
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary) {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #000;
-  box-shadow: none;
+  background: var(--rust);
+  border-color: var(--rust);
+  color: #1a0a03;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(255, 106, 44, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {
-  background: #fff;
-  border-color: #fff;
+  background: #ff7d45;
+  border-color: #ff7d45;
+  box-shadow: 0 8px 30px rgba(255, 106, 44, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 :root:not([data-platform='windows']) .mw-home .btn--ghost {
-  background: transparent;
-  border: 1px solid rgba(245, 245, 247, 0.5);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   color: var(--ink);
   box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
 }
 
 :root:not([data-platform='windows']) .mw-home .btn--ghost:hover {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #000;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--ink);
 }
 
 :root :is(.btn, .mw-home .btn):active {
@@ -239,28 +219,25 @@
 }
 
 /* ---------------------------------------------------------------- nav ----------------- */
-/* Apple's global nav: a thin translucent bar, small quiet links */
-:root .nav {
-  height: calc(48px + env(safe-area-inset-top, 0px));
-  background: rgba(22, 22, 23, 0.8);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 0;
-}
-
+/* the top bar: one frosted bar on every page, the current page marked with a small orange dot */
+:root .nav,
 :root .nav.nav-overlay {
-  background: rgba(0, 0, 0, 0.6);
+  height: calc(52px + env(safe-area-inset-top, 0px));
+  background: rgba(10, 10, 12, 0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
 }
 
 :root .nav-name {
-  font: 600 15px / 1 var(--font-head);
-  letter-spacing: 0.02em;
+  font: 700 18px / 1 var(--font-head);
+  letter-spacing: -0.01em;
   text-transform: none;
 }
 
 :root .nav-mark {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 :root:not([data-platform='windows']) .nav .nav-links {
@@ -269,25 +246,46 @@
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  gap: 4px;
+  gap: 6px;
   padding: 0;
 }
 
 :root .nav-links a {
-  height: 44px;
+  position: relative;
+  height: 52px;
   padding: 0 14px;
   border-radius: 0;
-  font: 400 12px / 1 var(--font);
+  font: 500 13.5px / 1 var(--font);
   letter-spacing: -0.01em;
   text-transform: none;
-  color: rgba(245, 245, 247, 0.8);
+  color: rgba(245, 245, 247, 0.62);
   background: none;
   transition: color 200ms var(--ease);
+}
+
+:root .nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--rust);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease);
 }
 
 :root .nav-links a.on {
   background: none;
   color: var(--ink);
+}
+
+:root .nav-links a.on::after {
+  opacity: 1;
+  transform: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -297,12 +295,20 @@
 }
 
 :root .nav-sos {
-  height: 28px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
   border-radius: 980px;
-  font: 400 12px / 1 var(--font);
+  background: rgba(255, 110, 90, 0.12);
+  color: #ff8f7c;
+  font: 500 13px / 1 var(--font);
   letter-spacing: -0.01em;
   text-transform: none;
+  transition: background-color 200ms var(--ease);
+}
+
+:root .nav-sos:hover {
+  background: rgba(255, 110, 90, 0.2);
 }
 
 /* phones: a flat full-width bar, and a full-screen menu with large links */
@@ -312,13 +318,13 @@
     top: 0;
     left: 0;
     right: 0;
-    height: calc(48px + env(safe-area-inset-top, 0px));
-    grid-template-rows: 48px 1fr;
+    height: calc(52px + env(safe-area-inset-top, 0px));
+    grid-template-rows: 52px 1fr;
     padding: env(safe-area-inset-top, 0px) 8px 0 16px;
     border: 0;
     border-radius: 0;
     box-shadow: none;
-    background: rgba(22, 22, 23, 0.8);
+    background: rgba(10, 10, 12, 0.82);
   }
 
   :root .nav.nav-open {
@@ -439,4 +445,67 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--ink-3);
+}
+
+/* ---------------------------------------------------------------- sliders ------------- */
+/* iOS-style: a slim track, filled in Mars orange up to a white thumb with a soft shadow */
+:root input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+:root input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 980px;
+  background: linear-gradient(90deg, var(--rust) var(--pct, 50%), rgba(255, 255, 255, 0.16) var(--pct, 50%));
+}
+
+:root input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 980px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+:root input[type='range']::-moz-range-progress {
+  height: 4px;
+  border-radius: 980px;
+  background: var(--rust);
+}
+
+:root input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), 0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  transition: transform 160ms ease;
+}
+
+:root input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+:root input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+:root input[type='range']:focus-visible {
+  outline: none;
+}
+
+:root input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(255, 106, 44, 0.45), 0 2px 8px rgba(0, 0, 0, 0.45);
 }

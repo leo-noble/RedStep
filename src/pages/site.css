@@ -1879,3 +1879,34 @@
   margin-top: 12px;
   width: 100%;
 }
+
+/* ---- map furniture: the scale sits clear above the credits; both quiet and legible ---- */
+.mars-scale {
+  bottom: calc(var(--dock-h) + 76px);
+}
+
+.mars-scale span {
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+.mars-scale span::after {
+  font: 500 11px / 1 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.mars-map .maplibregl-ctrl-attrib {
+  padding: 3px 10px 3px 28px;
+  border-radius: 980px;
+  background: rgba(10, 10, 12, 0.66) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  font: 400 11px / 1.4 var(--font);
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
+}
+
+.ab-icon svg {
+  display: block;
+}

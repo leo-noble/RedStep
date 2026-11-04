@@ -86,7 +86,7 @@ export default function MarsGlobeHero({ engine, sites, ref }) {
       <canvas
         ref={canvasRef}
         className="hero-canvas"
-        aria-label="Animated schematic: a rocket leaves Earth, passes the Moon's orbit and arrives at Mars."
+        aria-label="Animated schematic, not to scale: a rocket leaves Earth, passes the Moon's orbit and arrives at Mars."
         role="img"
       />
       {failed && <div className="hero-poster" aria-hidden="true" />}

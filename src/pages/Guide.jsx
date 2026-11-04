@@ -21,6 +21,28 @@ export default function Guide() {
   const [done, setDone] = useStored('mw-guide-done', {})
   const [answer, setAnswer] = useState(null)
   const [railOpen, setRailOpen] = useStored('mw-guide-rail', true)
+  // The steps sidebar is fixed to the window; when the footer scrolls into view it stops above
+  // it instead of covering it.
+  useEffect(() => {
+    const footer = document.querySelector('.footer')
+    if (!footer) return undefined
+    let raf = 0
+    const place = () => {
+      raf = 0
+      const lift = Math.max(0, window.innerHeight - footer.getBoundingClientRect().top)
+      document.documentElement.style.setProperty('--rail-lift', `${lift}px`)
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(place) }
+    place()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      cancelAnimationFrame(raf)
+      document.documentElement.style.removeProperty('--rail-lift')
+    }
+  }, [])
   const head = useRef(null)
   const walkDose = useMemo(lastWalkDose, [])
   const Widget = WIDGETS[s.widget]
@@ -95,7 +117,8 @@ export default function Guide() {
             )}
             {s.procedure.length > 0 && (
               <section className="g-proc">
-                <h2 className="micro">What you would do <span className="g-hypo">proposed, never tested on Mars</span></h2>
+                <h2 className="micro">What you would do</h2>
+                <p className="g-hypo">Proposed, never tested on Mars.</p>
                 <ol>
                   {s.procedure.map((p) => <li key={p}>{p}</li>)}
                 </ol>
