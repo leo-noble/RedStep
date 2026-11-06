@@ -13,7 +13,7 @@ export default function Sources() {
     <div className="page">
       <header className="page-head">
         <h1>Where every number <em>comes from.</em></h1>
-        <p className="page-lead">Nothing here is live telemetry. Maps and measurements come from NASA missions and are bundled with the app. After your first visit, the walk planner and its Jezero data are saved in your browser, so they keep working without a connection; world-map close-ups are saved as you look at them. We label every number with one of three tags:</p>
+        <p className="page-lead">Nothing about Mars here is live telemetry: maps and measurements come from NASA missions and are bundled with the app. The one live feed is space weather, measured near Earth. After your first visit, the walk planner and its Jezero data are saved in your browser, so they keep working without a connection; Gale and world-map close-ups are saved as you open them. We label every number with one of three tags:</p>
         <p className="src-data-source">Data source in use: <b>{dataSource.label}</b>.</p>
         <ul className="badge-key">
           {Object.entries(BADGES).map(([k, b]) => <li key={k}><Badge kind={k} /> <span>{b.long}</span></li>)}
@@ -62,10 +62,13 @@ export default function Sources() {
       <section className="src-group">
         <h2 className="micro">What we calculate ourselves <Badge kind="derived" /></h2>
         <ul className="src-methods">
-          <li><b>Steepness</b> from the CTX height map, using Horn&rsquo;s 3&times;3 method on a 40 m grid (the 20 m map averaged 2&times;2).</li>
+          <li><b>Steepness</b> using Horn&rsquo;s 3&times;3 method on a 40 m grid: at Jezero from the USGS CTX height map (20 m, averaged 2&times;2); at Gale from the USGS HiRISE height map (1 m, read from its 8 m overview and averaged 5&times;5). Gale heights agree with Curiosity&rsquo;s own logged heights within a few metres along its whole drive (checked in our tests).</li>
+          <li><b>Rocky ground</b>: the fine-scale texture of the HiRISE photo (how much each pixel differs from a blurred copy), averaged per grid cell. Rough-looking cells cost more in the route search and show on the Rocky ground layer. A texture guess, not a boulder count.</li>
           <li><b>Safe paths</b> by searching the grid (A* and Dijkstra, 8 directions, no corner cutting). Ground above your &ldquo;too steep&rdquo; limit is blocked; amber ground and loose ground (dark in THEMIS night infrared) cost more.</li>
           <li><b>Walking time</b> from Tobler&rsquo;s hiking rule, scaled so flat ground matches your walking speed.</li>
-          <li><b>Suit air</b>: hours of air at normal effort, used faster when climbing. The turn-back point is the last place where air used plus air to walk home the same way still leaves your reserve.</li>
+          <li><b>Suit air</b>: hours of air at normal effort, used faster when climbing and when carrying gear (in proportion to the total mass moved, after Pandolf et al. 1977). With two astronauts, the suit carrying most sets the plan for both. The turn-back point is the last place where air used plus air to walk home the same way still leaves your reserve.</li>
+          <li><b>Rover drop-off</b>: the drive follows the same safe-path search; drive time is distance over your rover speed. The walk-back circle moves to the rover.</li>
+          <li><b>Space weather</b>: solar flares and particle events from NASA DONKI, with the NOAA GOES proton count as a fallback. A particle storm (10 pfu or more at 10 MeV, or an event in the last 3 days) means postpone. These are measured near Earth; the card says how far around the Sun Mars is.</li>
           <li><b>Sun height</b> with NASA GISS&rsquo;s Mars24 algorithm, checked against both worked examples on the Mars24 page.</li>
           <li><b>Earth delay</b> from the planets&rsquo; positions (Mars24 + Meeus), checked against the January 2025 close approach (0.642 AU).</li>
           <li><b>Radiation</b>: hours outside times Curiosity RAD&rsquo;s 0.64 mSv per day.</li>
@@ -89,7 +92,8 @@ export default function Sources() {
         <ul className="src-methods">
           <li>The height map is 40 m per cell. Boulders, small ledges and loose sand are not visible at that scale. A real crew would use HiRISE height maps (1 m) and look at the ground.</li>
           <li>Suit numbers are planning values, not the specification of any real Mars suit.</li>
-          <li>Weather is not live. Perseverance&rsquo;s MEDA station measures it daily, but this demo does not download it.</li>
+          <li>Mars weather is not live. Perseverance&rsquo;s MEDA station measures it daily, but this demo does not download it. Space weather is live, but measured near Earth.</li>
+          <li>No spectral (mineral) layer yet: the CRISM products on Mars Trek are not served as map tiles.</li>
           <li>Radiation uses Curiosity&rsquo;s Gale Crater average; solar storms can raise it sharply.</li>
           <li>Lava tubes on Mars are unconfirmed. Mars soil needs perchlorate removal before it can grow food.</li>
         </ul>

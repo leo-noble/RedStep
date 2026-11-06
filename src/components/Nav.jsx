@@ -26,7 +26,7 @@ export default function Nav({ overlay, onEmergency }) {
         ))}
       </nav>
       <div className="nav-end">
-        <button type="button" className="nav-sos" onClick={onEmergency}>
+        <button type="button" className="nav-sos" aria-label="Emergency" onClick={onEmergency}>
           <span className="nav-sos-dot" aria-hidden="true" />
           <span>Emergency</span>
         </button>

@@ -3,11 +3,17 @@ import Orbits from '../components/Orbits.jsx'
 import { SITE } from '../content/site.js'
 import './page.css'
 
+// The 2026 challenge statement, point by point, and where each is answered in the app.
 const MAP = [
-  ['Layered, integrated view', 'Eleven map layers from six spacecraft, stacked on one map with opacity sliders, each labelled with its mission, instrument and detail level.'],
-  ['Data from many NASA missions', 'MRO (HiRISE, CTX), Mars Global Surveyor (MOLA, TES), Mars Odyssey (THEMIS), Viking, Curiosity (RAD), Perseverance (traverse, samples). Mars Express HRSC heights are blended into one relief map.'],
-  ['Plan a successful Marswalk', 'Steepness, suit air with a turn-back point, a walk-back circle, real sun height (Mars24), radiation dose and Earth delay give a GO, CAUTION or NO-GO with reasons.'],
-  ['New science along the way', 'Nine science stops at real Perseverance sample sites. Each says what it is, why it matters and which mission data backs it. The planner balances safety and science openly.'],
+  ['A layered, integrated view from many NASA missions', 'Eleven map layers from six spacecraft (MRO, MGS, Mars Odyssey, Viking, Curiosity, Perseverance) on one map, each labelled with mission, instrument and detail.', '/map', 'Mars map'],
+  ['A map an astronaut uses during the surface mission', 'Helmet view: a suit display over the 3D route (heading, air, sun, next stop, turn-back). Cuff view: a tablet checklist that works offline.', '/site/gale', 'Helmet view'],
+  ['Start from the science goal, then pick the place', 'Gale Crater is planned around Curiosity\u2019s 2025 boxwork on Mount Sharp, with stops at its real drill sites. Jezero is planned around Perseverance\u2019s samples.', '/site/gale', 'Gale planner'],
+  ['At least three data types', 'Optical (HiRISE, CTX, Viking), thermal (THEMIS day and night), topographic (MOLA, HRSC, CTX and HiRISE height maps) and radiation (Curiosity RAD).', '/sources', 'Sources'],
+  ['Safety first: radiation and space weather', 'Radiation dose for every walk from Curiosity RAD, and a live space-weather card (NASA DONKI, NOAA GOES) that says postpone during a particle storm.', '/site/jezero', 'Planner'],
+  ['Suit mobility, gear and a route around big rocks', 'Slope limits, a carried-gear setting that raises air use, and a rocky-ground layer from HiRISE photos that the route finder avoids.', '/site/jezero', 'Planner'],
+  ['Crews in pairs, rovers carrying crew', 'Buddy walks (the suit that breathes hardest sets the turn-back; never split up) and rover drop-off with the walk-back circle on the rover.', '/site/gale', 'Planner'],
+  ['Point-of-view images of what to expect', 'Real rover panoramas in Street view, and a 3D ground view built from orbit where no rover stood.', '/site/jezero', 'Street view'],
+  ['Past, predicted or no time frame', 'Mars24 sun height for any date from 2026 to 2035, and the best time to leave for the sun to stay up.', '/site/jezero', 'Planner'],
 ]
 
 // Only real entries: skip blanks and unfilled template text.
@@ -28,15 +34,23 @@ export default function About() {
         </div>
         <div>
           <h2 className="micro">Our solution</h2>
-          <p>One map that pulls the data together, and a planner that turns it into a plain answer. Press one button to get a safe route that visits real sample sites, or draw your own and see it rejected, with the reason, the moment it crosses a cliff or runs out of air.</p>
+          <p>One map that pulls the data together, and a planner that turns it into a plain answer for the first crews and the people who plan their walks. Press one button to get a safe route past real sample sites, or draw your own and see it rejected, with the reason, the moment it crosses a cliff or runs out of air. Then walk it in the helmet view and take the checklist on your wrist.</p>
         </div>
       </section>
 
       <section className="about-map">
         <h2 className="micro">How it answers the challenge</h2>
-        <ol>
-          {MAP.map(([t, d]) => <li key={t}><b>{t}</b><p>{d}</p></li>)}
-        </ol>
+        <table className="about-table">
+          <thead><tr><th scope="col">The challenge asks for</th><th scope="col">Where Redstep answers it</th></tr></thead>
+          <tbody>
+            {MAP.map(([t, d, to, label]) => (
+              <tr key={t}>
+                <th scope="row">{t}</th>
+                <td>{d} <Link to={to}>{label} <span aria-hidden="true">→</span></Link></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       <section className="about-grid">
@@ -47,10 +61,10 @@ export default function About() {
         <div>
           <h2 className="micro">Next steps</h2>
           <ul className="about-list">
-            <li>HiRISE 1 m height maps for metre-scale hazards.</li>
+            <li>A spectral layer: CRISM mineral maps, once the challenge&rsquo;s data resources are out.</li>
+            <li>Metre-scale hazards: the Gale height map is 1 m, and we plan on 40 m cells today.</li>
             <li>Live weather from Perseverance&rsquo;s MEDA when NASA posts it.</li>
-            <li>More sites: Gale Crater and the ice-rich landing zones.</li>
-            <li>Rover-assisted walks and two-person buddy planning.</li>
+            <li>More sites: the ice-rich candidate landing zones.</li>
           </ul>
         </div>
       </section>
