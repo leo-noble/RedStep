@@ -105,7 +105,14 @@ function Planner({ site }) {
   const setSettings = useCallback((u) => setRawSettings((s) => cleanSettings(typeof u === 'function' ? u(s) : u)), [])
   const [date, setRawDate] = useState(() => cleanDate(params.get('d')))
   const setDate = useCallback((d) => setRawDate(cleanDate(d)), [])
-  const [waypoints, setWaypoints] = useState(() => cleanPoints(decodePts(params.get('w')), habitat))
+  // Rover drop-off: a pressurised rover drives the crew out and waits; the walk starts there.
+  const [rover, setRover] = useState(() => {
+    const p = decodePts(params.get('r'))?.[0]
+    return p && Math.abs(p[0] - habitat[0]) < 1 && Math.abs(p[1] - habitat[1]) < 1 ? p : null
+  })
+  const start = useMemo(() => rover || habitat, [rover, habitat])
+  const base = rover ? habitat : null
+  const [waypoints, setWaypoints] = useState(() => cleanPoints(decodePts(params.get('w')), rover || habitat))
   const [snap, setSnap] = useState(params.get('snap') === '1')
   const [stopIds, setStopIds] = useState(() => (params.get('stops') || '').split(',').filter((sid) => stops.some((x) => x.id === sid)).slice(0, 30))
   const [drawing, setDrawing] = useState(false)
@@ -187,7 +194,7 @@ function Planner({ site }) {
       setStopIds(data.chosen)
       setSnap(true)
       setWaypoints(data.waypoints)
-      setResult({ line: data.line, analysis: data.analysis })
+      setResult({ line: data.line, analysis: data.analysis, driveLine: data.driveLine })
       animateRoute(data.line, data.waypoints)
       mapRef.current?.fitRoute(data.line)
     } else if (data.type === 'risky') {
@@ -201,7 +208,7 @@ function Planner({ site }) {
       animateRoute(data.line, data.line)
       mapRef.current?.fitRoute(data.line)
     } else {
-      setResult({ line: data.line, analysis: data.analysis })
+      setResult({ line: data.line, analysis: data.analysis, driveLine: data.driveLine })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -245,9 +252,9 @@ function Planner({ site }) {
     setBusy(true)
     worker.current.postMessage({
       type: 'plan', id, waypoints, snap: waypoints.slice(1).map(() => snap), stops: planStops,
-      settings, startMs, site, habitat, facts: FACT_VALUES,
+      settings, startMs, site, habitat: start, base, facts: FACT_VALUES,
     })
-  }, [grid, waypoints, snap, planStops, settings, startMs, site, habitat])
+  }, [grid, waypoints, snap, planStops, settings, startMs, site, start, base])
 
   // ---- URL ----
   useEffect(() => {
@@ -255,10 +262,11 @@ function Planner({ site }) {
     if (waypoints.length > 1) p.set('w', encodePts(waypoints))
     if (snap) p.set('snap', '1')
     if (stopIds.length) p.set('stops', stopIds.join(','))
+    if (rover) p.set('r', encodePts([rover]))
     if (date !== today()) p.set('d', date)
     if (settings.startHour !== DEFAULTS.startHour) p.set('t', String(settings.startHour))
     setParams(p, { replace: true })
-  }, [waypoints, snap, stopIds, date, settings.startHour, setParams])
+  }, [waypoints, snap, stopIds, date, settings.startHour, rover, setParams])
 
   // ---- paint derived layers once the grid arrives / thresholds change ----
   useEffect(() => {
@@ -288,12 +296,13 @@ function Planner({ site }) {
   const visited = result?.analysis?.visited.map((v) => v.id) || []
   const visitedStops = stops.filter((st) => visited.includes(st.id))
   useEffect(() => { if (mapReady) mapRef.current.setStops(stops, visited) }, [mapReady, stops, visited.join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (mapReady) mapRef.current.setRadius(habitat[0], habitat[1], settings.walkBack * 1000) }, [mapReady, habitat, settings.walkBack])
+  useEffect(() => { if (mapReady) mapRef.current.setRadius(start[0], start[1], settings.walkBack * 1000) }, [mapReady, start, settings.walkBack])
+  useEffect(() => { if (mapReady) mapRef.current.setDrive(rover ? result?.driveLine || [habitat, rover] : null) }, [mapReady, rover, habitat, result])
   useEffect(() => {
     if (!mapReady) return
     const a = result?.analysis
-    mapRef.current.setMarkers({ habitat, turnBack: a ? [a.turnBack.lon, a.turnBack.lat] : null, maxSlope: a && a.maxSlope > settings.greenSlope ? a.maxSlopeAt : null })
-  }, [mapReady, result, habitat, settings.greenSlope])
+    mapRef.current.setMarkers({ habitat, rover, turnBack: a ? [a.turnBack.lon, a.turnBack.lat] : null, maxSlope: a && a.maxSlope > settings.greenSlope ? a.maxSlopeAt : null })
+  }, [mapReady, result, habitat, rover, settings.greenSlope])
   useEffect(() => {
     if (!mapReady) return
     for (const [lid, st] of Object.entries(layers)) mapRef.current.setLayer(lid, st.on, st.opacity)
@@ -305,16 +314,35 @@ function Planner({ site }) {
     setDrawing(false)
     const id = ++reqId.current
     setBusy(true)
-    worker.current.postMessage({ type: 'suggest', id, habitat, stops, settings, startMs, site, facts: FACT_VALUES, appetite: APPETITE.find((a) => a.id === which).value })
-  }, [grid, appetite, habitat, stops, settings, startMs, site])
+    worker.current.postMessage({ type: 'suggest', id, habitat: start, base, stops, settings, startMs, site, facts: FACT_VALUES, appetite: APPETITE.find((a) => a.id === which).value })
+  }, [grid, appetite, start, base, stops, settings, startMs, site])
 
   const tryRisky = useCallback(() => {
     if (!grid) return
     setDrawing(false)
     const id = ++reqId.current
     setBusy(true)
-    worker.current.postMessage({ type: 'risky', id, habitat, stops, settings, startMs, site, facts: FACT_VALUES })
-  }, [grid, habitat, stops, settings, startMs, site])
+    worker.current.postMessage({ type: 'risky', id, habitat: start, stops, settings, startMs, site, facts: FACT_VALUES })
+  }, [grid, start, stops, settings, startMs, site])
+
+  // Rover on: park it at the middle of the science stops (drag it anywhere), then suggest a walk
+  // from there. Rover off: back to walking from the habitat.
+  const roverChanged = useRef(false)
+  const toggleRover = useCallback(() => {
+    let next = null
+    if (!rover) {
+      const pool = stops.length ? stops : [{ lon: habitat[0], lat: habitat[1] }]
+      next = [pool.reduce((t, p) => t + p.lon, 0) / pool.length, pool.reduce((t, p) => t + p.lat, 0) / pool.length]
+    }
+    roverChanged.current = true
+    setRover(next)
+    setWaypoints([next || habitat]); setStopIds([]); setResult(null); setSuggestNote(next ? 'Rover drop-off: drag the rover marker to where it should park.' : null)
+  }, [rover, stops, habitat])
+  useEffect(() => {
+    if (!roverChanged.current || !grid) return
+    roverChanged.current = false
+    suggest()
+  }, [start, grid, suggest])
 
   // First visit without a walk in the URL: show the Medium suggestion straight away,
   // so the answer card is visible without pressing anything.
@@ -338,7 +366,10 @@ function Planner({ site }) {
     if (s) setStopIds((ids) => (ids.includes(s.id) ? ids : [...ids, s.id]))
   }, [drawing, stops, meta, waypoints.length])
 
-  const onWaypointDrag = useCallback((i, p) => setWaypoints((w) => w.map((q, k) => (k === i ? p : q))), [])
+  const onWaypointDrag = useCallback((i, p) => {
+    if (i === 0) setRover((r) => (r ? p : r))
+    setWaypoints((w) => w.map((q, k) => (k === i ? p : q)))
+  }, [])
 
   const toggleStop = useCallback((sid, on) => {
     const s = stops.find((x) => x.id === sid)
@@ -352,7 +383,7 @@ function Planner({ site }) {
     }
   }, [stops])
 
-  const clear = () => { setWaypoints([habitat]); setStopIds([]); setResult(null); setSuggestNote(null); mapRef.current?.setRoute(null, [habitat]) }
+  const clear = () => { setWaypoints([start]); setStopIds([]); setResult(null); setSuggestNote(null); mapRef.current?.setRoute(null, [start]) }
   const undo = () => setWaypoints((w) => (w.length > 1 ? w.slice(0, -1) : w))
 
   const onFix = (what) => {
@@ -473,7 +504,7 @@ function Planner({ site }) {
 
   return (
     <div className={`planner ${following ? 'following' : ''} ${street?.demo ? 'demo' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
-      {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={siteLayers} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
+      {meta && <MarsMap ref={mapRef} roverMode={!!rover} meta={meta} grid={grid} layers={siteLayers} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
       {!grid && (
         <div className="planner-loading" role="status" aria-live="polite">
           <Ambient className="ambient-fill" />
@@ -504,6 +535,7 @@ function Planner({ site }) {
         <span className="ab-spacer" aria-hidden="true" />
         <MoreMenu
           items={[
+            { label: rover ? 'Walk from the habitat' : 'Rover drop-off', hint: rover ? 'Turn the rover off and start on foot' : 'A rover drives you out; walk from where it parks', onClick: toggleRover, disabled: !grid || busy },
             { label: 'Street view', hint: 'Look around from where the rovers stood', onClick: () => setPicking(true), disabled: !mapReady },
             { label: 'Fly along in 3D', hint: 'Follow the walk over the ground', onClick: follow, disabled: !a },
             { label: 'Try a risky walk', hint: 'See a NO-GO and the reasons for it', onClick: tryRisky, disabled: !grid || busy },

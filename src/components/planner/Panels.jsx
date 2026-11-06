@@ -219,7 +219,7 @@ export function VerdictPanel({ analysis: a, settings: s, busy, onFix, onEmergenc
         <p className="vp-turn">
           <i className="vp-turn-dot" aria-hidden="true" />
           {a.turnBack.atEnd
-            ? <>Turn around at the end of the route, <b>{(a.distance / 1000).toFixed(1)} km</b> from home.</>
+            ? <>Turn around at the end of the route, <b>{(a.distance / 1000).toFixed(1)} km</b> from {a.drive ? 'the rover' : 'home'}.</>
             : <>You must turn around after <b>{(a.turnBack.d / 1000).toFixed(1)} km</b> ({Math.round(turnPct * 100)}% of the way) to keep your safety reserve.</>}
           <Source note="Turn-back point: the furthest point where the air you have used plus the air to walk home the same way still leaves your reserve untouched. Air use rises when climbing (setting: extra air when climbing)." badge="derived" />
         </p>
@@ -228,7 +228,7 @@ export function VerdictPanel({ analysis: a, settings: s, busy, onFix, onEmergenc
       <dl className="vp-stats vp-key">
         <div><dt>Walk</dt><dd><Count value={a.tripDistance / 1000} format={f1} /><small>km</small></dd></div>
         <div><dt>Time outside</dt><dd>{fmtH(a.hours)}</dd></div>
-        <div><dt>Air left at home</dt><dd className={a.airLeft < 1 - a.budget ? 'v-nogo' : ''}>{a.airLeft > 0 ? pct(a.airLeft) : 'none'}</dd></div>
+        <div><dt>{a.drive ? 'Air left at the rover' : 'Air left at home'}</dt><dd className={a.airLeft < 1 - a.budget ? 'v-nogo' : ''}>{a.airLeft > 0 ? pct(a.airLeft) : 'none'}</dd></div>
         <div><dt>Home by</dt><dd>{fmtHours(a.sun.end.ltst)}<small>Mars time</small></dd></div>
       </dl>
 
@@ -239,7 +239,9 @@ export function VerdictPanel({ analysis: a, settings: s, busy, onFix, onEmergenc
           <div><dt className="micro">Climb</dt><dd>↑<Count value={a.gain} format={f0} /><small>m</small></dd><span className="vp-sub">↓{Math.round(a.loss)} m on the way out</span></div>
           <div><dt className="micro">Sun height</dt><dd>{a.sun.start.elevation.toFixed(0)}°<small>→ {a.sun.end.elevation.toFixed(0)}°</small></dd><span className="vp-sub">leave {fmtHours(a.sun.start.ltst)} <Source k="mars24" note="Sun height from NASA GISS's Mars24 algorithm for this day and place." badge="derived" /></span></div>
           <div><dt className="micro">Radiation</dt><dd>{a.dose.toFixed(2)}<small>mSv</small></dd><span className="vp-sub">about {Math.max(1, Math.round(a.dose / 0.1))} chest X-ray <Source k="rad" note="0.64 mSv per day measured by Curiosity's RAD at Gale Crater, applied to the hours outside." badge="nasa" /></span></div>
-          <div><dt className="micro">Farthest from home</dt><dd className={a.farthest > s.walkBack * 1000 ? 'v-caution' : ''}>{(a.farthest / 1000).toFixed(1)}<small>km</small></dd><span className="vp-sub">safe circle {s.walkBack} km</span></div>
+          <div><dt className="micro">{a.drive ? 'Farthest from the rover' : 'Farthest from home'}</dt><dd className={a.farthest > s.walkBack * 1000 ? 'v-caution' : ''}>{(a.farthest / 1000).toFixed(1)}<small>km</small></dd><span className="vp-sub">safe circle {s.walkBack} km</span></div>
+          {a.crew?.length > 1 && <div><dt className="micro">Air used, each suit</dt><dd>{a.crew.map((c) => pct(c.air)).join(' · ')}</dd><span className="vp-sub">{a.crew.map((c) => `${c.who.toLowerCase()} ${c.load} kg`).join(', ')} <Source k="spacewalks" note="Two astronauts walk together. The suit that uses air fastest decides when both turn back." badge="illustrative" /></span></div>}
+          {a.drive && <div><dt className="micro">Rover drive</dt><dd>{(a.drive.m / 1000).toFixed(1)}<small>km each way</small></dd><span className="vp-sub">{fmtH(a.drive.hours)} each way <Source k="lrv" note="Driving time at your rover speed setting along the planner's safe path. Apollo 15 drove its Moon rover 27.8 km in about 3 hours." badge="illustrative" /></span></div>}
           <div><dt className="micro">Message to Earth</dt><dd>{a.comms.lightMin.toFixed(1)}<small>min</small></dd><span className="vp-sub">one way <Source k="meeus" note="Light time from the Earth–Mars distance on this date, from the planets' orbits." badge="derived" /></span></div>
         </dl>
         <p className="vp-sub">Walking speed {s.flatPace} km/h on flat ground, suit air {s.suitHours} h. Change these in Settings. <Badge kind="illustrative" /></p>

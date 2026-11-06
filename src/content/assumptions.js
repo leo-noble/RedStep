@@ -26,6 +26,16 @@ export const WALK = {
     value: 10, unit: 'kg', min: 0, max: 60, step: 1, badge: 'illustrative',
     note: 'Tools, sample bags, water and spare batteries. Walking effort grows roughly with the total weight you move (Pandolf et al. 1977), so gear makes the suit use air faster. Mars gravity lightens you and your gear by the same share, so the ratio holds.',
   },
+  crew: {
+    label: 'Astronauts on the walk',
+    value: 2, unit: '', min: 1, max: 2, step: 1, badge: 'illustrative',
+    note: 'Space station spacewalks are done by two astronauts working together (NASA spacewalk log), so each can help the other. With two, the suit that uses air fastest decides when you both turn back.',
+  },
+  buddyLoad: {
+    label: 'Gear your buddy carries',
+    value: 15, unit: 'kg', min: 0, max: 60, step: 1, badge: 'illustrative',
+    note: 'Only counts when two of you walk. Whoever carries more breathes harder, so sharing the load evenly stretches the walk.',
+  },
   suitedMass: {
     label: 'You plus your suit',
     value: 150, unit: 'kg', min: 100, max: 250, step: 5, badge: 'illustrative',
@@ -60,6 +70,11 @@ export const WALK = {
     label: 'Leave the habitat at (Mars local time)',
     value: 9, unit: 'h', min: 5, max: 17, step: 0.25, badge: 'illustrative',
     note: 'Local true solar time at the site. 12:00 is when the sun is highest.',
+  },
+  roverSpeed: {
+    label: 'Rover driving speed',
+    value: 6, unit: 'km/h', min: 2, max: 15, step: 1, badge: 'illustrative',
+    note: 'Only used when a rover drops you off. Apollo 15\u2019s Moon rover averaged about 9 km/h while driving (27.8 km in 3 h 2 min, NASA NSSDCA); rough Mars ground keeps a planning value lower.',
   },
   stopMinutes: {
     label: 'Time at each science stop',

@@ -2,7 +2,7 @@
 // "Suggest safe route" search that picks science stops to fit the suit's air and the daylight.
 import { computeSlope, distance, toLonLat } from './grid.js'
 import { astar, cellCosts, cellOf, cellsToLine, dijkstra, nearestWalkable, walkBack } from './pathfind.js'
-import { airPerHour, analyze, pace } from './walk.js'
+import { airPerHour, analyze, crewOf, pace } from './walk.js'
 import { sunAt } from '../lib/mars24.js'
 
 export function createPlanner(g) {
@@ -41,10 +41,21 @@ export function createPlanner(g) {
     return { line, segments }
   }
 
-  function plan({ waypoints, snap, stops, settings, startMs, site, habitat, facts }) {
+  /** Rover drop-off: the drive from the habitat (base) to where the walk starts, on a safe path. */
+  function driveTo(base, start, s) {
+    if (!base || distance(g, base, start) < 30) return null
+    const { line } = buildLine([base, start], [true], s)
+    let m = 0
+    for (let k = 1; k < line.length; k++) m += distance(g, line[k - 1], line[k])
+    return { m, straight: distance(g, base, start), line }
+  }
+  const driveInfo = (d) => d && { m: d.m, straight: d.straight }
+
+  function plan({ waypoints, snap, stops, settings, startMs, site, habitat, base, facts }) {
     const { line, segments } = buildLine(waypoints, snap, settings)
-    const analysis = analyze(g, { line, stops, settings, startMs, site, habitat, facts })
-    return { line, segments, analysis }
+    const drive = driveTo(base, habitat, settings)
+    const analysis = analyze(g, { line, stops, settings, startMs, site, habitat, facts, drive: driveInfo(drive), base })
+    return { line, segments, analysis, driveLine: drive?.line || null }
   }
 
   /** Air and hours to walk a cell path forward and backward (same model as analyze). */
@@ -65,7 +76,11 @@ export function createPlanner(g) {
    * Choose science stops greedily by value per unit of air, chaining outward from the habitat and
    * walking home the same way. appetite (0..1] = share of the usable air budget we allow.
    */
-  function suggest({ habitat, stops, settings: s, startMs, site, facts, appetite = 0.85 }) {
+  function suggest({ habitat, base, stops, settings: s, startMs, site, facts, appetite = 0.85 }) {
+    const drive = driveTo(base, habitat, s)
+    const driveH = drive ? drive.m / 1000 / Math.max(0.5, s.roverSpeed || 6) : 0
+    // Air is costed for the suit that breathes hardest (the one carrying most), as analyze does.
+    const sl = { ...s, load: Math.max(...crewOf(s).map((c) => c.load)) }
     const c = costsFor(s)
     const nodes = [{ id: 'habitat', lon: habitat[0], lat: habitat[1], value: 0, minutes: 0 }, ...stops]
       .map((p) => ({ ...p, cell: cell(c, [p.lon, p.lat]) }))
@@ -73,12 +88,14 @@ export function createPlanner(g) {
     const inRadius = (p) => distance(g, habitat, [p.lon, p.lat]) <= s.walkBack * 1000
     const cand = nodes.slice(1).filter(inRadius)
 
-    // Daylight available from departure until the sun drops below the minimum.
+    // Daylight available from departure until the sun drops below the minimum, less the rover
+    // drive out and back.
     let maxHours = 0
     for (let h = 0; h < 14; h += 0.1) {
       if (sunAt(startMs + h * 3.6e6, site.lat, site.lon).elevation < s.minSun) break
       maxHours = h
     }
+    maxHours = Math.max(0, maxHours - 2 * driveH)
 
     const targets = nodes.map((p) => p.cell)
     const tree = (p) => {
@@ -91,7 +108,7 @@ export function createPlanner(g) {
       if (!legs.has(k)) {
         const t = tree(a)
         if (t.dist[b.cell] === Infinity) legs.set(k, null)
-        else { const cells = walkBack(t.prev, b.cell); legs.set(k, { cells, ...legCost(cells, s) }) }
+        else { const cells = walkBack(t.prev, b.cell); legs.set(k, { cells, ...legCost(cells, sl) }) }
       }
       return legs.get(k)
     }
@@ -138,9 +155,9 @@ export function createPlanner(g) {
     const line = cellsToLine(g, cells)
     line[0] = habitat
     const chosen = chain.slice(1)
-    const analysis = analyze(g, { line, stops: chosen, settings: s, startMs, site, habitat, facts })
+    const analysis = analyze(g, { line, stops: chosen, settings: s, startMs, site, habitat, facts, drive: driveInfo(drive), base })
     return {
-      line, analysis, maxHours,
+      line, analysis, maxHours, driveLine: drive?.line || null,
       chosen: chosen.map((p) => p.id),
       waypoints: [habitat, ...chosen.map((p) => [p.lon, p.lat])],
     }

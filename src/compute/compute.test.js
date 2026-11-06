@@ -177,3 +177,61 @@ describe('Gale Crater terrain (USGS HiRISE height map, baked)', () => {
     }
   })
 })
+
+describe('buddy walks and rover drop-off', () => {
+  const g = synth(200, 20, () => -2500) // flat, so only air and crew matter
+  const kmDeg = 1000 / (3396190 * Math.PI / 180)
+  const walk = (km, s, extra = {}) => {
+    const a = [0.002, 0.01], b = [0.002 + km * kmDeg, 0.01]
+    return analyze(g, { line: [a, b], settings: { ...settings, ...s }, facts, habitat: a, startMs: Date.UTC(2026, 9, 24, 12), site: { lat: 0.01, lon: 0.002 }, ...extra })
+  }
+
+  it('the suit carrying most sets the air for both', () => {
+    const pair = walk(1, { crew: 2, load: 5, buddyLoad: 30 })
+    const alone = walk(1, { crew: 1, load: 30 })
+    expect(pair.airUsed).toBeCloseTo(alone.airUsed, 6)
+    expect(pair.crew.map((c) => c.who)).toEqual(['You', 'Buddy'])
+    expect(pair.crew[0].air).toBeLessThan(pair.crew[1].air)
+  })
+
+  it('walking alone is a CAUTION', () => {
+    expect(walk(1, { crew: 1 }).reasons.some((r) => r.code === 'solo' && r.level === 'caution')).toBe(true)
+    expect(walk(1, { crew: 2 }).reasons.some((r) => r.code === 'solo')).toBe(false)
+  })
+
+  it('says not to split up when only the lighter suit could finish, and when sharing gear fixes it', () => {
+    // 6 km out and back at 2 km/h = 6 h; 10 h suits, 25% reserve: 0 kg uses 60%, 60 kg uses 84%, 30 kg each 72%
+    const r = walk(6, { crew: 2, load: 0, buddyLoad: 60, suitHours: 10, reserve: 25, suitedMass: 150, climbCost: 0 })
+    const split = r.reasons.find((x) => x.code === 'split')
+    expect(split?.level).toBe('nogo')
+    expect(split.detail).toMatch(/30 kg each/)
+    expect(r.reasons.some((x) => x.code === 'air')).toBe(false)
+  })
+
+  it('a rover drive adds time both ways and warns when the rover parks beyond the walk-back circle', () => {
+    const r = walk(1, { roverSpeed: 6, walkBack: 5 }, { drive: { m: 6000, straight: 5500 }, base: [0, 0.01] })
+    expect(r.drive.hours).toBeCloseTo(1, 6)
+    expect(r.tripHours).toBeCloseTo(r.hours + 2, 6)
+    expect(r.reasons.some((x) => x.code === 'roverfar')).toBe(true)
+    const near = walk(1, { roverSpeed: 6, walkBack: 5 }, { drive: { m: 2000, straight: 1800 }, base: [0, 0.01] })
+    expect(near.reasons.some((x) => x.code === 'roverfar')).toBe(false)
+  })
+})
+
+describe('wrist checklist', async () => {
+  const { cuffCard } = await import('../lib/cuff.js')
+  const g = synth(100, 20, () => -2500)
+  const kmDeg = 1000 / (3396190 * Math.PI / 180)
+  const a0 = [0.002, 0.01], b0 = [0.002 + 2 * kmDeg, 0.01]
+  const stop = { id: 'x', name: 'Test rock', lon: 0.002 + kmDeg, lat: 0.01, minutes: 30, bring: 'Hammer' }
+  const r = analyze(g, { line: [a0, b0], stops: [stop], settings, facts, habitat: a0, startMs: Date.UTC(2026, 9, 24, 12), site: { lat: 0.01, lon: 0.002 } })
+
+  it('lists leave, the stop, the far end and home, in time order', () => {
+    const c = cuffCard(r, { stops: [stop], settings })
+    expect(c.steps.map((x) => x.what)).toEqual(['Leave the habitat', 'Test rock', 'Turn around at the far end', 'Back at the habitat'])
+    for (let k = 1; k < c.steps.length; k++) expect(c.steps[k].t).toBeGreaterThan(c.steps[k - 1].t)
+    // the whole walk, in Mars hours
+    expect(c.steps.at(-1).t - c.steps[0].t).toBeCloseTo(r.hours / 1.0274912517, 6)
+    expect(c.rules.some((x) => /split up/.test(x))).toBe(settings.crew >= 2)
+  })
+})

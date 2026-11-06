@@ -255,7 +255,39 @@
   .br-map { grid-row: auto; }
 }
 
+/* Wrist card: one narrow column, big times, tick boxes. Prints on its own. */
+.cuff {
+  max-width: 420px;
+  margin: var(--s-6) auto 0;
+  padding: 22px 22px 18px;
+  background: #050505;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-3);
+}
+.cuff-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.cuff-steps { list-style: none; margin: 0; padding: 0; }
+.cuff-steps li {
+  display: grid;
+  grid-template-columns: 16px 52px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.cuff-box { width: 14px; height: 14px; margin-top: 2px; border: 1.5px solid var(--ink-2); border-radius: 3px; }
+.cuff-steps time { font-size: 16px; font-weight: 600; }
+.cuff-what { display: grid; gap: 2px; }
+.cuff-what small { color: var(--ink-2); font-size: 13px; }
+.cuff-air { color: var(--ink-2); font-size: 13px; padding-top: 2px; }
+.cuff-key .cuff-what b, .cuff-key time { color: var(--ember); }
+.cuff-key .cuff-box { border-color: var(--ember); }
+.cuff-rules { margin: 14px 0 8px; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.cuff-foot { color: var(--ink-3, var(--ink-2)); }
+
 @media print {
+  body.print-cuff .brief { display: none !important; }
+  body.print-cuff .cuff { margin: 0; border: 1px solid #444; }
+  body:not(.print-cuff) .cuff { break-before: page; }
   .brief-tools, .nav { display: none !important; }
   .brief-page { padding: 0; }
   .brief { border: 0; max-width: none; }

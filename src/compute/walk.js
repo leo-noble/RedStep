@@ -51,7 +51,20 @@ function walkLeg(pts, s, stopAt = new Map()) {
   return { t, air }
 }
 
-export function analyze(g, { line, stops = [], settings: s, startMs, site, habitat, facts }) {
+/** Who walks: one astronaut, or two with their own gear. Pace does not depend on load in this
+ *  model, so the pair walks together and only air use differs between the two suits. */
+export function crewOf(s) {
+  const you = { who: 'You', load: Math.max(0, s.load || 0) }
+  return (s.crew || 1) >= 2 ? [you, { who: 'Buddy', load: Math.max(0, s.buddyLoad || 0) }] : [you]
+}
+
+/**
+ * @param drive optional rover drop-off: { m, straight } metres driven from the habitat to where
+ *   the walk starts (along the safe path, and as the crow flies). The suits are full when the
+ *   walk starts; the drive adds time before and after the walk (sunlight, radiation).
+ * @param base the habitat, when the walk starts somewhere else (rover drop-off)
+ */
+export function analyze(g, { line, stops = [], settings: s, startMs, site, habitat, facts, drive = null, base = null }) {
   const pts = resample(g, line)
   for (const p of pts) { p.z = elevAt(g, p.lon, p.lat); p.slope = slopeAt(g, p.lon, p.lat); p.rough = roughAt(g, p.lon, p.lat) }
   // Rocky-looking ground from HiRISE texture (upper quarter of the scale): slower, riskier footing
@@ -94,12 +107,23 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     }
   }
 
-  const out = walkLeg(pts, s, stopAt)
   // Going home the same way: the same samples walked backwards (no stops on the way back).
   const rev = pts.map((p) => ({ ...p })).reverse()
   const total = pts[n - 1].d
   rev.forEach((p) => { p.d = total - p.d })
-  const back = walkLeg(rev, s)
+  const loopEnd = distance(g, line[0], line[line.length - 1]) < 80
+  // Air for the whole walk with a given load (outbound, plus walking home the same way).
+  const tripAir = (load) => {
+    const ss = { ...s, load }
+    const o = walkLeg(pts, ss, stopAt)
+    return o.air[n - 1] + (loopEnd ? 0 : walkLeg(rev, ss).air[n - 1])
+  }
+  // The pair turns back together, so the suit that breathes hardest (most gear) sets the plan.
+  const crew = crewOf(s)
+  const lead = crew.reduce((a, b) => (b.load > a.load ? b : a))
+  const sl = { ...s, load: lead.load }
+  const out = walkLeg(pts, sl, stopAt)
+  const back = walkLeg(rev, sl)
   // backAir[i]: air needed from sample i (outbound index) back to the start.
   const backAir = new Float64Array(n), backT = new Float64Array(n)
   for (let i = 0; i < n; i++) { backAir[i] = back.air[n - 1] - back.air[n - 1 - i]; backT[i] = back.t[n - 1] - back.t[n - 1 - i] }
@@ -141,7 +165,9 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
   // Sunlight through the whole walk, every 5 minutes.
   const sunTrack = []
   let minSun = Infinity, darkAt = null, lowAt = null
-  const totalMs = hours * 3.6e6
+  const driveH = drive ? drive.m / 1000 / Math.max(0.5, s.roverSpeed || 6) : 0
+  const tripHours = hours + 2 * driveH // drive out, walk, drive home
+  const totalMs = tripHours * 3.6e6
   // An impossible walk (say, up a sheer wall) can take "forever"; it is NO-GO on air long
   // before that, so the sun is only tracked for the first two sols.
   const trackMs = Number.isFinite(totalMs) ? Math.min(totalMs, 2 * 88775e3) : 2 * 88775e3
@@ -157,7 +183,7 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
 
   const mt = marsTime(startMs)
   const comms = earthMars(startMs)
-  const dose = hours * (facts.surfaceDose / 24)
+  const dose = tripHours * (facts.surfaceDose / 24) // the rover is not counted as a shelter
   const dusty = mt.Ls >= 180
 
   // ---- verdict ----
@@ -174,11 +200,36 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     reasons.push({ level: 'nogo', code: 'air', title: 'Not enough suit air', detail: `This walk needs ${pct(airUsed)} of the suit's air, but ${pct(budget)} is the most you may use (the rest is your ${s.reserve}% reserve). Turn back at ${km(pts[turn].d)} km.`, protocol: 'suit' })
   }
   if (darkAt !== null) {
-    reasons.push({ level: 'nogo', code: 'dark', title: 'You would be out after sunset', detail: `The sun sets ${fmtH(darkAt)} into the walk. Nights on Mars are far below freezing and you cannot see hazards.`, protocol: 'power' })
+    reasons.push({ level: 'nogo', code: 'dark', title: 'You would be out after sunset', detail: `The sun sets ${fmtH(darkAt)} after you leave${drive ? ' the habitat' : ''}. Nights on Mars are far below freezing and you cannot see hazards.`, protocol: 'power' })
   } else if (lowAt !== null) {
     reasons.push({ level: 'caution', code: 'lowsun', title: 'Sun gets low', detail: `The sun drops below ${s.minSun}° ${fmtH(lowAt)} into the walk. Long shadows hide holes and rocks.`, protocol: 'power' })
   }
   if (farthest > s.walkBack * 1000) reasons.push({ level: 'caution', code: 'radius', title: 'Outside the walk-back circle', detail: `You go ${km(farthest)} km from the habitat. Your circle is ${s.walkBack} km. Bring a rover or a second crew.`, protocol: 'suit' })
+  // ---- crew ----
+  const crewAir = crew.map((c) => ({ ...c, air: c === lead ? airUsed : tripAir(c.load) }))
+  if (crew.length === 1) {
+    reasons.push({ level: 'caution', code: 'solo', title: 'Walking alone', detail: 'Nobody can help if you fall or your suit fails. Space station spacewalks are done by two astronauts together. Add a buddy in Settings.', protocol: 'suit' })
+  } else {
+    const light = crewAir.reduce((a, b) => (b.air < a.air ? b : a))
+    const even = (crew[0].load + crew[1].load) / 2
+    if (airUsed > budget && light.air <= budget) {
+      const fits = tripAir(even) <= budget
+      reasons.push({ level: 'nogo', code: 'split', title: 'Only one of you has the air', detail: `${lead.who === 'You' ? 'Your suit' : 'Your buddy\u2019s suit'} runs short, but the other could finish. Do not split up: one astronaut alone, out of reach, is the danger. Turn back together at ${km(pts[turn].d)} km${fits ? `, or share the gear evenly (${Math.round(even)} kg each), which makes the walk fit` : ''}.`, protocol: 'suit' })
+      const air = reasons.findIndex((x) => x.code === 'air')
+      if (air >= 0) reasons.splice(air, 1) // the split warning says the same, more usefully
+    } else if (Math.abs(crew[0].load - crew[1].load) >= 10 && airUsed <= budget) {
+      reasons.push({ level: 'note', code: 'buddy', title: `${lead.who === 'You' ? 'You use' : 'Your buddy uses'} air faster`, detail: `${lead.who === 'You' ? 'You carry' : 'Your buddy carries'} ${lead.load} kg against ${light.load} kg, so that suit sets the turn-back point for both of you. Sharing the gear evenly gives you more margin.` })
+    }
+  }
+
+  // ---- rover drop-off ----
+  if (drive) {
+    reasons.push({ level: 'note', code: 'rover', title: `Rover drive: ${km(drive.m)} km each way`, detail: `About ${fmtH(driveH)} each way at ${s.roverSpeed} km/h. Suits start full at the rover, and the walk-back circle is centred on it.` })
+    if (drive.straight > s.walkBack * 1000) {
+      reasons.push({ level: 'caution', code: 'roverfar', title: 'Too far to walk home if the rover breaks', detail: `The rover parks ${km(drive.straight)} km from the habitat, beyond your ${s.walkBack} km walk-back circle. NASA\u2019s Mars plans send pressurised rovers in pairs so one can rescue the other.`, protocol: 'suit' })
+    }
+  }
+
   const amberM = bands.filter((b) => b.level === 'amber').reduce((m, b) => m + b.to - b.from, 0)
   if (amberM > s.steepAllowance && !redBands.length) {
     reasons.push({ level: 'caution', code: 'amber', title: 'Long stretches of steep ground', detail: `${Math.round(amberM)} m of the walk is between ${s.greenSlope}° and ${s.redSlope}°. Use walking poles and go slowly.` })
@@ -218,7 +269,9 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     status, reasons, good, loop,
     distance: total, tripDistance: loop ? total : total * 2,
     gain, loss, zMin, zMax, maxSlope, maxSlopeAt: [pts[maxSlopeAt].lon, pts[maxSlopeAt].lat, pts[maxSlopeAt].d],
-    hours, outHours, retHours,
+    hours, outHours, retHours, tripHours,
+    crew: crewAir.map(({ who, load, air }) => ({ who, load, air })),
+    drive: drive ? { ...drive, hours: driveH, base } : null,
     airUsed, airLeft, budget,
     turnBack: { lon: pts[turn].lon, lat: pts[turn].lat, d: pts[turn].d, atEnd: turn === n - 1, airThere: out.air[turn] },
     farthest, farthestAt: [pts[farIdx].lon, pts[farIdx].lat],

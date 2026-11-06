@@ -6,6 +6,7 @@ import { DATA } from '../content/sources.js'
 import { PRIORITY, PRIORITY_LABEL } from '../content/survival.js'
 import { fmtH, pct } from '../compute/walk.js'
 import { fmtHours } from '../lib/mars24.js'
+import { cuffCard } from '../lib/cuff.js'
 import { advise, ADVISOR_LABEL } from '../lib/advisor.js'
 import { store } from '../lib/hooks.js'
 import { Verdict } from '../components/Atoms.jsx'
@@ -44,6 +45,13 @@ export default function Brief() {
   const allStops = sitePlaces(b.site).stops
   const stops = allStops.filter((p) => b.stopIds.includes(p.id))
   const tips = advise(a, { settings: s, stops: allStops, startMs: b.startMs, site, visitedIds: b.stopIds })
+  const cuff = cuffCard(a, { stops, settings: s })
+  const printCuff = () => {
+    document.body.classList.add('print-cuff')
+    const done = () => { document.body.classList.remove('print-cuff'); window.removeEventListener('afterprint', done) }
+    window.addEventListener('afterprint', done)
+    window.print()
+  }
   const checklist = store.get('mw-checklist', [])
   const ready = checklist.filter(Boolean).length
 
@@ -72,6 +80,7 @@ export default function Brief() {
       <div className="brief-tools">
         <Link to={`/site/${b.site}?${new URL(b.url).searchParams}`} className="btn btn-small">← Back to the map</Link>
         <span className="brief-tools-gap" />
+        <button type="button" className="btn btn-small" onClick={printCuff}>Print wrist card</button>
         <button type="button" className="btn btn-small" onClick={() => window.print()}>Print or save PDF</button>
         <button type="button" className="btn btn-small btn-primary" onClick={download} disabled={saving}>{saving ? 'Saving…' : 'Download PNG'}</button>
       </div>
@@ -92,7 +101,7 @@ export default function Brief() {
         <div className="br-grid">
           <figure className="br-map">
             {b.snapshot ? <img src={b.snapshot} alt={`Map of the planned walk at ${site.name}`} /> : <div className="br-map-empty"><Orbits /></div>}
-            <figcaption className="micro">MRO HiRISE + CTX photo, CTX height map, Perseverance traverse (JPL MMGIS). ● habitat ● turn-back ● science stop</figcaption>
+            <figcaption className="micro">MRO orbital photos, {site.dem}, {site.rover}{'\u2019'}s real path (JPL MMGIS). ● habitat {a.drive ? '● rover ' : ''}● turn-back ● science stop</figcaption>
           </figure>
 
           <section className="br-why">
@@ -163,10 +172,29 @@ export default function Brief() {
         </div>
 
         <footer className="br-foot">
-          <p className="micro">Data: {DATA.filter((d) => ['ctxDem', 'ctxPhoto', 'hirise', 'traverse', 'samples', 'themisNight'].includes(d.id)).map((d) => `${d.mission} ${d.instrument}`).join(' · ')} · Curiosity RAD · NASA GISS Mars24</p>
+          <p className="micro">Data: {DATA.filter((d) => (b.site === 'gale' ? ['galeDem', 'galeHirise', 'mslTraverse', 'mslStops', 'themisNight'] : ['ctxDem', 'ctxPhoto', 'hirise', 'traverse', 'samples', 'themisNight']).includes(d.id)).map((d) => `${d.mission} ${d.instrument}`).join(' · ')} · Curiosity RAD · NASA GISS Mars24</p>
           <p className="micro">{SITE.name} · {SITE.by} · {SITE.disclaimer}</p>
         </footer>
       </article>
+
+      <section className="cuff" aria-label="Wrist checklist">
+        <header className="cuff-head">
+          <p className="micro">Wrist card · {site.name} · {b.date}</p>
+          <Verdict status={a.status} />
+        </header>
+        <ol className="cuff-steps">
+          {cuff.steps.map((st, i) => (
+            <li key={i} className={st.key ? 'cuff-key' : ''}>
+              <span className="cuff-box" aria-hidden="true" />
+              <time className="mono">{fmtHours(st.t)}</time>
+              <span className="cuff-what"><b>{st.what}</b>{st.note && <small>{st.note}</small>}</span>
+              {st.air != null && <span className="cuff-air mono" title="Suit air used by then">{pct(st.air)}</span>}
+            </li>
+          ))}
+        </ol>
+        <ul className="cuff-rules">{cuff.rules.map((x) => <li key={x}>{x}</li>)}</ul>
+        <p className="micro cuff-foot">Mars local time (a Mars hour is 2.7% longer than an Earth hour; stop times are Earth minutes) · air = share of suit air used by then · {a.crew?.length > 1 ? 'two astronauts' : 'one astronaut'}{a.drive ? ' · rover drop-off' : ''}</p>
+      </section>
     </div>
   )
 }
