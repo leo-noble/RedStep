@@ -72,7 +72,7 @@ export const HOME = {
     layers: {
       eyebrow: 'Layered + integrated',
       title: 'Five missions. *One map.*',
-      body: 'MOLA height, HiRISE and CTX photos, THEMIS rock-or-dust infrared, TES dust and the Viking colour mosaic, plus Perseverance’s real path: stacked and blended on one Mars map, each layer labelled with its mission, instrument and resolution.',
+      body: 'MOLA height, HiRISE and CTX photos, THEMIS rock-or-dust infrared, TES dust and the Viking colour mosaic, plus Perseverance’s and Curiosity’s real paths: stacked and blended on one Mars map, each layer labelled with its mission, instrument and resolution.',
       chips: ['mola', 'hirise', 'ctx', 'themis', 'tes', 'mdim', 'mmgis'],
     },
     cruise: {
@@ -95,6 +95,7 @@ export const HOME = {
     { title: 'Pick a place on Mars', body: 'One map stacks five missions: height, photos, rock or dust. Tap a crater to see what is there.', link: '/map', cta: 'Open the Mars map', img: '/home/map.webp', alt: 'The Mars map: a globe with landing sites and a list of places' },
     { title: 'Ask for a safe walk', body: 'At Jezero Crater the planner reads slope, suit air and sunlight, and draws a route past the science.', link: '/site/jezero', cta: 'Plan a walk', img: '/home/planner-before.webp', alt: 'The walk planner at Jezero Crater before a route is drawn' },
     { title: 'Get a straight answer', body: 'GO, CAUTION or NO-GO, with the reasons. Every number says where it came from.', link: '/sources', cta: 'See the sources', img: '/home/planner-after.webp', alt: 'The planner with a route drawn and a GO verdict' },
+    { title: 'Walk it in the helmet', body: 'Fly the route over real 3D ground with the suit display: heading, air left, sun, the next stop and when to turn back. Here: Curiosity’s boxwork on Mount Sharp.', link: '/site/gale', cta: 'Walk to the boxwork', img: '/home/visor.webp', alt: 'Helmet view at Gale Crater: a 3D route to the boxwork with the suit display' },
   ],
 
 }

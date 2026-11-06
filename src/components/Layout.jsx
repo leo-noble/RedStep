@@ -16,7 +16,7 @@ export default function Layout() {
   const ctx = useMemo(() => ({ open }), [open])
   const home = pathname === '/'
   // Full-screen views: no footer, no ambient background. Home ends in its own short credits.
-  const immersive = home || pathname === '/map' || pathname.startsWith('/site/') || pathname === '/brief'
+  const immersive = home || pathname === '/map' || pathname.startsWith('/site/') || pathname === '/brief' || pathname === '/cuff'
 
   useEffect(() => { if (!pathname.startsWith('/guide')) window.scrollTo(0, 0) }, [pathname])
 
@@ -43,7 +43,7 @@ export default function Layout() {
   return (
     <EmergencyCtx.Provider value={ctx}>
       <a className="skip" href="#main">Skip to content</a>
-      {pathname !== '/brief' && <Nav overlay={immersive} onEmergency={() => open()} />}
+      {pathname !== '/brief' && pathname !== '/cuff' && <Nav overlay={immersive} onEmergency={() => open()} />}
       <main id="main" tabIndex={-1} className={immersive ? '' : 'has-ambient'}>
         {!immersive && <Ambient />}
         <Outlet />

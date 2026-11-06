@@ -1805,7 +1805,7 @@
   letter-spacing: -0.03em;
 }
 
-.mw-home .walk__track { height: 260vh; }
+.mw-home .walk__track { height: 340vh; }
 
 .mw-home .walk__sticky {
   position: sticky;
@@ -1835,11 +1835,13 @@
 
 .mw-home .walk[data-step='0'] .walk__step:nth-child(1),
 .mw-home .walk[data-step='1'] .walk__step:nth-child(2),
-.mw-home .walk[data-step='2'] .walk__step:nth-child(3) { opacity: 1; transform: none; }
+.mw-home .walk[data-step='2'] .walk__step:nth-child(3),
+.mw-home .walk[data-step='3'] .walk__step:nth-child(4) { opacity: 1; transform: none; }
 
 .mw-home .walk[data-step='0'] .walk__step:nth-child(1) .walk__link,
 .mw-home .walk[data-step='1'] .walk__step:nth-child(2) .walk__link,
-.mw-home .walk[data-step='2'] .walk__step:nth-child(3) .walk__link { opacity: 1; pointer-events: auto; }
+.mw-home .walk[data-step='2'] .walk__step:nth-child(3) .walk__link,
+.mw-home .walk[data-step='3'] .walk__step:nth-child(4) .walk__link { opacity: 1; pointer-events: auto; }
 
 .mw-home .walk__shot-inline { display: none; }
 
@@ -1861,7 +1863,8 @@
 
 .mw-home .walk[data-step='0'] .walk__shot:nth-child(1),
 .mw-home .walk[data-step='1'] .walk__shot:nth-child(2),
-.mw-home .walk[data-step='2'] .walk__shot:nth-child(3) { opacity: 1; }
+.mw-home .walk[data-step='2'] .walk__shot:nth-child(3),
+.mw-home .walk[data-step='3'] .walk__shot:nth-child(4) { opacity: 1; }
 
 /* step 2: a tap on "Suggest a safe walk" */
 .mw-home .walk__tap {

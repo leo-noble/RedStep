@@ -129,7 +129,7 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, []);
 
-  // Walkthrough: the section's scroll position picks the step (0, 1, 2) and drives a slow zoom.
+  // Walkthrough: the section's scroll position picks the step (0 .. steps - 1) and drives a slow zoom.
   useEffect(() => {
     const el = walkRef.current;
     if (!el) return undefined;
@@ -144,7 +144,8 @@ export default function HomePage() {
       const span = r.height - window.innerHeight;
       const p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
       el.style.setProperty('--wp', p.toFixed(4));
-      el.dataset.step = String(Math.min(2, Math.floor(p * 3)));
+      const n = HOME.walkthrough.length;
+      el.dataset.step = String(Math.min(n - 1, Math.floor(p * n)));
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
     read();

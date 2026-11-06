@@ -1,0 +1,203 @@
+/* Cuff view: built for a tablet strapped to a suit arm. Large type, rows at least 72 px tall,
+   high contrast, landscape first (two columns), one column when held upright. */
+.cuffv {
+  min-height: 100dvh;
+  padding: 20px clamp(16px, 3vw, 36px) 16px;
+  background: #000;
+  color: var(--ink);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+}
+
+.cv-micro {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.cv-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.cv-head h1 {
+  margin: 6px 0 4px;
+  font-family: var(--font-head);
+  font-size: clamp(28px, 4.4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.cv-sub {
+  margin: 0;
+  font-size: 18px;
+  color: var(--ember);
+}
+
+.cv-head-r {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.cuffv .btn.cv-sos {
+  min-height: 52px;
+  padding: 0 22px;
+  font-size: 16px;
+  color: #fff;
+  background: #b3261e;
+  border-color: transparent;
+  box-shadow: none;
+}
+.cuffv .btn.cv-sos:hover { background: #c9302a; }
+
+.cv-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 22px;
+  align-items: start;
+  min-height: 0;
+}
+
+.cv-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.cv-steps button {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 40px 76px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  background: #0d0d0e;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.cv-steps button.now {
+  border-color: var(--rust);
+  background: #1a0d06;
+  box-shadow: 0 0 0 1px var(--rust) inset;
+}
+
+.cv-steps button.key b,
+.cv-steps button.key time { color: var(--ember); }
+
+.cv-steps button.done { opacity: 0.45; }
+.cv-steps button.done b { text-decoration: line-through; }
+
+.cv-box {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink-2);
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.done .cv-box { border-color: #7fe0a8; color: #7fe0a8; }
+
+.cv-steps time {
+  font: 700 22px / 1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cv-what { display: grid; gap: 3px; }
+.cv-what b { font-size: 20px; line-height: 1.2; }
+.cv-what small { font-size: 15px; color: var(--ink-2); }
+
+.cv-air {
+  font: 600 17px / 1 var(--mono);
+  color: var(--ink-2);
+}
+
+.cv-rules {
+  padding: 18px 20px;
+  border: 1px solid var(--rule);
+  border-radius: 18px;
+  background: #0a0a0b;
+  position: sticky;
+  top: 20px;
+}
+
+.cv-rules h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.cv-rules ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.cv-rules dl {
+  margin: 18px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.cv-rules dt { font-size: 12px; color: var(--ink-2); }
+.cv-rules dd { margin: 2px 0 0; font: 700 20px / 1.1 var(--mono); }
+
+.cv-tools {
+  margin-top: 18px;
+  display: flex;
+  gap: 8px;
+}
+
+.cv-foot {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.cuff-empty {
+  min-height: 80dvh;
+  display: grid;
+  place-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+@media (max-width: 860px), (orientation: portrait) {
+  .cv-grid { grid-template-columns: 1fr; }
+  .cv-rules { position: static; }
+}
+
+@media (max-width: 520px) {
+  .cv-head { flex-direction: column; align-items: stretch; }
+  .cv-head-r { grid-auto-flow: column; justify-content: space-between; align-items: center; }
+  .cv-steps button { grid-template-columns: 34px 62px 1fr; padding: 10px 12px; gap: 10px; }
+  .cv-air { display: none; }
+  .cv-steps time { font-size: 18px; }
+  .cv-what b { font-size: 17px; }
+}

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { siteById, sitePlaces, siteMeta, siteTraverse, siteHazards, sitePanoramas, WALK, FACTS } from '../data/index.js'
 import { LAYER_GROUPS, layerGroupsFor, iceNoteFor } from '../content/layers.js'
-import { instantAtLocalTime, marsTime } from '../lib/mars24.js'
+import { instantAtLocalTime, marsTime, sunAt } from '../lib/mars24.js'
 import { paintElevation, paintRough, paintSlope } from '../lib/marsmap.js'
 import { advise } from '../lib/advisor.js'
 import { useNarrow, prefersReducedMotion, store } from '../lib/hooks.js'
@@ -11,6 +11,7 @@ import { useEmergency } from '../components/Layout.jsx'
 import MarsMap from '../components/planner/MarsMap.jsx'
 import Profile from '../components/planner/Profile.jsx'
 import Minimap from '../components/planner/Minimap.jsx'
+import Visor from '../components/planner/Visor.jsx'
 import StreetView from '../components/StreetView.jsx'
 import StreetPicker from '../components/StreetPicker.jsx'
 import Ambient from '../components/Ambient.jsx'
@@ -412,17 +413,27 @@ function Planner({ site }) {
     setFollowing(true)
     setSheetOpen(false)
     mapRef.current.setLayer('slope', layers.slope.on, Math.min(layers.slope.opacity, 0.22))
-    const prof = result.analysis.profile
+    const an = result.analysis
+    const prof = an.profile
+    const walkStart = startMs + (an.drive?.hours || 0) * 3.6e6
+    const ahead = [...an.visited].sort((x, y) => x.d - y.d).map((v) => ({ ...v, name: stops.find((st) => st.id === v.id)?.name || 'Science stop' }))
+    const R = 3396190, D = Math.PI / 180
+    const fromStart = (lon, lat) => {
+      const dLat = (lat - start[1]) * D, dLon = (lon - start[0]) * D
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat * D) * Math.cos(start[1] * D) * Math.sin(dLon / 2) ** 2
+      return 2 * R * Math.asin(Math.sqrt(h))
+    }
     stopFollow.current = mapRef.current.follow(prof, (i, d, pos) => {
       minimap.current?.setPlayer(pos.lon, pos.lat, pos.bearing)
-      const el = hud.current
-      if (!el) return
       const p = prof[i]
-      el.querySelector('[data-k=d]').textContent = `${(d / 1000).toFixed(2)} km`
-      el.querySelector('[data-k=t]').textContent = fmtH(p[5])
-      el.querySelector('[data-k=z]').textContent = `${Math.round(p[1])} m`
-      el.querySelector('[data-k=s]').textContent = `${p[2].toFixed(1)}°`
-      el.querySelector('[data-k=a]').textContent = pct(1 - p[6])
+      const sun = sunAt(walkStart + p[5] * 3.6e6, site.lat, site.lon)
+      const next = ahead.find((v) => v.d > d - 15)
+      hud.current?.update({
+        heading: pos.bearing, d, air: p[6], slope: p[2], sun: sun.elevation, ltst: sun.ltst,
+        next: next ? { name: next.name, m: Math.max(0, next.d - d) } : null,
+        turn: an.turnBack.atEnd ? null : { m: an.turnBack.d - d },
+        home: fromStart(pos.lon, pos.lat),
+      })
     }, () => setTimeout(endFollow, 1200))
   }
   const endFollow = () => { stopFollow.current?.(); stopFollow.current = null; setFollowing(false); mapRef.current?.setLayer('slope', layers.slope.on, layers.slope.opacity); if (result) mapRef.current?.fitRoute(result.line) }
@@ -537,7 +548,7 @@ function Planner({ site }) {
           items={[
             { label: rover ? 'Walk from the habitat' : 'Rover drop-off', hint: rover ? 'Turn the rover off and start on foot' : 'A rover drives you out; walk from where it parks', onClick: toggleRover, disabled: !grid || busy },
             { label: 'Street view', hint: 'Look around from where the rovers stood', onClick: () => setPicking(true), disabled: !mapReady },
-            { label: 'Fly along in 3D', hint: 'Follow the walk over the ground', onClick: follow, disabled: !a },
+            { label: 'Helmet view', hint: 'Walk the route in 3D with the suit display', onClick: follow, disabled: !a },
             { label: 'Try a risky walk', hint: 'See a NO-GO and the reasons for it', onClick: tryRisky, disabled: !grid || busy },
             { label: 'Download the route', hint: 'GeoJSON with heights, for GIS tools', onClick: () => downloadRoute(site, a, visitedStops), disabled: !a },
             { label: 'Download the walk profile', hint: 'CSV: distance, height, slope, time, air', onClick: () => downloadProfile(site, a), disabled: !a },
@@ -641,15 +652,9 @@ function Planner({ site }) {
         <Minimap ref={minimap} profile={a.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
       )}
       {following && a && (
-        <div className="follow-hud" ref={hud} aria-live="off">
-          <div><span className="micro">Distance</span><b data-k="d">0.00 km</b></div>
-          <div><span className="micro">Time out</span><b data-k="t">0 min</b></div>
-          <div><span className="micro">Height</span><b data-k="z">—</b></div>
-          <div><span className="micro">Slope</span><b data-k="s">—</b></div>
-          <div><span className="micro">Suit air left</span><b data-k="a">100%</b></div>
-          <button type="button" className="btn btn-small" onClick={endFollow}>Stop</button>
-          <p className="micro follow-note">Heights ×2 for clarity · 3D terrain from the {site.dem}</p>
-        </div>
+        <Visor ref={hud} title="Helmet display during the walk" onExit={endFollow}>
+          <p className="micro vz-note">Helmet display · heights ×2 for clarity · 3D terrain from the {site.dem}</p>
+        </Visor>
       )}
     </div>
   )

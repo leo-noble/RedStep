@@ -1,0 +1,253 @@
+/* Helmet visor HUD. Amber on the glass, like a projected display; nothing here takes clicks
+   except the exit button, so the map underneath still works. */
+.visor {
+  --vz: #ffc27a;
+  --vz-dim: rgba(255, 194, 122, 0.55);
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  color: var(--vz);
+  font-family: var(--font);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 1px rgba(0, 0, 0, 0.9);
+}
+
+/* The helmet edge: a curved dark rim with a faint warm reflection at the top. */
+.vz-glass {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 74% at 50% 54%, transparent 58%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.94) 100%),
+    linear-gradient(180deg, rgba(255, 170, 90, 0.08), transparent 18%);
+}
+
+.vz-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vz);
+  opacity: 0.8;
+}
+
+.visor b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 150, 60, 0.35);
+}
+
+.vz-top {
+  position: absolute;
+  top: calc(var(--nav-h, 52px) + 18px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, 80vw);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.vz-tape {
+  position: relative;
+  width: 100%;
+  height: 26px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+
+.vz-tape-track {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  margin-left: -1095px; /* tick 0 is -360 deg; 30 px per 10 deg; half a tick */
+  display: flex;
+  will-change: transform;
+}
+
+.vz-tape-track span {
+  width: 30px;
+  flex: none;
+  height: 26px;
+  border-left: 1px solid var(--vz-dim);
+  font: 600 10px / 1 var(--mono);
+  padding: 13px 0 0 3px;
+  color: var(--vz-dim);
+  box-sizing: border-box;
+}
+
+.vz-tape-track span.vz-major {
+  color: var(--vz);
+  border-left-color: var(--vz);
+}
+
+.vz-caret {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 26px;
+  margin-left: -1px;
+  background: #fff;
+  box-shadow: 0 0 8px var(--vz);
+}
+
+.vz-hdg {
+  font-size: 15px;
+}
+
+.vz-left,
+.vz-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  gap: 6px;
+}
+
+.vz-left {
+  left: clamp(18px, 6vw, 80px);
+  justify-items: center;
+}
+
+.vz-left b { font-size: 22px; }
+
+.vz-gauge {
+  width: 12px;
+  height: 140px;
+  border: 1px solid var(--vz-dim);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.vz-gauge i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(0deg, #ff8a3d, var(--vz));
+  transform-origin: bottom;
+  transition: transform 300ms linear;
+}
+
+.vz-airlow .vz-gauge i { background: #ff5a3c; }
+.vz-airlow [data-v='air'] { color: #ff7a5c; }
+
+.vz-right {
+  right: clamp(18px, 6vw, 80px);
+  text-align: right;
+  gap: 2px;
+}
+
+.vz-right b {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.vz-alert {
+  position: absolute;
+  top: 34%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 18px;
+  border: 1.5px solid var(--vz);
+  border-radius: 999px;
+  font: 700 15px / 1.2 var(--font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.vz-alert-now {
+  color: #fff;
+  border-color: #ff5a3c;
+  background: rgba(255, 70, 40, 0.35);
+  animation: vz-blink 900ms steps(2, end) infinite;
+}
+
+@keyframes vz-blink { 50% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vz-alert-now { animation: none; }
+  .vz-gauge i { transition: none; }
+}
+
+.vz-bottom {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 32px));
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: end;
+}
+
+.vz-bottom b { font-size: 17px; }
+.vz-next { text-align: center; }
+.vz-next b { font-size: 15px; }
+.vz-bottom > span:last-child { text-align: right; }
+
+.vz-exit {
+  position: absolute;
+  right: 16px;
+  top: calc(var(--nav-h, 52px) + 14px);
+  pointer-events: auto;
+}
+
+@media (max-width: 640px) {
+  .vz-gauge { height: 96px; }
+  .vz-left b { font-size: 17px; }
+  .vz-right b { font-size: 15px; }
+  .vz-bottom { gap: 10px; bottom: 18px; }
+  .vz-bottom b, .vz-next b { font-size: 13px; }
+  .vz-top { width: 62vw; }
+  .vz-exit { top: auto; bottom: 72px; }
+}
+
+.vz-note {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 9px;
+  color: var(--vz-dim);
+  white-space: nowrap;
+}
+
+/* In the helmet view the minimap sits low on the right, under the sun readouts, and smaller. */
+.following .mm {
+  top: auto;
+  bottom: 96px;
+  right: 16px;
+  width: 200px;
+  z-index: 8;
+}
+.following .vz-right { top: 40%; }
+@media (max-width: 640px) {
+  .following .mm { display: none; }
+}
+
+.following .sheet,
+.following .planner-sb {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms var(--ease);
+}
+
+/* The suit display replaces the map furniture while it runs. */
+.following .mars-map .maplibregl-ctrl-top-right,
+.following .mars-map .maplibregl-ctrl-bottom-right,
+.following .mars-map .maplibregl-ctrl-bottom-left,
+.following .mars-scale {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .vz-note { display: none; }
+  .vz-bottom { bottom: 14px; }
+}

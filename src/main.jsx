@@ -44,6 +44,7 @@ const router = createBrowserRouter([
       { path: 'sources', ...page(() => import('./pages/Sources.jsx')) },
       { path: 'about', ...page(() => import('./pages/About.jsx')) },
       { path: 'brief', ...page(() => import('./pages/Brief.jsx')) },
+      { path: 'cuff', ...page(() => import('./pages/Cuff.jsx')) },
       { path: '*', ...page(() => import('./pages/NotFound.jsx')) },
     ],
   },

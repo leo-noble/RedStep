@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { SITE } from '../content/site.js'
 import { siteById, sitePlaces, WALK } from '../data/index.js'
 import { DATA } from '../content/sources.js'
@@ -28,6 +28,7 @@ function load() {
 export default function Brief() {
   const b = useMemo(load, [])
   const sheet = useRef(null)
+  const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   if (!b) {
     return (
@@ -46,6 +47,8 @@ export default function Brief() {
   const stops = allStops.filter((p) => b.stopIds.includes(p.id))
   const tips = advise(a, { settings: s, stops: allStops, startMs: b.startMs, site, visitedIds: b.stopIds })
   const cuff = cuffCard(a, { stops, settings: s })
+  // The cuff keeps its own copy (no map picture) in local storage, so it reopens offline.
+  const openCuff = () => { store.set('mw-cuff-v1', { ...b, snapshot: null }); navigate('/cuff') }
   const printCuff = () => {
     document.body.classList.add('print-cuff')
     const done = () => { document.body.classList.remove('print-cuff'); window.removeEventListener('afterprint', done) }
@@ -80,6 +83,7 @@ export default function Brief() {
       <div className="brief-tools">
         <Link to={`/site/${b.site}?${new URL(b.url).searchParams}`} className="btn btn-small">← Back to the map</Link>
         <span className="brief-tools-gap" />
+        <button type="button" className="btn btn-small" onClick={openCuff}>Open on cuff</button>
         <button type="button" className="btn btn-small" onClick={printCuff}>Print wrist card</button>
         <button type="button" className="btn btn-small" onClick={() => window.print()}>Print or save PDF</button>
         <button type="button" className="btn btn-small btn-primary" onClick={download} disabled={saving}>{saving ? 'Saving…' : 'Download PNG'}</button>
