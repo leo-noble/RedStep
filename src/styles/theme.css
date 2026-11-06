@@ -421,15 +421,19 @@
   padding: clamp(24px, 3vw, 48px);
 }
 
-/* links: Mars orange, underline on hover */
+/* links in running text: Mars orange with a soft underline (colour alone is not enough to
+   tell a link apart), full underline on hover */
 :root :is(.page, .g-main) p a {
   color: var(--link);
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 159, 90, 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   :root :is(.page, .g-main) p a:hover {
-    text-decoration: underline;
+    text-decoration-color: currentColor;
   }
 }
 
