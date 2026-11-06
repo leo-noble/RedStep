@@ -1,7 +1,7 @@
 // Analyse one Marswalk: profile, time, suit air, turn-back point, sunlight, radiation, comms,
 // and the GO / CAUTION / NO-GO verdict with the reasons that drive it.
 // Every assumption comes in through `settings` (see src/content/assumptions.js).
-import { distance, elevAt, slopeAt, inside } from './grid.js'
+import { distance, elevAt, slopeAt, roughAt, inside } from './grid.js'
 import { marsTime, sunAt } from '../lib/mars24.js'
 import { earthMars } from '../lib/ephem.js'
 
@@ -11,8 +11,12 @@ const TOBLER_FLAT = Math.exp(-3.5 * 0.05)
 /** Tobler's hiking function, scaled so flat ground gives `flat` km/h. grade = rise / run. */
 export const pace = (flat, grade) => (flat * Math.exp(-3.5 * Math.abs(grade + 0.05))) / TOBLER_FLAT
 
-/** Suit air used per hour, as a fraction of a full suit. */
-export const airPerHour = (s, grade) => (1 / s.suitHours) * (1 + (s.climbCost / 100) * (Math.max(0, grade) / 0.1))
+/** Extra effort from carried gear: walking cost grows with the total mass moved (Pandolf et al.
+ *  1977, first-order term), so air use scales by (you + suit + gear) / (you + suit). */
+export const loadFactor = (s) => 1 + Math.max(0, s.load || 0) / Math.max(1, s.suitedMass || 150)
+
+/** Suit air used per hour while walking, as a fraction of a full suit. */
+export const airPerHour = (s, grade) => (loadFactor(s) / s.suitHours) * (1 + (s.climbCost / 100) * (Math.max(0, grade) / 0.1))
 
 /** Resample a polyline every STEP_M metres along the ground. */
 export function resample(g, line) {
@@ -49,7 +53,10 @@ function walkLeg(pts, s, stopAt = new Map()) {
 
 export function analyze(g, { line, stops = [], settings: s, startMs, site, habitat, facts }) {
   const pts = resample(g, line)
-  for (const p of pts) { p.z = elevAt(g, p.lon, p.lat); p.slope = slopeAt(g, p.lon, p.lat) }
+  for (const p of pts) { p.z = elevAt(g, p.lon, p.lat); p.slope = slopeAt(g, p.lon, p.lat); p.rough = roughAt(g, p.lon, p.lat) }
+  // Rocky-looking ground from HiRISE texture (upper quarter of the scale): slower, riskier footing
+  let rockyM = 0
+  for (let k = 1; k < pts.length; k++) if (pts[k].rough >= 190) rockyM += pts[k].d - pts[k - 1].d
   const n = pts.length
 
   // Ground with no height data: outside the detailed map (lookups there only repeat the edge)
@@ -167,7 +174,7 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     reasons.push({ level: 'nogo', code: 'air', title: 'Not enough suit air', detail: `This walk needs ${pct(airUsed)} of the suit's air, but ${pct(budget)} is the most you may use (the rest is your ${s.reserve}% reserve). Turn back at ${km(pts[turn].d)} km.`, protocol: 'suit' })
   }
   if (darkAt !== null) {
-    reasons.push({ level: 'nogo', code: 'dark', title: 'You would be out after sunset', detail: `The sun sets ${fmtH(darkAt)} into the walk. Nights at Jezero are far below freezing and you cannot see hazards.`, protocol: 'power' })
+    reasons.push({ level: 'nogo', code: 'dark', title: 'You would be out after sunset', detail: `The sun sets ${fmtH(darkAt)} into the walk. Nights on Mars are far below freezing and you cannot see hazards.`, protocol: 'power' })
   } else if (lowAt !== null) {
     reasons.push({ level: 'caution', code: 'lowsun', title: 'Sun gets low', detail: `The sun drops below ${s.minSun}° ${fmtH(lowAt)} into the walk. Long shadows hide holes and rocks.`, protocol: 'power' })
   }
@@ -177,6 +184,11 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     reasons.push({ level: 'caution', code: 'amber', title: 'Long stretches of steep ground', detail: `${Math.round(amberM)} m of the walk is between ${s.greenSlope}° and ${s.redSlope}°. Use walking poles and go slowly.` })
   } else if (amberM > 0 && !redBands.length) {
     reasons.push({ level: 'note', code: 'amber', title: 'A few short steep steps', detail: `${Math.round(amberM)} m of the walk is between ${s.greenSlope}° and ${s.redSlope}°. Walking poles help.` })
+  }
+  if (rockyM > 300) {
+    reasons.push({ level: 'caution', code: 'rocky', title: 'Rocky ground', detail: `About ${Math.round(rockyM / 10) * 10} m of the walk crosses rough, rocky-looking ground in the HiRISE photo. Slow down, watch your footing, and keep your buddy close.`, protocol: 'suit' })
+  } else if (rockyM > 0) {
+    reasons.push({ level: 'note', code: 'rocky', title: 'Some rocky ground', detail: `About ${Math.round(rockyM / 10) * 10} m of the walk crosses rough, rocky-looking ground in the HiRISE photo.` })
   }
   if (airUsed <= budget && airUsed > budget - 0.08) {
     reasons.push({ level: 'caution', code: 'margin', title: 'Thin air margin', detail: `You get home with ${pct(airLeft)} air, only just above your ${s.reserve}% reserve.`, protocol: 'suit' })
@@ -212,7 +224,7 @@ export function analyze(g, { line, stops = [], settings: s, startMs, site, habit
     farthest, farthestAt: [pts[farIdx].lon, pts[farIdx].lat],
     sun: { start: startSun, end: endSun, min: minSun, track: sunTrack, darkAt, lowAt },
     dose, comms, mars: { sol: mt.sol, Ls: mt.Ls, dusty, msd: mt.msd },
-    bands, amberM, profile, visited, unknownM,
+    bands, amberM, rockyM, profile, visited, unknownM,
   }
 }
 

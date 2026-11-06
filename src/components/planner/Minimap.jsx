@@ -79,7 +79,7 @@ function runs(profile, green, red) {
  * @param {{green: number, red: number}} props.limits  slope limits in degrees
  * @param {string} [props.title]
  */
-const Minimap = forwardRef(function Minimap({ profile = [], analysis: a, stops, visited = [], home, hazards = [], limits, title = 'Minimap', className = '', heading = true }, ref) {
+const Minimap = forwardRef(function Minimap({ site, profile = [], analysis: a, stops, visited = [], home, hazards = [], limits, title = 'Minimap', className = '', heading = true }, ref) {
   const mini = useRef(null)
   const big = useRef(null)
   const dialog = useRef(null)
@@ -236,7 +236,7 @@ const Minimap = forwardRef(function Minimap({ profile = [], analysis: a, stops, 
           <ul className="mm-legend">
             {legend.map(([k, t]) => <li key={k}><Glyph kind={k} />{t}</li>)}
           </ul>
-          <p className="mm-note">North is up. Route and steepness from the MRO CTX height map (USGS); science stop positions from Perseverance’s logged stops (NASA JPL).</p>
+          <p className="mm-note">North is up. Route and steepness from the {site?.dem || 'MRO height map'} (USGS); science stop positions from {site?.rover || 'the rover'}’s logged stops (NASA JPL).</p>
         </div>
       </dialog>
     </>

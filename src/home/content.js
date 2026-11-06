@@ -88,7 +88,7 @@ export const HOME = {
     choose: {
       eyebrow: 'New science along the way',
       title: 'Choose your *landing site.*',
-      body: 'Drag the globe or pick a site. Walk planning is ready at Jezero Crater; the other sites open on the map.',
+      body: 'Drag the globe or pick a site. Walk planning is ready at Jezero Crater and at Gale Crater’s boxwork; the other sites open on the map.',
     },
   },
   walkthrough: [

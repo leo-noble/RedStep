@@ -29,5 +29,7 @@ export function earthMars(ms) {
   const lightMin = (au * AU_KM) / C_KM_S / 60
   // Sun-Earth-Mars angle: below ~3 deg the Sun blocks radio links (solar conjunction).
   const se = Math.acos(-(b[0] * (a[0] - b[0]) + b[1] * (a[1] - b[1]) + b[2] * (a[2] - b[2])) / (e.r * au)) / D
-  return { au, km: au * AU_KM, lightMin, sunAngle: se, marsSunAU: m.rAU }
+  // Earth-Sun-Mars angle: how far apart the two planets are around the Sun (0 = same side).
+  const apart = Math.acos((a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (m.rAU * e.r)) / D
+  return { au, km: au * AU_KM, lightMin, sunAngle: se, marsSunAU: m.rAU, apart }
 }

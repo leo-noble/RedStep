@@ -91,6 +91,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       img('src-photo', meta.photo.url, meta.photo.bbox)
       img('src-elevation', blank, meta.grid.bbox)
       img('src-slope', blank, meta.grid.bbox)
+      img('src-rough', blank, meta.grid.bbox)
 
       const raster = (id, src, opacity, visible) => m.addLayer({ id, type: 'raster', source: src, paint: { 'raster-opacity': opacity, 'raster-fade-duration': 0, 'raster-resampling': 'linear' }, layout: { visibility: visible ? 'visible' : 'none' } })
       const L = Object.fromEntries(layers.map((l) => [l.id, l]))
@@ -102,6 +103,7 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       raster('themis-day', 'src-themis-day', L['themis-day'].opacity, L['themis-day'].on)
       raster('themis-night', 'src-themis-night', L['themis-night'].opacity, L['themis-night'].on)
       raster('slope', 'src-slope', L.slope.opacity, L.slope.on)
+      if (L.rough) raster('rough', 'src-rough', L.rough.opacity, L.rough.on)
       // DEM edge: a hairline around the area with a detailed height map
       m.addSource('dem-edge', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[...corners(meta.grid.bbox), corners(meta.grid.bbox)[0]]] } } })
       m.addLayer({ id: 'dem-edge', type: 'line', source: 'dem-edge', layout: { visibility: 'none' }, paint: { 'line-color': '#ffffff', 'line-opacity': 0.25, 'line-width': 1, 'line-dasharray': [3, 3] } })

@@ -20,6 +20,7 @@
  * @property {[number, number]} cellDeg  cell size in degrees [lon, lat]
  * @property {'decimetres'|'metres'} unit
  * @property {number} nodata
+ * @property {number} [offset]  metres to add to every stored height (lets deep sites fit in Int16)
  * @property {number} radius  planet radius in metres used for distances
  *
  * @typedef {object} SiteMeta

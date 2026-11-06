@@ -7,6 +7,7 @@ export const LAYER_GROUPS = [
     layers: [
       { id: 'elevation', kind: 'elevation', name: 'Height colours', plain: 'Dark = low, bright = high', mission: 'MRO', instrument: 'CTX height map', res: '40 m', badge: 'derived', source: 'ctxDem', on: false, opacity: 0.3 },
       { id: 'slope', kind: 'slope', name: 'Steepness', plain: 'Clear = easy · amber = careful · red = too steep', mission: 'MRO', instrument: 'CTX height map', res: '40 m', badge: 'derived', source: 'ctxDem', on: true, opacity: 0.35 },
+      { id: 'rough', kind: 'rough', name: 'Rocky ground', plain: 'Clear = smooth · rust = rough, rocky-looking ground in the HiRISE photo', mission: 'MRO', instrument: 'HiRISE photo texture', res: '40 m', badge: 'derived', source: 'hirise', on: false, opacity: 0.75 },
       { id: 'relief', kind: 'image', file: 'relief', name: 'Regional relief', plain: 'Hills and craters around the site', mission: 'MGS + Mars Express', instrument: 'MOLA + HRSC', res: '200 m', badge: 'nasa', source: 'hrsc', on: false, opacity: 0.8 },
     ],
   },
@@ -41,3 +42,26 @@ export const LAYER_GROUPS = [
 ]
 
 export const ICE_NOTE = 'The SWIM project (MRO, Mars Odyssey and MGS data) finds its strongest buried-ice candidates at Arcadia Planitia and Deuteronilus Mensae, far north of Jezero. In this planner, water at Jezero comes from recycling, not from ice.'
+
+// Gale uses different products for the same layers; only the wording and credits change.
+const GALE = {
+  elevation: { instrument: 'HiRISE height map', source: 'galeDem' },
+  slope: { instrument: 'HiRISE height map', source: 'galeDem' },
+  hirise: { plain: 'Rocks, sand and the boxwork ridges around the habitat', source: 'galeHirise' },
+  photo: { instrument: 'HiRISE mosaic', res: '25 cm (shown at ~10 m)', source: 'galeHirise' },
+  traverse: { name: 'Curiosity\u2019s real path', plain: 'Every drive since landing in 2012', mission: 'Curiosity (MSL)', source: 'mslTraverse' },
+  stops: { plain: 'Where Curiosity drilled and studied rocks', mission: 'Curiosity (MSL)', instrument: 'NASA news and team blog', source: 'mslStops' },
+}
+const SITE_LAYERS = { gale: GALE }
+
+/** The layer list for a planning site, with that site's own products and credits. */
+export function layerGroupsFor(siteId) {
+  const o = SITE_LAYERS[siteId]
+  if (!o) return LAYER_GROUPS
+  return LAYER_GROUPS.map((g) => ({ ...g, layers: g.layers.map((l) => (o[l.id] ? { ...l, ...o[l.id] } : l)) }))
+}
+
+const ICE_NOTES = {
+  gale: 'The SWIM project (MRO, Mars Odyssey and MGS data) finds its strongest buried-ice candidates at Arcadia Planitia and Deuteronilus Mensae, far from Gale near the equator. In this planner, water at Gale comes from recycling, not from ice.',
+}
+export const iceNoteFor = (siteId) => ICE_NOTES[siteId] || ICE_NOTE

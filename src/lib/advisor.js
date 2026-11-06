@@ -6,10 +6,15 @@ import { fmtHours, sunAt } from './mars24.js'
 
 export const ADVISOR_LABEL = 'Local rule engine — not a live AI model'
 
-export function advise(a, { settings: s, stops, startMs, site, visitedIds = [], snap = false }) {
+export function advise(a, { settings: s, stops, startMs, site, visitedIds = [], snap = false, weather = null }) {
   if (!a) return []
   const tips = []
   const km = (m) => `${(m / 1000).toFixed(1)} km`
+
+  // 0. Space weather: a particle storm outranks everything else
+  if (weather?.storm) {
+    tips.push({ id: 'storm', text: `A solar particle storm is under way. Postpone this ${fmtH(a.hours)} walk, or cut it to a short loop within reach of shelter.`, rule: weather.flux !== null && weather.flux >= 10 ? `≥10 MeV protons ${weather.flux.toFixed(1)} pfu ≥ 10 (NOAA S1)` : `solar particle event in the last 3 days (NASA DONKI)` })
+  }
 
   // 1. Steep ground
   if (a.reasons.some((r) => r.code === 'steep') && !snap) {

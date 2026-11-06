@@ -35,7 +35,7 @@ class Heap {
 }
 
 /** Per-cell multiplier on walking cost; Infinity = impassable. */
-export function cellCosts(g, { greenSlope, redSlope, looseGround = 0.6 }) {
+export function cellCosts(g, { greenSlope, redSlope, looseGround = 0.6, rockyGround = 2 }) {
   const n = g.w * g.h
   const c = new Float32Array(n)
   for (let k = 0; k < n; k++) {
@@ -46,6 +46,8 @@ export function cellCosts(g, { greenSlope, redSlope, looseGround = 0.6 }) {
     let m = 1 + 0.02 * s + 3 * over * over
     // THEMIS night IR: dark (cold at night) = loose dust/sand, slower and tiring
     if (g.ground) m *= 1 + looseGround * Math.max(0, 0.5 - g.ground[k] / 255)
+    // HiRISE texture: rocky-looking ground is slower and riskier, so routes bend around it
+    if (g.rough) { const r = g.rough[k] / 255; m *= 1 + rockyGround * r * r }
     c[k] = m
   }
   return c

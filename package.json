@@ -12,7 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "bake": "node scripts/bake-site.mjs",
+    "bake": "node scripts/bake-site.mjs && node scripts/bake-roughness.mjs jezero && node scripts/bake-roughness.mjs gale",
     "deploy": "vite build && cp vercel.json dist/ && cd dist && npx --yes vercel@latest deploy --prod --yes --scope noble-nexus --name marswalk-planner"
   },
   "dependencies": {

@@ -19,14 +19,15 @@ self.onmessage = async ({ data: msg }) => {
         const pct = Math.min(99, Math.round((got / total) * 100))
         if (pct >= last + 2) { last = pct; self.postMessage({ type: 'progress', pct }) }
       }
-      const { elev: dm, ground } = await siteTerrain(msg.site, tick)
+      const { elev: dm, ground, rough } = await siteTerrain(msg.site, tick)
       self.postMessage({ type: 'progress', pct: 100, stage: 'slopes' })
-      g = makeGrid(meta.grid, dm, ground)
+      g = makeGrid(meta.grid, dm, ground, rough)
       const slope = computeSlope(g)
       planner = createPlanner(g)
       const copy = slope.slice()
       const elev = g.elev.slice()
-      self.postMessage({ type: 'ready', meta, slope: copy, elev, w: g.w, h: g.h, dx: g.dx, dy: g.dy }, [copy.buffer, elev.buffer])
+      const roughCopy = g.rough ? g.rough.slice() : null
+      self.postMessage({ type: 'ready', meta, slope: copy, elev, rough: roughCopy, w: g.w, h: g.h, dx: g.dx, dy: g.dy }, roughCopy ? [copy.buffer, elev.buffer, roughCopy.buffer] : [copy.buffer, elev.buffer])
       return
     }
     if (!planner) throw new Error('Planner not ready')

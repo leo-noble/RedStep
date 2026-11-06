@@ -68,6 +68,51 @@ const f1 = (x) => x.toFixed(1)
 const f0 = (x) => Math.round(x).toLocaleString()
 const fp = (x) => `${Math.round(x * 100)}`
 
+/** Space weather now: the Sun's last week from NASA DONKI (NOAA GOES protons as a backup), and how
+ *  far around the Sun Mars sits from Earth, since both feeds are measured on Earth's side. */
+export function SpaceWeatherPanel({ weather: w }) {
+  const fmtDay = (ms) => new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const checked = w.checkedAt ? new Date(w.checkedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : null
+  const label = !w.known ? (w.loading ? 'Checking…' : 'No reading') : w.storm ? 'Particle storm' : w.level === 'active' ? 'Active Sun' : 'Quiet'
+  const side = w.apart < 60 ? 'on the same side of the Sun as Earth, so Earth-side readings are a fair guide' : w.apart > 120 ? 'nearly behind the Sun from Earth, so a storm could reach Mars without Earth seeing it' : 'well around the Sun from Earth, so Earth-side readings are only a rough guide'
+  return (
+    <section className={`swx swx-${w.known ? w.level : 'unknown'}`} aria-labelledby="swx-title">
+      <div className="sw-head">
+        <h3 id="swx-title">Space weather now</h3>
+        <span className="swx-pill">{label}</span>
+      </div>
+      {w.known ? (
+        <ul className="swx-list">
+          {w.flares !== null && (
+            <li>
+              <span>Solar flares, last 7 days</span>
+              <b>{w.flares}{w.strongest ? ` · strongest ${w.strongest.cls}, ${fmtDay(w.strongest.at)}` : ''}</b>
+            </li>
+          )}
+          {w.seps !== null && <li><span>Solar particle events, last 7 days</span><b>{w.seps}</b></li>}
+          {w.flux !== null && <li><span>Fast protons at Earth now (≥10 MeV)</span><b>{w.flux < 1 ? w.flux.toFixed(2) : w.flux.toFixed(1)} pfu</b></li>}
+        </ul>
+      ) : (
+        <p className="sw-say">{w.loading ? 'Asking NASA’s space weather database…' : 'Could not reach NASA’s space weather database. Check again before the hatch opens.'}</p>
+      )}
+      <p className="sw-say">
+        Mars is {Math.round(w.apart)}° around the Sun from Earth: {side}.
+        {' '}<Source k="meeus" note="Angle between Earth and Mars as seen from the Sun, from Mars24 and Meeus orbit formulas." badge="derived" />
+      </p>
+      <p className={`swx-advice ${w.storm ? 'warn' : ''}`}>
+        {w.storm
+          ? 'A solar particle storm is under way. Postpone long walks and stay within reach of shelter until it ends.'
+          : w.known ? 'No particle storm reported. Walk as planned, and check again before the hatch opens.' : 'Treat space weather as unknown: keep the walk short and close to shelter.'}
+      </p>
+      <p className="swx-src">
+        {w.known ? `Checked ${checked}${w.stale ? ' (saved copy)' : ''} · ` : ''}
+        {w.donki ? 'NASA DONKI' : w.flux !== null ? 'NOAA GOES (NASA DONKI unreachable)' : 'NASA DONKI'}
+        {' '}<Source k="donki" badge="nasa" />
+      </p>
+    </section>
+  )
+}
+
 /** When to leave: the start times that keep the sun above the safe limit for this whole walk,
  *  and the one with the kindest light. Worked out from the same Mars24 sun model as the verdict. */
 export function StartWindowPanel({ analysis: a, settings: s, site, dateMs, onApply }) {

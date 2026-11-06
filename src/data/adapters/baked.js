@@ -3,7 +3,7 @@
 // src/content/. It turns them into the shapes in src/data/schema.js.
 // Works in the page and in the route worker (it only uses fetch).
 import { SITES } from '../../content/sites.js'
-import { STOPS, HABITAT } from '../../content/science.js'
+import { STOPS, HABITAT, HOMES } from '../../content/science.js'
 import { WALK, FACTS } from '../../content/assumptions.js'
 import { PANORAMAS } from '../../content/panoramas.js'
 import { deviceTier } from '../../lib/quality.js'
@@ -58,6 +58,7 @@ export const baked = {
       bbox: m.bbox || union([m.grid?.bbox, m.photo?.bbox, ...Object.values(m.layers).map((L) => L.bbox)].filter(Boolean)),
       center: m.center,
       grid: m.grid,
+      rough: m.rough,
       photo: m.photo && layer(id, m.photo),
       layers: Object.fromEntries(Object.entries(m.layers).map(([k, L]) => [k, layer(id, L)])),
       traverse: m.traverse ? { ...m.traverse, url: url(`${id}/${m.traverse.file}`) }
@@ -67,11 +68,15 @@ export const baked = {
 
   /** Heights (Int16, decimetres) and ground type (THEMIS night IR, 0-255) on the planning grid. */
   async terrain(id, meta, onBytes) {
-    const [elev, ground] = await Promise.all([bytes(`${id}/elevation.i16`, onBytes), bytes(`${id}/themis-night.u8`, onBytes)])
-    return { meta, elev: new Int16Array(elev), ground: new Uint8Array(ground) }
+    const [elev, ground, rough] = await Promise.all([
+      bytes(`${id}/elevation.i16`, onBytes),
+      bytes(`${id}/themis-night.u8`, onBytes),
+      meta.rough ? bytes(`${id}/${meta.rough}`, onBytes) : null,
+    ])
+    return { meta, elev: new Int16Array(elev), ground: new Uint8Array(ground), rough: rough ? new Uint8Array(rough) : null }
   },
 
-  places: (id) => ({ home: HABITAT, stops: STOPS[id] || [] }),
+  places: (id) => ({ home: HOMES[id] || HABITAT, stops: STOPS[id] || [] }),
 
   // No hazard catalogue exists in the baked data: steep and loose ground are read from the
   // terrain itself when a walk is planned. Official data can list fixed hazards here.

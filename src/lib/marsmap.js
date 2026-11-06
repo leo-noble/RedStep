@@ -87,6 +87,21 @@ export async function paintSlope({ w, h, slope }, green, red) {
   return URL.createObjectURL(await c.convertToBlob({ type: 'image/png' }))
 }
 
+/** Rocky-looking ground (HiRISE texture score 0..255): clear when smooth, warming to a rust red
+ *  where the photo shows the most boulders and broken rock. */
+export async function paintRough({ w, h, rough }) {
+  const c = new OffscreenCanvas(w, h)
+  const ctx = c.getContext('2d')
+  const img = ctx.createImageData(w, h)
+  for (let k = 0; k < w * h; k++) {
+    const t = Math.max(0, (rough[k] - 110) / 145)
+    if (t <= 0) continue
+    img.data.set([255, Math.round(180 - 90 * t), Math.round(90 - 50 * t), Math.round(40 + 175 * t)], k * 4)
+  }
+  ctx.putImageData(img, 0, 0)
+  return URL.createObjectURL(await c.convertToBlob({ type: 'image/png' }))
+}
+
 /**
  * Register a `marsdem://z/x/y` protocol that renders Terrarium-encoded height tiles straight
  * from the in-memory grid, so 3D terrain needs no tile files. Outside the grid we use its

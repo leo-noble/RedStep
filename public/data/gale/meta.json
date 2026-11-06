@@ -1,65 +1,101 @@
 {
  "id": "gale",
- "bbox": [
-  136.3417,
-  -5.3395,
-  138.5417,
-  -3.8395
- ],
- "center": [
-  137.4417,
-  -4.5895
- ],
+ "grid": {
+  "w": 444,
+  "h": 629,
+  "bbox": [
+   137.2499384816139,
+   -4.99945318275002,
+   137.54952408846563,
+   -4.5749887645198415
+  ],
+  "cellDeg": [
+   0.0006747423577741791,
+   0.0006748241943246087
+  ],
+  "unit": "decimetres",
+  "offset": -3000,
+  "nodata": -32768,
+  "min": -4553.89123046875,
+  "max": -1512.0057763671875,
+  "radius": 3396190
+ },
+ "photo": {
+  "file": "photo.webp",
+  "bbox": [
+   137.2499384816139,
+   -4.99945318275002,
+   137.54952408846563,
+   -4.5749887645198415
+  ],
+  "lite": "photo-2k.webp"
+ },
  "layers": {
-  "viking": {
-   "file": "viking.webp",
-   "bbox": [
-    136.3417,
-    -5.3395,
-    138.5417,
-    -3.8395
-   ],
-   "trekLayer": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
-   "zoom": 7
-  },
   "relief": {
    "file": "relief.webp",
    "bbox": [
-    136.3417,
-    -5.3395,
-    138.5417,
-    -3.8395
+    136.95,
+    -5.35,
+    137.85,
+    -4.25
    ],
    "trekLayer": "Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw",
    "zoom": 8
   },
+  "viking": {
+   "file": "viking.webp",
+   "bbox": [
+    136.95,
+    -5.35,
+    137.85,
+    -4.25
+   ],
+   "trekLayer": "Mars_Viking_MDIM21_ClrMosaic_global_232m",
+   "zoom": 7
+  },
   "themis-day": {
    "file": "themis-day.webp",
    "bbox": [
-    136.3417,
-    -5.3395,
-    138.5417,
-    -3.8395
+    136.95,
+    -5.35,
+    137.85,
+    -4.25
    ],
    "trekLayer": "THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018",
-   "zoom": 9
+   "zoom": 9,
+   "lite": "themis-day-2k.webp"
   },
   "themis-night": {
    "file": "themis-night.webp",
    "bbox": [
-    136.3417,
-    -5.3395,
-    138.5417,
-    -3.8395
+    136.95,
+    -5.35,
+    137.85,
+    -4.25
    ],
    "trekLayer": "THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018",
-   "zoom": 9
+   "zoom": 9,
+   "lite": "themis-night-2k.webp"
+  },
+  "hirise": {
+   "file": "hirise.webp",
+   "bbox": [
+    137.36,
+    -4.835,
+    137.425,
+    -4.77
+   ],
+   "trekLayer": "curiosity_hirise_mosaic",
+   "zoom": 15,
+   "lite": "hirise-2k.webp"
   }
  },
  "traverse": {
   "file": "traverse.json",
   "source": "NASA JPL MMGIS MSL_traverse.json",
-  "lastSol": 0
+  "lastSol": 5045
  },
- "built": "2026-10-24"
+ "dem": "USGS MSL Gale DEM mosaic v3 (HiRISE, 1 m), 8 m overview averaged to 40 m",
+ "built": "2026-11-06",
+ "rough": "rough.u8"
 }

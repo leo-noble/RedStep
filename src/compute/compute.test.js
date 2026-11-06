@@ -133,3 +133,47 @@ describe('impossible walks', () => {
     expect(Date.now() - t0).toBeLessThan(2000)
   })
 })
+
+describe('carried gear', async () => {
+  const { airPerHour, loadFactor } = await import('./walk.js')
+  it('adds air use in proportion to the weight carried', () => {
+    const none = { ...settings, load: 0 }
+    const heavy = { ...settings, load: 15, suitedMass: 150 }
+    expect(loadFactor(none)).toBe(1)
+    expect(airPerHour(heavy, 0) / airPerHour(none, 0)).toBeCloseTo(1.1, 6)
+  })
+  it('treats missing settings as no extra gear', () => {
+    const { load, suitedMass, ...old } = settings
+    expect(loadFactor(old)).toBe(1)
+  })
+})
+
+describe('rocky ground', () => {
+  it('makes rough cells cost more, never forbids them', () => {
+    const meta = { w: 2, h: 1, bbox: [0, 0, 0.002, 0.001], nodata: -32768, radius: 3396190, unit: 'metres' }
+    const g = makeGrid(meta, new Int16Array([0, 0]), null, new Uint8Array([0, 255]))
+    computeSlope(g)
+    const c = cellCosts(g, { greenSlope: 10, redSlope: 15 })
+    expect(c[1]).toBeGreaterThan(c[0] * 2.5)
+    expect(Number.isFinite(c[1])).toBe(true)
+  })
+})
+
+describe('Gale Crater terrain (USGS HiRISE height map, baked)', () => {
+  const dir = new URL('../../public/data/gale/', import.meta.url)
+  const meta = JSON.parse(fs.readFileSync(new URL('meta.json', dir), 'utf8'))
+  const e = fs.readFileSync(new URL('elevation.i16', dir))
+  const g = makeGrid(meta.grid, new Int16Array(e.buffer, e.byteOffset, e.byteLength / 2), new Uint8Array(fs.readFileSync(new URL('themis-night.u8', dir))))
+
+  it('stores deep heights with an offset so they fit', () => {
+    expect(meta.grid.offset).toBe(-3000)
+    expect(g.elev.every((v) => v > -5000 && v < 0)).toBe(true)
+  })
+
+  it('agrees with Curiosity’s own logged heights within 10 m', () => {
+    // JPL MMGIS MSL waypoints: [lon, lat, elevation (m)] at sols 3, 4210, 4450 and 5045
+    for (const [lon, lat, z] of [[137.441633, -4.589467, -4501], [137.4088596, -4.78571901, -3688], [137.3931242, -4.78692417, -3721], [137.3876138, -4.82466475, -3488]]) {
+      expect(Math.abs(elevAt(g, lon, lat) - z)).toBeLessThan(10)
+    }
+  })
+})

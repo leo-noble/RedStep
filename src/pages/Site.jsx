@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { siteById, sitePlaces, siteMeta, siteTraverse, siteHazards, sitePanoramas, WALK, FACTS } from '../data/index.js'
-import { LAYER_GROUPS } from '../content/layers.js'
+import { LAYER_GROUPS, layerGroupsFor, iceNoteFor } from '../content/layers.js'
 import { instantAtLocalTime, marsTime } from '../lib/mars24.js'
-import { paintElevation, paintSlope } from '../lib/marsmap.js'
+import { paintElevation, paintRough, paintSlope } from '../lib/marsmap.js'
 import { advise } from '../lib/advisor.js'
 import { useNarrow, prefersReducedMotion, store } from '../lib/hooks.js'
 import { useEmergency } from '../components/Layout.jsx'
@@ -14,7 +14,8 @@ import Minimap from '../components/planner/Minimap.jsx'
 import StreetView from '../components/StreetView.jsx'
 import StreetPicker from '../components/StreetPicker.jsx'
 import Ambient from '../components/Ambient.jsx'
-import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, StartWindowPanel, VerdictPanel } from '../components/planner/Panels.jsx'
+import { AdvisorPanel, LayerPanel, ManualPanel, SciencePanel, SettingsPanel, SpaceWeatherPanel, StartWindowPanel, VerdictPanel } from '../components/planner/Panels.jsx'
+import { useSpaceWeather } from '../lib/spaceWeather.js'
 import { Sidebar } from '../components/Sidebar.jsx'
 import { MANUAL } from '../content/manual.js'
 import { Verdict } from '../components/Atoms.jsx'
@@ -83,6 +84,8 @@ function Planner({ site }) {
   const worker = useRef(null)
   const reqId = useRef(0)
   const places = useMemo(() => sitePlaces(site.id), [site.id])
+  const siteGroups = useMemo(() => layerGroupsFor(site.id), [site.id])
+  const siteLayers = useMemo(() => siteGroups.flatMap((g) => g.layers), [siteGroups])
   const habitat = useMemo(() => [places.home.lon, places.home.lat], [places])
   const stops = places.stops
 
@@ -161,7 +164,7 @@ function Planner({ site }) {
     const w = new Worker(new URL('../compute/worker.js', import.meta.url), { type: 'module' })
     worker.current = w
     w.onmessage = ({ data }) => {
-      if (data.type === 'ready') { setMeta((m) => m || data.meta); setGrid({ w: data.w, h: data.h, slope: data.slope, elev: data.elev, dx: data.dx, dy: data.dy }) }
+      if (data.type === 'ready') { setMeta((m) => m || data.meta); setGrid({ w: data.w, h: data.h, slope: data.slope, elev: data.elev, rough: data.rough, dx: data.dx, dy: data.dy }) }
       else if (data.type === 'progress') { setLoadPct(data.pct); if (data.stage) setLoadStage(data.stage) }
       else if (data.type === 'error') {
         setBusy(false)
@@ -270,6 +273,12 @@ function Planner({ site }) {
     paintSlope(grid, settings.greenSlope, settings.redSlope).then((u) => { if (gone) return URL.revokeObjectURL(u); url = u; mapRef.current?.setImage('slope', u) })
     return () => { gone = true; if (url) setTimeout(() => URL.revokeObjectURL(url), 2000) }
   }, [grid, mapReady, settings.greenSlope, settings.redSlope])
+  useEffect(() => {
+    if (!grid?.rough || !mapReady) return
+    let gone = false, url
+    paintRough(grid).then((u) => { if (gone) return URL.revokeObjectURL(u); url = u; mapRef.current?.setImage('rough', u) })
+    return () => { gone = true; if (url) setTimeout(() => URL.revokeObjectURL(url), 2000) }
+  }, [grid, mapReady])
 
   // static overlays
   useEffect(() => {
@@ -430,7 +439,8 @@ function Planner({ site }) {
     const got = stops.filter((p) => visited.includes(p.id)).reduce((s, p) => s + p.value, 0)
     return { total, got }
   }, [stops, visited])
-  const tips = useMemo(() => advise(result?.analysis, { settings, stops, startMs, site, visitedIds: visited, snap }), [result, settings, stops, startMs, site, visited, snap])
+  const weather = useSpaceWeather()
+  const tips = useMemo(() => advise(result?.analysis, { settings, stops, startMs, site, visitedIds: visited, snap, weather }), [result, settings, stops, startMs, site, visited, snap, weather])
 
   const onAdvisor = (what, sid) => { if (what === 'snap') setSnap(true); if (what === 'add') toggleStop(sid, true) }
   const onHover = useCallback((p) => mapRef.current?.setHover(p ? [p[3], p[4]] : null), [])
@@ -453,20 +463,21 @@ function Planner({ site }) {
     <>
       <VerdictPanel analysis={a} settings={settings} snap={snap} busy={busy} onFix={onFix} onEmergency={(f) => emergency.open(f)} visitedCount={visited.length} />
       <StartWindowPanel analysis={a} settings={settings} site={site} dateMs={Date.parse(`${date}T12:00:00Z`)} onApply={(h) => setSettings((x) => ({ ...x, startHour: h }))} />
+      <SpaceWeatherPanel weather={weather} />
     </>
   )
   const science = <SciencePanel stops={stops} visited={visited} onAdd={toggleStop} onFocus={(sid) => setFocusStop((f) => (f === sid ? null : sid))} focus={focusStop} score={score} />
   const advisor = <AdvisorPanel tips={tips} onAction={onAdvisor} />
-  const layerPanel = <LayerPanel groups={LAYER_GROUPS} state={layers} onToggle={(lid, on) => setLayers((L) => ({ ...L, [lid]: { ...L[lid], on } }))} onOpacity={(lid, o) => setLayers((L) => ({ ...L, [lid]: { ...L[lid], opacity: o } }))} />
+  const layerPanel = <LayerPanel groups={siteGroups} iceNote={iceNoteFor(site.id)} state={layers} onToggle={(lid, on) => setLayers((L) => ({ ...L, [lid]: { ...L[lid], on } }))} onOpacity={(lid, o) => setLayers((L) => ({ ...L, [lid]: { ...L[lid], opacity: o } }))} />
   const settingsPanel = <SettingsPanel settings={settings} onChange={setSettings} date={date} onDate={setDate} sol={sol} snap={snap} onSnap={setSnap} />
 
   return (
     <div className={`planner ${following ? 'following' : ''} ${street?.demo ? 'demo' : ''} ${drawing ? 'drawing' : ''} ${sbOpen || narrow ? '' : 'sb-closed'}`}>
-      {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={ALL_LAYERS} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
+      {meta && <MarsMap ref={mapRef} meta={meta} grid={grid} layers={siteLayers} drawing={drawing} onReady={() => setMapReady(true)} onMapClick={onMapClick} onWaypointDrag={onWaypointDrag} onStopClick={(sid) => { setFocusStop(sid); narrow ? (setSheet('science'), setSheetOpen(true)) : setRightTab('science') }} />}
       {!grid && (
         <div className="planner-loading" role="status" aria-live="polite">
           <Ambient className="ambient-fill" />
-          <span><i className="spinner" aria-hidden="true" />{loadStage === 'slopes' ? 'Working out slopes…' : `Loading terrain… ${loadPct}%`}{slowLoad && <small>Slow connection: the Jezero height map is about 1.8 MB.</small>}</span>
+          <span><i className="spinner" aria-hidden="true" />{loadStage === 'slopes' ? 'Working out slopes…' : `Loading terrain… ${loadPct}%`}{slowLoad && <small>Slow connection: the {site.name} height map is about {site.demSize}.</small>}</span>
         </div>
       )}
 
@@ -577,21 +588,21 @@ function Planner({ site }) {
       {picking && <StreetPicker panoramas={panoramas} stops={stops} visited={visited} home={places.home} canDemo={!!grid} onPick={openStreet} onClose={() => setPicking(false)} />}
       {street?.pano && (
         <StreetView pano={street.pano} onClose={closeStreet}>
-          <Minimap ref={minimap} className="mm-sv" title="Location" heading={false} profile={a?.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
+          <Minimap site={site} ref={minimap} className="mm-sv" title="Location" heading={false} profile={a?.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
         </StreetView>
       )}
       {street?.demo && (
         <>
           <div className="sv-demo" role="region" aria-label="Demo street view">
             <p className="sv-demo-tag">DEMO · NOT ROVER PHOTOS</p>
-            <p><b>{street.demo.name}</b>: no rover panorama here, so this is a 3D view built from orbit (MRO CTX photo, plus HiRISE where it covers, on the CTX height map at true scale). The 3D shape comes from a 40 m height map, so boulders and small ledges are flat here.</p>
+            <p><b>{street.demo.name}</b>: no rover panorama here, so this is a 3D view built from orbit (orbital photos from MRO, HiRISE where it covers, on the {site.dem.replace('MRO ', '')} at true scale). The 3D shape comes from a 40 m height map, so boulders and small ledges are flat here.</p>
             <div className="sv-demo-row">
               <button type="button" className="btn btn-small" onClick={() => ground.current?.turn(-45)} aria-label="Turn left">←</button>
               <button type="button" className="btn btn-small" onClick={() => ground.current?.turn(45)} aria-label="Turn right">→</button>
               <button type="button" className="btn btn-small" onClick={closeStreet}>Close demo view</button>
             </div>
           </div>
-          <Minimap ref={minimap} title="Location" profile={a?.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
+          <Minimap site={site} ref={minimap} title="Location" profile={a?.profile} analysis={a} stops={stops} visited={visited} home={habitat} hazards={hazards} limits={{ green: settings.greenSlope, red: settings.redSlope }} />
         </>
       )}
       {following && a && (
@@ -605,7 +616,7 @@ function Planner({ site }) {
           <div><span className="micro">Slope</span><b data-k="s">—</b></div>
           <div><span className="micro">Suit air left</span><b data-k="a">100%</b></div>
           <button type="button" className="btn btn-small" onClick={endFollow}>Stop</button>
-          <p className="micro follow-note">Heights ×2 for clarity · 3D terrain from the MRO CTX height map</p>
+          <p className="micro follow-note">Heights ×2 for clarity · 3D terrain from the {site.dem}</p>
         </div>
       )}
     </div>

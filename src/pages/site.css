@@ -1622,6 +1622,19 @@
   gap: 8px;
   padding: 8px;
   border-radius: 22px;
+  /* when the sidebars leave too little room, the bar scrolls sideways instead of spilling */
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.actionbar::-webkit-scrollbar {
+  display: none;
+}
+
+.actionbar > *,
+.ab-more > * {
+  flex: none;
 }
 
 .ab-more {
@@ -1909,4 +1922,64 @@
 
 .ab-icon svg {
   display: block;
+}
+
+/* ---- space weather now ---- */
+.swx {
+  margin-top: 14px;
+  padding: 14px 16px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.swx-pill {
+  padding: 3px 10px;
+  border-radius: 980px;
+  background: rgba(127, 224, 168, 0.14);
+  color: var(--go);
+  font: 600 12px / 1.4 var(--font);
+}
+
+.swx-active .swx-pill { background: rgba(255, 211, 122, 0.14); color: var(--caution); }
+.swx-storm .swx-pill { background: rgba(255, 141, 122, 0.16); color: var(--nogo); }
+.swx-unknown .swx-pill { background: rgba(255, 255, 255, 0.08); color: var(--ink-3); }
+
+.swx-list {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.swx-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.swx-list b {
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+
+.swx-advice {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.swx-advice.warn {
+  color: var(--nogo);
+}
+
+.swx-src {
+  display: flex;
+  align-items: center;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
 }

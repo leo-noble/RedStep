@@ -291,6 +291,170 @@ async function bakeJezero() {
   await makeLite(dir) // half-size copies of the big photos for low-memory devices
 }
 
+// ---------- Gale Crater / Mount Sharp ----------
+
+// USGS MSL Gale DEM mosaic (1 m, from HiRISE stereo; Calef & Parker 2016, v3). The full file is
+// 7.6 GB, so we read GDAL's ready-made 8 m overview (the .ovr next to it) over HTTP range requests:
+// only the window we need is downloaded. Georeferencing comes from the USGS .vrt/.lbl.
+const GALE_DEM = 'https://asc-pds-services.s3.us-west-2.amazonaws.com/mosaic/Mars/MSL/MSL_Gale_DEM_Mosaic_1m_v3.tif.ovr'
+const GALE_X0 = 8127993.4927860238, GALE_Y0 = -244781.07518943801 // top-left, metres (Equirectangular, clon 0)
+const GALE_FULL = [32980, 57440] // full-resolution size in 1 m pixels
+// Planning grid: the Mount Sharp foothills from Bradbury Landing (north) past the boxwork (south).
+const GALE_GRID = [137.25, -5.0, 137.55, -4.575]
+// Gale's floor is about -4.5 km, too deep for Int16 decimetres, so heights are stored relative to this.
+const GALE_OFFSET = -3000
+
+async function bakeGale() {
+  console.log('gale')
+  const { fromUrl } = await import('geotiff')
+  const dir = path.join(OUT, 'gale')
+  await fs.mkdir(dir, { recursive: true })
+
+  const tif = await fromUrl(GALE_DEM)
+  const im = await tif.getImage(1) // overview 1: about 8 m per pixel
+  const OW = im.getWidth(), OH = im.getHeight()
+  const px = GALE_FULL[0] / OW, py = GALE_FULL[1] / OH // metres per overview pixel
+  const F = Math.round(40 / px) // overview pixels per 40 m grid cell
+  const toCol = (lon) => (lon * DEG * R_MARS - GALE_X0) / px
+  const toRow = (lat) => (GALE_Y0 - lat * DEG * R_MARS) / py
+  const c0 = Math.floor(toCol(GALE_GRID[0])), r0 = Math.floor(toRow(GALE_GRID[3]))
+  const gw = Math.floor((toCol(GALE_GRID[2]) - c0) / F), gh = Math.floor((toRow(GALE_GRID[1]) - r0) / F)
+  // The overview is stored as plain (uncompressed) 128 px float tiles. geotiff.js fires many
+  // parallel range requests, which this server drops, so fetch each row of tiles as one range
+  // ourselves, one at a time, with retries.
+  const BW = gw * F, BH = gh * F
+  const band = new Float32Array(BW * BH)
+  const fd = im.fileDirectory
+  const TW = im.getTileWidth(), TH = im.getTileHeight(), tilesAcross = Math.ceil(OW / TW)
+  const tileOffsets = await fd.loadValue('TileOffsets'), tileBytes = await fd.loadValue('TileByteCounts')
+  if ((fd.getValue('Compression') || 1) !== 1 || im.getBitsPerSample() !== 32) throw new Error('unexpected Gale overview format')
+  const little = im.littleEndian
+  async function range(from, to) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const r = await fetch(GALE_DEM, { headers: { Range: `bytes=${from}-${to - 1}` } })
+        if (r.status !== 206) throw new Error(`HTTP ${r.status}`)
+        const buf = new Uint8Array(await r.arrayBuffer())
+        if (buf.length !== to - from) throw new Error('short read')
+        return buf
+      } catch (e) {
+        if (attempt >= 8) throw e
+        await new Promise((res) => setTimeout(res, 1000 * attempt))
+      }
+    }
+  }
+  const tx0 = Math.floor(c0 / TW), tx1 = Math.floor((c0 + BW - 1) / TW)
+  const ty0 = Math.floor(r0 / TH), ty1 = Math.floor((r0 + BH - 1) / TH)
+  for (let ty = ty0; ty <= ty1; ty++) {
+    const ids = []
+    for (let tx = tx0; tx <= tx1; tx++) ids.push(ty * tilesAcross + tx)
+    // Fetch the row as one span when its tiles sit next to each other in the file, else one by one.
+    const offs = ids.map((k) => Number(tileOffsets[k])), lens = ids.map((k) => Number(tileBytes[k]))
+    const contiguous = offs.every((o, k) => k === 0 || o === offs[k - 1] + lens[k - 1])
+    const chunks = contiguous
+      ? await (async () => { const all = new DataView((await range(offs[0], offs.at(-1) + lens.at(-1))).buffer); return offs.map((o) => new DataView(all.buffer, o - offs[0], TW * TH * 4)) })()
+      : await Promise.all(offs.map(async (o, k) => new DataView((await range(o, o + lens[k])).buffer)))
+    chunks.forEach((dv, k) => {
+      const tx = tx0 + k
+      for (let y = 0; y < TH; y++) {
+        const gy = ty * TH + y - r0
+        if (gy < 0 || gy >= BH) continue
+        for (let x = 0; x < TW; x++) {
+          const gx = tx * TW + x - c0
+          if (gx < 0 || gx >= BW) continue
+          band[gy * BW + gx] = dv.getFloat32((y * TW + x) * 4, little)
+        }
+      }
+    })
+    process.stdout.write(`\r  heights ${Math.round(((ty - ty0 + 1) / (ty1 - ty0 + 1)) * 100)}%`)
+  }
+  process.stdout.write('\n')
+  const grid = new Int16Array(gw * gh)
+  let min = Infinity, max = -Infinity, holes = 0
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    let sum = 0, n = 0
+    for (let dy = 0; dy < F; dy++) for (let dx = 0; dx < F; dx++) {
+      const v = band[(j * F + dy) * BW + i * F + dx]
+      if (v > -30000 && Number.isFinite(v)) { sum += v; n++ } // nodata is -32767
+    }
+    if (n < (F * F) / 2) { grid[j * gw + i] = -32768; holes++; continue }
+    const v = sum / n
+    if (v < min) min = v
+    if (v > max) max = v
+    grid[j * gw + i] = Math.round((v - GALE_OFFSET) * 10)
+  }
+  await fs.writeFile(path.join(dir, 'elevation.i16'), Buffer.from(grid.buffer))
+  const lonAt = (c) => (GALE_X0 + c * px) / R_MARS / DEG, latAt = (r) => (GALE_Y0 - r * py) / R_MARS / DEG
+  const gridBbox = [lonAt(c0), latAt(r0 + gh * F), lonAt(c0 + gw * F), latAt(r0)]
+  console.log(`  elevation grid ${gw}x${gh}, ${min.toFixed(1)}..${max.toFixed(1)} m, holes ${holes}`)
+
+  // Photo over the whole grid: the HiRISE Curiosity site mosaic at zoom 12 (about 10 m per pixel).
+  const ph = await trekMosaic({ layer: 'curiosity_hirise_mosaic', ext: 'png', z: 12, bbox: gridBbox })
+  const photo = toMercator(ph, gridBbox, 4096)
+  feather(photo, 0.035)
+  await writeImage(photo, path.join(dir, 'photo.webp'), { quality: 76 })
+
+  const ctx = [136.95, -5.35, 137.85, -4.25]
+  const layers = [
+    ['relief', 'Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw', 'jpg', 8, ctx, 1400],
+    ['viking', 'Mars_Viking_MDIM21_ClrMosaic_global_232m', 'jpg', 7, ctx, 1400],
+    ['themis-day', 'THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018', 'png', 9, ctx, 1800],
+    ['themis-night', 'THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018', 'png', 9, ctx, 1800],
+  ]
+  const layerMeta = {}
+  for (const [id, layer, ext, z, bbox, outW] of layers) {
+    const src = await trekMosaic({ layer, ext, z, bbox })
+    const img = toMercator(src, bbox, outW)
+    feather(img, 0.06)
+    await writeImage(img, path.join(dir, `${id}.webp`), { quality: 80 })
+    layerMeta[id] = { file: `${id}.webp`, bbox, trekLayer: layer, zoom: z }
+  }
+
+  // HiRISE close-up of the boxwork walking area, zoom 15 (about 1.3 m per pixel).
+  const hiBbox = [137.36, -4.835, 137.425, -4.77]
+  const hi = await trekMosaic({ layer: 'curiosity_hirise_mosaic', ext: 'png', z: 15, bbox: hiBbox })
+  const hiImg = toMercator(hi, hiBbox, 4096)
+  feather(hiImg, 0.04)
+  await writeImage(hiImg, path.join(dir, 'hirise.webp'), { quality: 70 })
+  layerMeta.hirise = { file: 'hirise.webp', bbox: hiBbox, trekLayer: 'curiosity_hirise_mosaic', zoom: 15 }
+
+  // THEMIS night infrared on the grid (loose-ground penalty), as at Jezero.
+  const night = await trekMosaic({ layer: 'THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018', ext: 'png', z: 9, bbox: gridBbox })
+  const nightGrid = new Uint8Array(gw * gh)
+  const out = new Float64Array(4)
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const lon = gridBbox[0] + ((i + 0.5) / gw) * (gridBbox[2] - gridBbox[0])
+    const lat = gridBbox[3] - ((j + 0.5) / gh) * (gridBbox[3] - gridBbox[1])
+    nightGrid[j * gw + i] = sample(night, lon, lat, out)[0]
+  }
+  await fs.writeFile(path.join(dir, 'themis-night.u8'), Buffer.from(nightGrid.buffer))
+
+  // Curiosity's real path (JPL MMGIS).
+  const t = JSON.parse(await fs.readFile(await download('https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_traverse.json', path.join(RAW, 'msl', 'MSL_traverse.json')), 'utf8'))
+  const line = []
+  const pts = (g) => (g.type === 'MultiLineString' ? g.coordinates.flat() : g.coordinates)
+  for (const f of t.features) for (const c of pts(f.geometry)) {
+    const p = [+c[0].toFixed(6), +c[1].toFixed(6)], q = line[line.length - 1]
+    if (!q || Math.hypot(p[0] - q[0], p[1] - q[1]) > 0.00005) line.push(p)
+  }
+  await fs.writeFile(path.join(dir, 'traverse.json'), JSON.stringify(line))
+  const wps = JSON.parse(await fs.readFile(await download('https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json', path.join(RAW, 'msl', 'MSL_waypoints.json')), 'utf8'))
+  const lastSol = Math.max(...wps.features.map((f) => f.properties.sol || 0))
+  console.log(`  curiosity path: ${line.length} points, to sol ${lastSol}`)
+
+  const meta = {
+    id: 'gale',
+    grid: { w: gw, h: gh, bbox: gridBbox, cellDeg: [(gridBbox[2] - gridBbox[0]) / gw, (gridBbox[3] - gridBbox[1]) / gh], unit: 'decimetres', offset: GALE_OFFSET, nodata: -32768, min, max, radius: R_MARS },
+    photo: { file: 'photo.webp', bbox: gridBbox },
+    layers: layerMeta,
+    traverse: { file: 'traverse.json', source: 'NASA JPL MMGIS MSL_traverse.json', lastSol },
+    dem: 'USGS MSL Gale DEM mosaic v3 (HiRISE, 1 m), 8 m overview averaged to 40 m',
+    built: new Date().toISOString().slice(0, 10),
+  }
+  await fs.writeFile(path.join(dir, 'meta.json'), JSON.stringify(meta, null, 1))
+  await makeLite(dir)
+}
+
 // ---------- other sites: map layers only (no walk planning) ----------
 
 async function bakeContexts() {
@@ -402,6 +566,7 @@ async function bakeWorld() {
 const only = process.argv[2]
 if (!only || only === 'globe') await bakeGlobe()
 if (!only || only === 'jezero') await bakeJezero()
+if (!only || only === 'gale') await bakeGale()
 if (!only || only === 'sites') await bakeContexts()
 if (!only || only === 'world') await bakeWorld()
 console.log('done')

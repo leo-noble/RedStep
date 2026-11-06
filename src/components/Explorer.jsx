@@ -190,14 +190,14 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
               m.addLayer({ id: `det-mola-${s.id}`, type: 'raster', source: `det-mola-${s.id}`, minzoom: 5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0, 6, 1] }, layout: vis(base === 'mola') }, 'night')
             }
           }
-          // Jezero's big CTX and HiRISE photos (about 1 MB each) wait for a closer zoom still.
-          if (s.id === 'jezero' && z >= 7.5 && !detailsAdded.has('jezero-photos') && near(s, b, 1)) {
-            detailsAdded.add('jezero-photos')
+          // Planning sites' big orbital photos (about 1 MB each) wait for a closer zoom still.
+          if (s.planner && z >= 7.5 && !detailsAdded.has(`${s.id}-photos`) && near(s, b, 1)) {
+            detailsAdded.add(`${s.id}-photos`)
             const meta = await siteMeta(s.id)
-            m.addSource('det-ctx', { type: 'image', url: meta.photo.url, coordinates: corners(meta.photo.bbox) })
-            m.addLayer({ id: 'det-ctx', type: 'raster', source: 'det-ctx', minzoom: 8.5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 8.5, 0, 9.5, 1] }, layout: vis(base !== 'dust') }, 'night')
-            m.addSource('det-hirise', { type: 'image', url: meta.layers.hirise.url, coordinates: corners(meta.layers.hirise.bbox) })
-            m.addLayer({ id: 'det-hirise', type: 'raster', source: 'det-hirise', minzoom: 11, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 1] }, layout: vis(base !== 'dust') }, 'night')
+            m.addSource(`det-ctx-${s.id}`, { type: 'image', url: meta.photo.url, coordinates: corners(meta.photo.bbox) })
+            m.addLayer({ id: `det-ctx-${s.id}`, type: 'raster', source: `det-ctx-${s.id}`, minzoom: 8.5, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 8.5, 0, 9.5, 1] }, layout: vis(base !== 'dust') }, 'night')
+            m.addSource(`det-hirise-${s.id}`, { type: 'image', url: meta.layers.hirise.url, coordinates: corners(meta.layers.hirise.bbox) })
+            m.addLayer({ id: `det-hirise-${s.id}`, type: 'raster', source: `det-hirise-${s.id}`, minzoom: 11, paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 1] }, layout: vis(base !== 'dust') }, 'night')
           }
         } catch { /* site data missing: the global map still works */ }
       }
@@ -323,7 +323,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
       if (m.getLayer(`det-viking-${s.id}`)) m.setLayoutProperty(`det-viking-${s.id}`, 'visibility', basemap === 'viking' ? 'visible' : 'none')
       if (m.getLayer(`det-mola-${s.id}`)) m.setLayoutProperty(`det-mola-${s.id}`, 'visibility', basemap === 'mola' ? 'visible' : 'none')
     }
-    for (const id of ['det-ctx', 'det-hirise']) if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', basemap === 'dust' ? 'none' : 'visible')
+    for (const id of SITES.filter((x) => x.planner).flatMap((x) => [`det-ctx-${x.id}`, `det-hirise-${x.id}`])) if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', basemap === 'dust' ? 'none' : 'visible')
     m.setLayoutProperty('night', 'visibility', overlays.night ? 'visible' : 'none')
     m.setLayoutProperty('rovers', 'visibility', overlays.rovers ? 'visible' : 'none')
   }, [ready, basemap, overlays])

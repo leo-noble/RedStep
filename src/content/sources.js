@@ -60,6 +60,26 @@ export const DATA = [
     product: 'Mars rock samples list', by: 'NASA', url: 'https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/', licence: PD, badge: 'nasa',
   },
   {
+    id: 'galeDem', group: 'Maps', name: 'Gale height map (1 m)', plain: 'How high the ground is on Mount Sharp, from HiRISE stereo photos',
+    mission: 'Mars Reconnaissance Orbiter', instrument: 'HiRISE stereo', resolution: '1 m/pixel (we read the 8 m overview and use 40 m)',
+    product: 'MSL_Gale_DEM_Mosaic_1m_v3', by: 'USGS Astrogeology for the Curiosity mission (Calef and Parker 2016)', url: 'https://astrogeology.usgs.gov/search/map/msl_gale_crater_digital_elevation_model_mosaic', licence: PD, badge: 'nasa',
+  },
+  {
+    id: 'galeHirise', group: 'Maps', name: 'Gale photo map', plain: 'Black-and-white photo of Curiosity\u2019s area from orbit',
+    mission: 'Mars Reconnaissance Orbiter', instrument: 'HiRISE', resolution: '25 cm/pixel (shown at about 10 m, and 1.3 m near the boxwork)',
+    product: 'curiosity_hirise_mosaic', by: 'USGS Astrogeology / University of Arizona, via NASA Mars Trek', url: 'https://trek.nasa.gov/mars/', licence: PD, badge: 'nasa',
+  },
+  {
+    id: 'mslTraverse', group: 'Rovers', name: 'Curiosity\u2019s real path', plain: 'Every drive the rover has made since 2012',
+    mission: 'Mars Science Laboratory (Curiosity)', instrument: 'Rover localisation', resolution: 'metres',
+    product: 'MSL_traverse.json + MSL_waypoints.json', by: 'NASA JPL MMGIS', url: 'https://mars.nasa.gov/maps/location/?mission=MSL', licence: PD, badge: 'nasa',
+  },
+  {
+    id: 'mslStops', group: 'Rovers', name: 'Curiosity science stops', plain: 'Where Curiosity drilled and studied rocks on Mount Sharp',
+    mission: 'Mars Science Laboratory (Curiosity)', instrument: 'Mastcam, APXS, drill', resolution: '\u2014',
+    product: 'JPL news, NASA Photojournal and the Curiosity team blog', by: 'NASA / JPL', url: 'https://science.nasa.gov/mission/msl-curiosity/', licence: PD, badge: 'nasa',
+  },
+  {
     id: 'globeEarth', group: 'Home page', name: 'Earth day and night', plain: 'Earth pictures in the opening scene',
     mission: 'Terra MODIS; Suomi NPP VIIRS', instrument: 'Blue Marble; Black Marble 2016', resolution: 'resampled to 2048 px',
     product: 'land_shallow_topo_2048, BlackMarble_2016_01deg', by: 'NASA Earth Observatory', url: 'https://earthobservatory.nasa.gov/features/NightLights', licence: PD, badge: 'nasa',
@@ -81,6 +101,8 @@ export const FACT_SOURCES = {
   dustFacts: { title: 'NASA: The fact and fiction of Martian dust storms', url: 'https://www.nasa.gov/solar-system/the-fact-and-fiction-of-martian-dust-storms/' },
   mars24: { title: 'NASA GISS Mars24 algorithm (Allison & McEwen 2000)', url: 'https://www.giss.nasa.gov/tools/mars24/help/algorithm.html' },
   meeus: { title: 'Meeus, Astronomical Algorithms (2nd ed.), ch. 25: Earth’s position', url: 'https://www.willbell.com/math/mc1.htm' },
+  donki: { title: 'NASA CCMC Space Weather Database Of Notifications, Knowledge, Information (DONKI)', url: 'https://kauai.ccmc.gsfc.nasa.gov/DONKI/' },
+  pandolf: { title: 'Pandolf, Givoni & Goldman 1977, Predicting energy expenditure with loads while standing or walking very slowly, J Appl Physiol 43', url: 'https://doi.org/10.1152/jappl.1977.43.4.577' },
   tobler: { title: 'Tobler 1993, Three presentations on geographical analysis and modeling (hiking function)', url: 'https://escholarship.org/uc/item/05r820mz' },
   ezWorkshop: { title: 'NASA First Landing Site / Exploration Zone Workshop for Human Missions to Mars, Oct 2015 (abstracts)', url: 'https://www.nasa.gov/wp-content/uploads/2015/06/mars-c-abstracts_in_order_of_presentation10242015_0.pdf' },
   moxie: { title: 'NASA: MOXIE completes its mission (Sept 2023), up to 12 g of oxygen per hour', url: 'https://www.nasa.gov/missions/mars-2020-perseverance/perseverance-rover/nasas-oxygen-generating-experiment-moxie-completes-mars-mission/' },

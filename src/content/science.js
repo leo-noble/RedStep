@@ -10,6 +10,18 @@ export const HABITAT = {
   note: 'Placed at the Octavia E. Butler landing site, where Perseverance touched down on 18 Feb 2021.',
 }
 
+// Where the habitat sits at each walk-planning site.
+export const HOMES = {
+  jezero: HABITAT,
+  gale: {
+    id: 'habitat',
+    name: 'Habitat',
+    lon: 137.3931242,
+    lat: -4.78692417,
+    note: 'Placed where Curiosity parked on sol 4450 (May 2025), arriving at the boxwork. It took its first 360-degree view of the boxwork from here over sols 4451 to 4454 (NASA PIA26559).',
+  },
+}
+
 export const STOPS = {
   jezero: [
     {
@@ -110,6 +122,44 @@ export const STOPS = {
       why: 'May be among the oldest rock Perseverance has sampled, from before the lake existed.',
       evidence: 'Samples 26 Silver Mountain, 27 Green Gardens, 28 Main River (sols 1401–1441).',
       bring: 'Core drill, climbing poles',
+    },
+  ],
+  // Gale Crater, Mount Sharp. The challenge statement's own example: the boxwork Curiosity explored
+  // in 2025. Positions are Curiosity's logged stop (JPL MMGIS waypoints) on or just before the sol
+  // named in each NASA source, so they are accurate to tens of metres.
+  gale: [
+    {
+      id: 'gediz',
+      name: 'Gediz Vallis channel, sulfur stones',
+      lon: 137.4088596, lat: -4.78571901,
+      value: 4, minutes: 45,
+      region: 'A channel running down Mount Sharp',
+      what: 'A field of bright stones made of pure sulfur, inside a channel cut by old floods and landslides.',
+      why: 'Pure sulfur had never been found on Mars before. It forms only in a narrow range of conditions, and scientists do not yet know why it is here.',
+      evidence: 'Curiosity cracked a sulfur stone on 30 May 2024 and drilled Mammoth Lakes nearby (JPL news, 18 Jul 2024). 360-degree view from sol 4220 (PIA26363).',
+      bring: 'Sample bags, hand lens',
+    },
+    {
+      id: 'altadena',
+      name: 'Altadena, edge of the boxwork',
+      lon: 137.3835414, lat: -4.79984723,
+      value: 4, minutes: 40,
+      region: 'Outer edge of the boxwork rock layer',
+      what: 'The rock layer that holds the boxwork, just before the ridges begin.',
+      why: 'Comparing this rock with the ridges shows what the old groundwater added to it.',
+      evidence: 'Drilled by Curiosity in June 2025 (Curiosity team blog, sols 4568 to 4569).',
+      bring: 'Core drill, sample tubes',
+    },
+    {
+      id: 'boxwork',
+      name: 'Monte Grande, boxwork ridge and hollow',
+      lon: 137.3810353, lat: -4.80783916,
+      value: 5, minutes: 60,
+      region: 'Boxwork ridges, Mount Sharp foothills',
+      what: 'Low, hard ridges with sandy hollows between them. From orbit they look like a spider web.',
+      why: 'NASA thinks groundwater trickled through cracks here billions of years ago and left minerals that hardened like cement. Water underground for that long matters in the search for past life.',
+      evidence: 'Drill holes Valle de la Luna in a hollow (sol 4693) and Nevado Sajama on a ridge top (sol 4718), Curiosity team blog. Boxwork origin: NASA PIA26559.',
+      bring: 'Core drill, sample tubes, climbing poles',
     },
   ],
 }

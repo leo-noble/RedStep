@@ -7,20 +7,22 @@ const DEG = Math.PI / 180
  * @param {object} meta   the site's grid description (src/data/schema.js TerrainGrid)
  * @param {Int16Array} dm elevation in meta.unit (decimetres or metres), row 0 = north edge
  * @param {Uint8Array} [ground] THEMIS night IR brightness per cell (0 dark/cold .. 255 bright/warm)
+ * @param {Uint8Array} [rough] rocky-ground score from HiRISE texture (0 smooth or unknown .. 255 rough)
  */
-export function makeGrid(meta, dm, ground) {
+export function makeGrid(meta, dm, ground, rough) {
   const { w, h, bbox, nodata, radius } = meta
   const [west, south, east, north] = bbox
   const dLon = (east - west) / w, dLat = (north - south) / h
   const midLat = (north + south) / 2
   const k = meta.unit === 'metres' ? 1 : 0.1
   const elev = new Float32Array(w * h)
-  for (let i = 0; i < elev.length; i++) elev[i] = dm[i] === nodata ? NaN : dm[i] * k
+  const base = meta.offset || 0 // metres added back (deep sites are stored relative to it to fit Int16)
+  for (let i = 0; i < elev.length; i++) elev[i] = dm[i] === nodata ? NaN : dm[i] * k + base
   return {
     w, h, west, south, east, north, dLon, dLat, radius,
     dx: radius * Math.cos(midLat * DEG) * dLon * DEG, // metres per cell east-west
     dy: radius * dLat * DEG, // metres per cell north-south
-    elev, ground: ground || null, slope: null,
+    elev, ground: ground || null, rough: rough || null, slope: null,
   }
 }
 
@@ -39,6 +41,7 @@ export function bilinear(g, arr, lon, lat) {
 
 export const elevAt = (g, lon, lat) => bilinear(g, g.elev, lon, lat)
 export const slopeAt = (g, lon, lat) => bilinear(g, g.slope, lon, lat)
+export const roughAt = (g, lon, lat) => (g.rough ? bilinear(g, g.rough, lon, lat) : 0)
 
 /** Terrain slope in degrees per cell (Horn 1981, 3x3 window). */
 export function computeSlope(g) {

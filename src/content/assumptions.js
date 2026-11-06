@@ -21,6 +21,16 @@ export const WALK = {
     value: 40, unit: '% per 10% grade', min: 0, max: 100, step: 5, badge: 'illustrative',
     note: 'Climbing makes you breathe harder. At 10% uphill grade you use air this much faster.',
   },
+  load: {
+    label: 'Gear you carry',
+    value: 10, unit: 'kg', min: 0, max: 60, step: 1, badge: 'illustrative',
+    note: 'Tools, sample bags, water and spare batteries. Walking effort grows roughly with the total weight you move (Pandolf et al. 1977), so gear makes the suit use air faster. Mars gravity lightens you and your gear by the same share, so the ratio holds.',
+  },
+  suitedMass: {
+    label: 'You plus your suit',
+    value: 150, unit: 'kg', min: 100, max: 250, step: 5, badge: 'illustrative',
+    note: 'An astronaut with a full pressure suit and life-support pack. No Mars suit exists yet, so this is a planning value. With 150 kg here, 15 kg of gear adds about 10% to air use.',
+  },
   greenSlope: {
     label: 'Easy ground below',
     value: 10, unit: '°', min: 5, max: 20, step: 1, badge: 'illustrative',
