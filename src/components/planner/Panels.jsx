@@ -1,3 +1,4 @@
+import { dustOutlook } from '../../content/dustHistory.js'
 import { useCallback, useMemo } from 'react'
 import { Link } from 'react-router'
 import { Badge, HonestyDot, Pop, Source, Slider, Verdict } from '../Atoms.jsx'
@@ -328,6 +329,7 @@ export function SettingsPanel({ settings, onChange, date, onDate, sol, snap, onS
         <label htmlFor="walk-date">Walk date (Earth calendar)</label>
         <input id="walk-date" type="date" value={date} min="2026-01-01" max="2035-12-31" onChange={(e) => e.target.value && onDate(e.target.value)} />
         <p className="micro">Mars day {sol.sol.toLocaleString()}{sol.Ls >= 180 ? ' · dust storm season' : ''}</p>
+        {(() => { const d = dustOutlook(sol.Ls); return <p className="micro" role="note"><b>Dust history: {d.level[0].toUpperCase() + d.level.slice(1)}.</b> {d.why} {d.disclaimer}</p> })()}
       </div>
       {Object.entries(WALK).map(([k, w]) => (
         <Slider compact key={k} id={`set-${k}`} label={w.label} value={settings[k]} min={w.min} max={w.max} step={w.step} unit={k === 'startHour' ? '' : w.unit} badge={w.badge} note={w.note} format={k === 'startHour' ? fmtHours : undefined} onChange={set(k)} />
