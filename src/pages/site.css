@@ -689,12 +689,12 @@
   white-space: nowrap;
 }
 
+/* plain flowing text (a flex row split every phrase into its own item and orphaned the info icon) */
 .vp-turn {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px;
+  position: relative;
+  padding-left: 17px;
   margin-top: 6px;
+  line-height: 1.45;
   font-size: 13px;
   color: var(--ink-2);
 }
@@ -709,8 +709,13 @@
   height: 9px;
   border-radius: 50%;
   background: var(--nogo);
-  margin-right: 4px;
-  transform: translateY(1px);
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+}
+.vp-turn > :last-child {
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .vp-stats {

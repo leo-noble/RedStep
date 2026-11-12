@@ -241,7 +241,8 @@ function Planner({ site }) {
   useEffect(() => {
     if (!mapReady || animating.current) return
     mapRef.current?.setRoute(result?.line || null, waypoints)
-  }, [mapReady, result, waypoints])
+    mapRef.current?.setHazards(result?.profile || null, settings.greenSlope, settings.redSlope)
+  }, [mapReady, result, waypoints, settings.greenSlope, settings.redSlope])
 
   // ---- plan whenever inputs change ----
   const planStops = useMemo(() => stops.filter((s) => stopIds.includes(s.id)), [stops, stopIds])

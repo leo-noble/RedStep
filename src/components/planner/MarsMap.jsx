@@ -108,18 +108,20 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       m.addSource('dem-edge', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[...corners(meta.grid.bbox), corners(meta.grid.bbox)[0]]] } } })
       m.addLayer({ id: 'dem-edge', type: 'line', source: 'dem-edge', layout: { visibility: 'none' }, paint: { 'line-color': '#ffffff', 'line-opacity': 0.25, 'line-width': 1, 'line-dasharray': [3, 3] } })
 
-      for (const id of ['radius', 'traverse', 'drive', 'route', 'waypoints', 'stops', 'marks', 'hover']) m.addSource(id, { type: 'geojson', data: EMPTY })
+      for (const id of ['radius', 'traverse', 'drive', 'route', 'hazard', 'waypoints', 'stops', 'marks', 'hover']) m.addSource(id, { type: 'geojson', data: EMPTY })
       m.addLayer({ id: 'radius-fill', type: 'fill', source: 'radius', paint: { 'fill-color': '#7fb0ff', 'fill-opacity': 0.035 } })
       m.addLayer({ id: 'radius', type: 'line', source: 'radius', paint: { 'line-color': '#7fb0ff', 'line-opacity': 0.7, 'line-width': 1.2, 'line-dasharray': [2, 3] } })
       m.addLayer({ id: 'traverse', type: 'line', source: 'traverse', paint: { 'line-color': '#dfe8ff', 'line-opacity': L.traverse.opacity, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.8, 14, 1.6], 'line-dasharray': [2, 2] }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
       m.addLayer({ id: 'drive', type: 'line', source: 'drive', paint: { 'line-color': '#ffffff', 'line-opacity': 0.75, 'line-width': 2, 'line-dasharray': [0.6, 1.8] }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
       m.addLayer({ id: 'route-glow', type: 'line', source: 'route', paint: { 'line-color': '#d0602f', 'line-opacity': 0.35, 'line-width': 10, 'line-blur': 6 }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
       m.addLayer({ id: 'route', type: 'line', source: 'route', paint: { 'line-color': '#e3895a', 'line-width': 3 }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
+      // steep stretches drawn over the route in the verdict colours, so the risk reads at a glance
+      m.addLayer({ id: 'hazard', type: 'line', source: 'hazard', paint: { 'line-color': ['match', ['get', 'level'], 'red', '#ff8d7a', '#ffd37a'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3, 15, 5] }, layout: { 'line-join': 'round', 'line-cap': 'round' } })
       m.addLayer({ id: 'stops-ring', type: 'circle', source: 'stops', paint: { 'circle-radius': ['case', ['get', 'visited'], 11, 8], 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': ['case', ['get', 'visited'], '#7fe0a8', '#7fb0ff'], 'circle-stroke-width': 1.5 } })
       m.addLayer({ id: 'stops', type: 'circle', source: 'stops', paint: { 'circle-radius': 4, 'circle-color': ['case', ['get', 'visited'], '#7fe0a8', '#7fb0ff'] } })
       m.addLayer({ id: 'waypoints', type: 'circle', source: 'waypoints', paint: { 'circle-radius': ['case', ['get', 'rover'], 12, ['get', 'first'], 0, 7], 'circle-color': ['case', ['get', 'rover'], 'rgba(0,0,0,0)', '#0b0704'], 'circle-stroke-opacity': ['case', ['get', 'rover'], 0, 1], 'circle-stroke-color': '#e3895a', 'circle-stroke-width': 2 } })
-      m.addLayer({ id: 'marks-halo', type: 'circle', source: 'marks', paint: { 'circle-radius': ['match', ['get', 'kind'], 'habitat', 14, 'turn', 13, 'rover', 15, 6], 'circle-color': ['match', ['get', 'kind'], 'habitat', '#f5f7fb', 'turn', '#ff8d7a', 'rover', '#ff6a2c', '#fff'], 'circle-opacity': 0.14 } })
-      m.addLayer({ id: 'marks', type: 'circle', source: 'marks', paint: { 'circle-radius': ['match', ['get', 'kind'], 'habitat', 6, 'turn', 6, 'rover', 7, 4], 'circle-color': ['match', ['get', 'kind'], 'habitat', '#f5f7fb', 'turn', '#ff8d7a', 'max', '#ffd37a', 'rover', '#ff6a2c', '#fff'], 'circle-stroke-color': ['match', ['get', 'kind'], 'rover', '#fff', '#000'], 'circle-stroke-width': 1.5 } })
+      m.addLayer({ id: 'marks-halo', type: 'circle', source: 'marks', paint: { 'circle-radius': ['match', ['get', 'kind'], 'habitat', 14, 'turn', 13, 'rover', 15, 6], 'circle-color': ['match', ['get', 'kind'], 'habitat', '#f5f7fb', 'turn', '#ff8d7a', 'rover', '#d0602f', '#fff'], 'circle-opacity': 0.14 } })
+      m.addLayer({ id: 'marks', type: 'circle', source: 'marks', paint: { 'circle-radius': ['match', ['get', 'kind'], 'habitat', 6, 'turn', 6, 'rover', 7, 4], 'circle-color': ['match', ['get', 'kind'], 'habitat', '#f5f7fb', 'turn', '#ff8d7a', 'max', '#ffd37a', 'rover', '#d0602f', '#fff'], 'circle-stroke-color': ['match', ['get', 'kind'], 'rover', '#fff', '#000'], 'circle-stroke-width': 1.5 } })
       m.addLayer({ id: 'hover', type: 'circle', source: 'hover', paint: { 'circle-radius': 6, 'circle-color': '#00e5ff', 'circle-stroke-color': '#000', 'circle-stroke-width': 2 } })
 
       // waypoint dragging
@@ -230,6 +232,24 @@ const MarsMap = forwardRef(function MarsMap({ meta, grid, layers, onMapClick, on
       m.getSource('route').setData(coords?.length > 1 ? line(coords, { kind }) : EMPTY)
       wps.current = waypoints || []
       m.getSource('waypoints').setData(fc((waypoints || []).map((p, i) => pt(p[0], p[1], { index: i, first: i === 0, rover: i === 0 && cb.current.roverMode }))))
+    },
+    /** Colour the steep parts of the route: profile rows are [d, z, slope, lon, lat, …]. */
+    setHazards(profile, greenSlope, redSlope) {
+      const src = map.current?.getSource('hazard')
+      if (!src) return
+      const runs = []
+      let cur = null
+      for (let k = 1; k < (profile?.length || 0); k++) {
+        const a = profile[k - 1], b = profile[k]
+        const sl = Math.max(a[2], b[2])
+        const level = sl > redSlope ? 'red' : sl > greenSlope ? 'amber' : null
+        if (level && cur && cur.level === level) cur.coords.push([b[3], b[4]])
+        else {
+          cur = level ? { level, coords: [[a[3], a[4]], [b[3], b[4]]] } : null
+          if (cur) runs.push(cur)
+        }
+      }
+      src.setData(fc(runs.map((r) => ({ type: 'Feature', properties: { level: r.level }, geometry: { type: 'LineString', coordinates: r.coords } }))))
     },
     setStops(stops, visited = []) {
       map.current?.getSource('stops')?.setData(fc(stops.map((s) => pt(s.lon, s.lat, { id: s.id, name: s.name, visited: visited.includes(s.id) }))))

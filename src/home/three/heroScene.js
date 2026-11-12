@@ -71,6 +71,10 @@ const PARK_R = 1.24;
 const LAND_T = 2.75; // seconds from 'land here' to the site page
 const ORBIT_W = 0.5; // about one lap every 12 s: clearly moving
 
+const BOUNCE_EARTH = new THREE.Color(0.07, 0.1, 0.16);
+const BOUNCE_MARS = new THREE.Color(0.16, 0.08, 0.045);
+const rocketSun = new THREE.Vector3();
+const rocketBounce = new THREE.Color();
 const SUN_MARS_REF = new THREE.Vector3(0.5, 0.42, 0.76).normalize();
 const SUN_MARS_DAY = new THREE.Vector3(-0.42, 0.42, 0.8).normalize();
 
@@ -146,6 +150,8 @@ function planetMaterial(define, { map, aux, rim, rimStrength = 0, bump = 0, expo
       uExposure: { value: exposure },
       uCloudShift: { value: 0 },
       uCityColor: { value: new THREE.Color('#e5c79e') },
+      uNight: { value: map },
+      uUseNight: { value: 0 },
       uFade: { value: 1 },
     },
   });
@@ -264,7 +270,8 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   sky.frustumCulled = false;
   scene.add(sky);
 
-  const STARS = 2600;
+  // a deep field: many faint stars and a few bright ones (fewer on weaker devices)
+  const STARS = low ? 3000 : 7000;
   const sp = new Float32Array(STARS * 3);
   const ss = new Float32Array(STARS);
   const st = new Float32Array(STARS);
@@ -277,7 +284,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     const r = Math.sqrt(1 - u * u);
     sp.set([r * Math.cos(th) * 800, u * 800, r * Math.sin(th) * 800], i * 3);
     const bright = Math.pow(rnd(), 9);
-    ss[i] = 0.9 + bright * 3.2;
+    ss[i] = (i % 3 === 0 ? 0.6 : 0.9) + bright * 3.2;
     st[i] = rnd();
     const blue = rnd() < 0.35;
     const k = 0.35 + bright * 0.65 + rnd() * 0.15;
@@ -377,6 +384,14 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     );
   if (textures.mars) tryOverride(textures.mars, marsMat, () => bake(renderer, BAKE_MARS, B, B / 2, { uSeed: { value: 4.21 } }));
   if (textures.earth) tryOverride(textures.earth, earthMat);
+  // NASA Black Marble city lights replace the drawn ones once loaded
+  if (textures.earthNight)
+    loadMap(textures.earthNight, (tex) => {
+      tex.wrapS = THREE.RepeatWrapping;
+      loaded.push(tex);
+      earthMat.uniforms.uNight.value = tex;
+      earthMat.uniforms.uUseNight.value = 1;
+    });
   if (textures.moon) tryOverride(textures.moon, moonMat, () => bake(renderer, BAKE_MOON, 1024, 512, { uSeed: { value: 7.7 } }));
 
   /* ---- Rocket ---- */
@@ -859,12 +874,17 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     marsAtmo.material.uniforms.uSunWorld.value.copy(sunWorld);
 
     /* ---- Rocket uniforms ---- */
+    const nearMars = flight ? 1 : smoothstep(0.45, 0.8, p);
     rig.update({
       time,
       thrust,
       px: pxBase * rScale,
       fade: fRocket * flyFade,
-      sunWorld: SUN_EARTH,
+      // the rocket is lit by the sun it is flying under: Earth's key light early on, Mars's
+      // sun (and its rust-coloured bounce light) on approach and during the landing
+      sunWorld: rocketSun.copy(SUN_EARTH).lerp(sunWorld, nearMars).normalize(),
+      bounce: rocketBounce.copy(BOUNCE_EARTH).lerp(BOUNCE_MARS, nearMars),
+      legs: flight ? smoothstep(1.15, 1.75, flight.t) : 0,
       camera,
       // smoke only in air: thick at launch from Earth, gone in space; a thin dust cloud in
       // Mars's air in the last metres of the landing

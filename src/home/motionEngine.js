@@ -103,7 +103,8 @@ export function createMotionEngine({ smoothing = 5.5, introDuration = 2.2 } = {}
     for (const fn of subs) fn(state);
 
     // Reduced motion renders on demand only; otherwise keep looping while visible.
-    if (active && !state.reduced && !document.hidden) raf = requestAnimationFrame(tick);
+    // The intro always runs to the end, even if the stage is briefly off-screen.
+    if ((active || state.introPlaying) && !state.reduced && !document.hidden) raf = requestAnimationFrame(tick);
   };
 
   const kick = () => {

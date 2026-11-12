@@ -2565,8 +2565,9 @@
 }
 
 /* the opening: the page holds still while the rocket launches, then the words arrive */
-html.intro-lock,
-html.intro-lock body {
+/* Lock the viewport only. Hiding overflow on body as well made body its own scroll container,
+   so the sticky stage stopped sticking whenever the page was scrolled during the intro. */
+html.intro-lock {
   overflow: hidden;
 }
 

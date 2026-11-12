@@ -119,12 +119,41 @@ export function createRocketRig({ quality = 'high' } = {}) {
       uText: { value: text },
       uCoreR: { value: CORE_R },
       uBoostX: { value: BOOST_X },
+      uBounce: { value: new THREE.Color(0.07, 0.1, 0.16) },
     },
     side: THREE.DoubleSide, // the bells are open cones
   });
   const vehicle = new THREE.Mesh(vehicleGeo, vehicleMat);
   vehicle.frustumCulled = false;
   body.add(vehicle);
+
+  /* ---- Landing legs: four struts folded flat against the core, swung out for touchdown ---- */
+  const legGeo = tag(new THREE.BoxGeometry(0.009, 0.15, 0.005), 4);
+  legGeo.translate(0, 0.075, 0); // hinge at the bottom end
+  legGeo.deleteAttribute('uv');
+  const footGeo = tag(new THREE.CylinderGeometry(0.009, 0.011, 0.004, 12), 4);
+  footGeo.deleteAttribute('uv');
+  const legs = [];
+  for (let k = 0; k < 4; k++) {
+    const a = Math.PI / 4 + (k * Math.PI) / 2; // between the boosters
+    const hinge = new THREE.Group();
+    hinge.position.set(Math.cos(a) * (CORE_R + 0.003), 0.055, Math.sin(a) * (CORE_R + 0.003));
+    hinge.rotation.y = -a; // local +x points radially outward
+    const leg = new THREE.Mesh(legGeo, vehicleMat);
+    leg.frustumCulled = false;
+    const foot = new THREE.Mesh(footGeo, vehicleMat);
+    foot.position.y = 0.15;
+    foot.frustumCulled = false;
+    leg.add(foot);
+    hinge.add(leg);
+    body.add(hinge);
+    legs.push(hinge);
+  }
+  const setLegs = (d) => {
+    // folded: pointing up along the hull; deployed: swung ~150° down and outward
+    for (const h of legs) h.rotation.z = -d * 2.55;
+  };
+  setLegs(0);
 
   /* ---- Flames: an inner white-hot core and an outer turbulent flame per engine ---- */
   const nozzles = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(BOOST_X, 0, 0), new THREE.Vector3(-BOOST_X, 0, 0)];
@@ -232,7 +261,9 @@ export function createRocketRig({ quality = 'high' } = {}) {
     body,
     stats: { triangles: vehicleGeo.attributes.position.count / 3, particles: COUNT, flames: flames.length },
     /** Per-frame uniform writes only. */
-    update({ time, thrust, px, fade, sunWorld, camera, smoke = 1 }) {
+    update({ time, thrust, px, fade, sunWorld, camera, smoke = 1, legs: legDeploy = 0, bounce }) {
+      setLegs(legDeploy);
+      if (bounce) vehicleMat.uniforms.uBounce.value.copy(bounce);
       plumeMat.uniforms.uTime.value = time;
       plumeMat.uniforms.uThrust.value = Math.min(1, thrust) * fade * smoke;
       plume.visible = smoke > 0.01;
@@ -258,6 +289,8 @@ export function createRocketRig({ quality = 'high' } = {}) {
     },
     dispose() {
       vehicleGeo.dispose();
+      legGeo.dispose();
+      footGeo.dispose();
       vehicleMat.dispose();
       text.dispose();
       plumeGeo.dispose();

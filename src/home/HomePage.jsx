@@ -42,6 +42,9 @@ export default function HomePage() {
 
     // Every visit opens with the launch: the page holds still at the top until the rocket is
     // away, then the headline and the ways in appear. (Reduced motion skips straight to the end.)
+    // (and stop the browser restoring an old scroll position after we reset it)
+    const restore = history.scrollRestoration;
+    history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
     document.documentElement.classList.add('intro-lock');
     engine.playIntro();
@@ -106,6 +109,7 @@ export default function HomePage() {
       unsub();
       engine.destroy();
       document.documentElement.classList.remove('intro-lock');
+      history.scrollRestoration = restore;
     };
   }, [engine]);
 
