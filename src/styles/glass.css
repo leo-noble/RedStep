@@ -49,7 +49,7 @@
 }
 
 /* weak devices: no live blur over the moving 3D scene, the glass turns solid */
-:root .mw-home[data-quality='low'] :is(.chapter--left, .telemetry, .btn--ghost, .skip-intro, .glass) {
+:root .mw-home[data-quality='low'] :is(.btn--ghost, .skip-intro, .glass) {
   background: rgba(20, 20, 24, 0.94);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;

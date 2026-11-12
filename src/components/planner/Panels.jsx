@@ -243,16 +243,13 @@ export function VerdictPanel({ analysis: a, settings: s, busy, onFix, onEmergenc
           <div><dt className="micro">{a.drive ? 'Farthest from the rover' : 'Farthest from home'}</dt><dd className={a.farthest > s.walkBack * 1000 ? 'v-caution' : ''}>{(a.farthest / 1000).toFixed(1)}<small>km</small></dd><span className="vp-sub">safe circle {s.walkBack} km</span></div>
           {a.crew?.length > 1 && <div><dt className="micro">Air used, each suit</dt><dd>{a.crew.map((c) => pct(c.air)).join(' · ')}</dd><span className="vp-sub">{a.crew.map((c) => `${c.who.toLowerCase()} ${c.load} kg`).join(', ')} <Source k="spacewalks" note="Two astronauts walk together. The suit that uses air fastest decides when both turn back." badge="illustrative" /></span></div>}
           {a.drive && <div><dt className="micro">Rover drive</dt><dd>{(a.drive.m / 1000).toFixed(1)}<small>km each way</small></dd><span className="vp-sub">{fmtH(a.drive.hours)} each way <Source k="lrv" note="Driving time at your rover speed setting along the planner's safe path. Apollo 15 drove its Moon rover 27.8 km in about 3 hours." badge="illustrative" /></span></div>}
-          <div><dt className="micro">Message to Earth</dt><dd>{a.comms.lightMin.toFixed(1)}<small>min</small></dd><span className="vp-sub">one way <Source k="meeus" note="Light time from the Earth–Mars distance on this date, from the planets' orbits." badge="derived" /></span></div>
         </dl>
-        <p className="vp-sub">Walking speed {s.flatPace} km/h on flat ground, suit air {s.suitHours} h. Change these in Settings. <Badge kind="illustrative" /></p>
+        {notes.length > 0 && (
+          <ul className="vp-notes">
+            {notes.map((r) => <li key={r.code}><b>{r.title}.</b> {r.detail}</li>)}
+          </ul>
+        )}
       </details>
-
-      {notes.length > 0 && (
-        <ul className="vp-notes">
-          {notes.map((r) => <li key={r.code}><b>{r.title}.</b> {r.detail}</li>)}
-        </ul>
-      )}
       {visitedCount > 0 && <p className="vp-science micro">Science stops on this walk: <b>{visitedCount}</b></p>}
     </div>
   )

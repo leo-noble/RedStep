@@ -1664,7 +1664,6 @@
 /* Weaker devices: the panels sit over a moving 3D scene, and re-blurring it every frame is
    costly, so they turn solid instead. */
 .mw-home[data-quality='low'] .glass,
-.mw-home[data-quality='low'] .chapter--left,
 .mw-home[data-quality='low'] .btn--ghost,
 .mw-home[data-quality='low'] .skip-intro,
 .mw-home[data-quality='low'] .badge__tip {
@@ -2622,4 +2621,19 @@ html.intro-lock {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+}
+
+/* ---- mission chips: a plain two-line list, no boxes ---- */
+.mw-home .chapter--left .chips {
+  gap: 10px 22px;
+}
+.mw-home .chapter--left .chip {
+  padding: 0 0 0 12px;
+  border: 0;
+  border-left: 2px solid var(--rust);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }

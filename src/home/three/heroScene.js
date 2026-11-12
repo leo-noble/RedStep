@@ -48,7 +48,7 @@ const ANCHORS = {
     earth: { x: -1.14, y: -0.64, r: 0.6, d: 16 },
     moon: { x: -0.42, y: 0.66, r: 0.055, d: 20 },
     mars: { x: 0.86, y: 0.5, r: 0.05, d: 30 },
-    rocket: { x: -0.16, y: 0.16, len: 0.4, tilt: 26, d: 8 },
+    rocket: { x: 0.08, y: -0.04, len: 0.44, tilt: 22, d: 8 }, // clear of Earth and the copy, as in the reference
     end: { x: 0.28, y: -0.02, r: 0.33 },
   },
   // Portrait: copy owns the top ~45 %, telemetry the bottom ~15 %; the scene lives between.
@@ -465,7 +465,8 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     // Flight path: reference pose → climb → cruise → Mars parking orbit
     const tilt = (ro.tilt * Math.PI) / 180;
-    const dir = new THREE.Vector3(Math.sin(tilt), Math.cos(tilt), -0.42).normalize();
+    const dir = new THREE.Vector3(Math.sin(tilt), Math.cos(tilt), -0.25).normalize();
+    L.heroDir = dir.clone();
     // Parking orbit: tilted to face the camera, so the whole circle stays clear of the
     // planet's disk (never behind it, never cutting across it) and inside the frame.
     const parkR = L.marsR * PARK_R;
@@ -725,6 +726,9 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     const u = L.u0 * launch + (1 - L.u0) * fp;
     L.curve.getPoint(u, rocketPos);
     L.curve.getTangent(u, tangent);
+    // in the opening frame the rocket stands at the reference angle, not along the curve
+    // from Earth (which leaned it over to ~50°); it eases onto the path as you scroll
+    if (L.heroDir) tangent.lerp(L.heroDir, launch * (1 - smoothstep(0.02, 0.16, p))).normalize();
     const park = smoothstep(0.8, 0.9, p);
     // Orbit angle: 0 is where the flight path ends. Once in orbit the rocket glides up to a
     // steady speed; scrolling back winds it home along the circle (never across the planet).
@@ -837,7 +841,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     stars.position.copy(camera.position);
 
     /* ---- Bodies ---- */
-    qSpin.setFromAxisAngle(Y, reduced ? 0 : time * 0.05);
+    qSpin.setFromAxisAngle(Y, reduced ? 0 : time * 0.09); // a visible turn
     earth.quaternion.copy(qEarthBase).multiply(qSpin);
     earthMat.uniforms.uCloudShift.value = reduced ? 0 : time * 0.004;
     bodyUniforms(earth, earthMat, SUN_EARTH);
@@ -845,7 +849,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     if (L.lunar) {
       // drift along a short arc of its orbit around the reference spot: a full lap took it
       // behind Earth and off the frame
-      const a = reduced ? 0 : 0.18 * Math.sin(time * 0.12);
+      const a = reduced ? 0 : 0.42 * Math.sin(time * 0.3);
       moon.position.copy(L.lunar.c).addScaledVector(L.lunar.u, Math.cos(a) * L.lunar.r).addScaledVector(L.lunar.v, Math.sin(a) * L.lunar.r);
     }
     bodyUniforms(moon, moonMat, SUN_MOON);
