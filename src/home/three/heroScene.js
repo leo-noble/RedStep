@@ -38,9 +38,10 @@ const CAM0 = new THREE.Vector3(0, 0, 10);
 const ANCHORS = {
   wide: {
     earth: { x: -1.06, y: -0.49, r: 0.78, d: 16 }, // perspective-fitted to the limb, 3 px RMS
-    moon: { x: -0.363, y: 0.659, r: 0.068, d: 20 },
-    mars: { x: 0.876, y: 0.354, r: 0.0552, d: 30 },
-    rocket: { x: 0.1, y: 0.12, len: 0.54, tilt: 27.8, d: 8 }, // fills the gap between Earth and the title
+    // positions measured from the reference frame (1706 × 922)
+    moon: { x: -0.3, y: 0.52, r: 0.05, d: 20 },
+    mars: { x: 0.84, y: 0.48, r: 0.056, d: 30 },
+    rocket: { x: 0.3, y: 0.0, len: 0.5, tilt: 24, d: 8 },
     end: { x: 0.3, y: -0.02, r: 0.36 },
   },
   mid: {
@@ -842,7 +843,9 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     bodyUniforms(earth, earthMat, SUN_EARTH);
     earthAtmo.material.uniforms.uSunWorld.value.copy(SUN_EARTH);
     if (L.lunar) {
-      const a = reduced ? 0 : time * 0.16; // one lap every ~40 s
+      // drift along a short arc of its orbit around the reference spot: a full lap took it
+      // behind Earth and off the frame
+      const a = reduced ? 0 : 0.18 * Math.sin(time * 0.12);
       moon.position.copy(L.lunar.c).addScaledVector(L.lunar.u, Math.cos(a) * L.lunar.r).addScaledVector(L.lunar.v, Math.sin(a) * L.lunar.r);
     }
     bodyUniforms(moon, moonMat, SUN_MOON);
