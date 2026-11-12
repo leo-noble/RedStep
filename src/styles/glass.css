@@ -27,7 +27,7 @@
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary) {
   background: var(--rust);
   border-color: transparent;
-  box-shadow: 0 4px 14px rgba(236, 125, 69, 0.18);
+  box-shadow: 0 4px 14px rgba(208, 96, 47, 0.18);
 }
 
 :root:not([data-platform='windows']) :is(.btn-primary, .mw-home .btn--primary):hover {

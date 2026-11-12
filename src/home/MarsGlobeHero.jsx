@@ -22,6 +22,12 @@ export default function MarsGlobeHero({ engine, sites, ref }) {
       paused.current = on;
       if (!on) engine.requestFrame();
     },
+    land: (id, done) => {
+      if (!sceneRef.current) return done?.();
+      sceneRef.current.land(id, done);
+      engine.requestFrame();
+    },
+    cancelLanding: () => sceneRef.current?.cancelLanding(),
   }));
 
   useEffect(() => {

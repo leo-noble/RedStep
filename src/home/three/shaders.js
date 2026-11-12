@@ -370,17 +370,36 @@ uniform float uFade;
 varying vec2 vUv;
 varying vec3 vPos;
 
+// Exact equirectangular UV per pixel (matches THREE.SphereGeometry), so the poles don't
+// pinch into the triangle fan. Filtering uses whichever of two seam-shifted UVs has the
+// smaller screen derivative, so there is no seam line at the date line either.
+vec2 gUv;
+vec2 gDx;
+vec2 gDy;
+void sphereUv(vec3 n){
+  gUv = vec2(fract(atan(n.z, -n.x) / 6.2831853), 1.0 - acos(clamp(n.y, -1.0, 1.0)) / 3.14159265);
+  vec2 a = gUv;
+  vec2 b = vec2(fract(gUv.x + 0.5), gUv.y);
+  vec2 ax = dFdx(a), ay = dFdy(a), bx = dFdx(b), by = dFdy(b);
+  bool useB = abs(bx.x) + abs(by.x) < abs(ax.x) + abs(ay.x);
+  gDx = useB ? bx : ax;
+  gDy = useB ? by : ay;
+}
+vec4 tex(sampler2D t, vec2 uv){ return textureGrad(t, uv, gDx, gDy); }
+
 void main(){
   vec3 N = normalize(vPos);
-  vec4 base = texture2D(uMap, vUv);
-  vec3 albedo = mix(base.rgb, texture2D(uOverride, vUv).rgb, uUseOverride);
+  sphereUv(N);
+  vec2 uv = gUv;
+  vec4 base = tex(uMap, uv);
+  vec3 albedo = mix(base.rgb, tex(uOverride, uv).rgb, uUseOverride);
 
-  float hE = texture2D(uMap, vUv + vec2(uTexel.x, 0.0)).a - texture2D(uMap, vUv - vec2(uTexel.x, 0.0)).a;
-  float hN = texture2D(uMap, vUv + vec2(0.0, uTexel.y)).a - texture2D(uMap, vUv - vec2(0.0, uTexel.y)).a;
-  float phi = vUv.x * 6.2831853;
+  float hE = tex(uMap, uv + vec2(uTexel.x, 0.0)).a - tex(uMap, uv - vec2(uTexel.x, 0.0)).a;
+  float hN = tex(uMap, uv + vec2(0.0, uTexel.y)).a - tex(uMap, uv - vec2(0.0, uTexel.y)).a;
+  float phi = uv.x * 6.2831853;
   vec3 Te = normalize(vec3(sin(phi), 0.0, cos(phi)));
   vec3 Tn = normalize(cross(N, Te));
-  float cl = max(cos((vUv.y - 0.5) * 3.14159265), 0.2);
+  float cl = max(cos((uv.y - 0.5) * 3.14159265), 0.35); // weaker bump near the poles
   vec3 Nb = normalize(N - uBump * (1.0 - uUseOverride) * (hE / cl * Te + hN * Tn));
 
   float ndlG = dot(N, uSunObj);
@@ -399,8 +418,8 @@ void main(){
   col += vec3(0.9, 0.45, 0.25) * term * albedo;
   col += uRimColor * fres * smoothstep(-0.2, 0.5, ndlG) * uRimStrength;
 #elif defined(EARTH)
-  vec4 aux = texture2D(uAux, vUv);
-  float clouds = texture2D(uAux, vUv + vec2(uCloudShift, 0.0)).g;
+  vec4 aux = tex(uAux, uv);
+  float clouds = tex(uAux, uv + vec2(uCloudShift, 0.0)).g;
   float ocean = base.a;
   vec3 col = albedo * lit * uExposure;
   vec3 H = normalize(uSunObj + V);
@@ -760,12 +779,15 @@ void main(){
   float spread = r0 * (1.2 + pow(age, 0.8) * 9.0) * sqrt(aSeed.z);
   float start = 0.22; // smoke starts where the flame thins out
   vec3 pos = origin + vec3(dir.x * spread, -(start + age) * len * 0.75, dir.y * spread);
-  pos.xz += vec2(sin(uTime * 0.7 + aSeed.w * 40.0), cos(uTime * 0.6 + aSeed.x * 40.0)) * 0.03 * age;
+  // billowing: each puff curls outward and rolls as it slows down
+  float t = uTime * 0.5 + aSeed.w * 40.0;
+  pos.xz += vec2(sin(t + age * 5.0), cos(t * 0.9 + age * 4.0)) * 0.045 * age * age;
+  pos.y += sin(t * 1.3 + aSeed.x * 20.0) * 0.02 * age;
   vec4 mv = modelViewMatrix * vec4(pos, 1.0);
   vAge = age;
   vSeed = aSeed;
   vA = smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.55, 1.0, age)) * uThrust;
-  float size = (0.06 + age * 0.22) * (0.7 + 0.6 * aSeed.x);
+  float size = (0.05 + age * 0.3) * (0.6 + 0.8 * aSeed.x);
   gl_PointSize = max(2.0, size * uPx / -mv.z);
   gl_Position = projectionMatrix * mv;
 }
@@ -789,13 +811,18 @@ void main(){
   // a lumpy cloud, not a dot: soft falloff broken up by noise that turns slowly
   float ang = vSeed.w * 6.283 + uTime * 0.2;
   vec2 r = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * uv * 3.0 + vSeed.xy * 10.0;
-  float n = noise(r) * 0.6 + noise(r * 2.1) * 0.4;
-  float a = smoothstep(1.0, 0.15, d + (n - 0.5) * 0.7);
-  // warm and lit by the flame near the engines, grey-blue in shadow further down
-  vec3 warm = vec3(0.95, 0.62, 0.36);
-  vec3 grey = vec3(0.42, 0.42, 0.46);
-  vec3 c = mix(warm, grey, smoothstep(0.0, 0.45, vAge)) * (0.75 + 0.35 * n);
-  gl_FragColor = vec4(c, a * vA * 0.32);
+  // four octaves: big lumps with fine wisps at their edges
+  float n = noise(r) * 0.5 + noise(r * 2.03) * 0.25 + noise(r * 4.1) * 0.15 + noise(r * 8.3) * 0.1;
+  float a = smoothstep(1.0, 0.1, d + (n - 0.5) * 0.9);
+  a *= smoothstep(0.15, 0.55, n + 0.25 * (1.0 - d)); // ragged, broken-up edges
+  // fake volume: puffs are lit from the flame above and the sun upper-right, darker underneath
+  float shade = 0.62 + 0.5 * clamp(-uv.y * 1.4 + uv.x * 0.6 + 0.5, 0.0, 1.0);
+  vec3 hot = vec3(1.0, 0.7, 0.42);
+  vec3 warm = vec3(0.86, 0.72, 0.6);
+  vec3 grey = vec3(0.56, 0.56, 0.6);
+  vec3 c = mix(hot, warm, smoothstep(0.0, 0.18, vAge));
+  c = mix(c, grey, smoothstep(0.15, 0.6, vAge)) * shade * (0.8 + 0.3 * n);
+  gl_FragColor = vec4(c, a * vA * 0.38);
 }
 `;
 

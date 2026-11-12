@@ -47,7 +47,7 @@ const ANCHORS = {
     earth: { x: -1.14, y: -0.64, r: 0.6, d: 16 },
     moon: { x: -0.42, y: 0.66, r: 0.055, d: 20 },
     mars: { x: 0.86, y: 0.5, r: 0.05, d: 30 },
-    rocket: { x: -0.02, y: 0.22, len: 0.42, tilt: 26, d: 8 },
+    rocket: { x: -0.16, y: 0.16, len: 0.4, tilt: 26, d: 8 },
     end: { x: 0.28, y: -0.02, r: 0.33 },
   },
   // Portrait: copy owns the top ~45 %, telemetry the bottom ~15 %; the scene lives between.
@@ -68,7 +68,8 @@ const SUN_EARTH = new THREE.Vector3(0.3, 0.85, -0.42).normalize();
 const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
 // Parking orbit radius (Mars radii) and angular speed (rad/s): about one lap every 30 s.
 const PARK_R = 1.24;
-const ORBIT_W = 0.21;
+const LAND_T = 2.75; // seconds from 'land here' to the site page
+const ORBIT_W = 0.5; // about one lap every 12 s: clearly moving
 
 const SUN_MARS_REF = new THREE.Vector3(0.5, 0.42, 0.76).normalize();
 const SUN_MARS_DAY = new THREE.Vector3(-0.42, 0.42, 0.8).normalize();
@@ -170,7 +171,7 @@ function atmosphere(color, scale, intensity, power) {
   return mesh;
 }
 
-function orbitLine(points, { done = '#ffb25b', todo = '#f4f1ec', dashes = 60, alphaDone = 0.7, alphaTodo = 0.22 }) {
+function orbitLine(points, { done = '#e3895a', todo = '#f4f1ec', dashes = 60, alphaDone = 0.7, alphaTodo = 0.22 }) {
   const geo = new THREE.BufferGeometry().setFromPoints(points);
   const t = new Float32Array(points.length);
   for (let i = 0; i < points.length; i++) t[i] = i / (points.length - 1);
@@ -214,7 +215,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   const low = quality === 'low';
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: !low,
+    antialias: true,
     alpha: false,
     powerPreference: 'high-performance',
   });
@@ -458,7 +459,8 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     const park = ringPoints(L.marsPos, parkR, parkN, 256, new THREE.Vector3(-1, 0.8, 0));
     L.parking = park;
     const entry = park.pts[0];
-    const p0 = L.rocketPos0.clone().addScaledVector(dir, -L.rocketLen * 2.4);
+    // the rocket lifts off from Earth: the path starts on Earth's surface facing the rocket
+    const p0 = earth.position.clone().add(L.rocketPos0.clone().sub(earth.position).normalize().multiplyScalar(L.earthR * 1.01));
     const p1 = L.rocketPos0.clone();
     const p2 = L.rocketPos0.clone().addScaledVector(dir, L.rocketLen * 1.6).add(new THREE.Vector3(0.6, 0.2, -1.2));
     const p3 = p1.clone().lerp(entry, 0.55).add(new THREE.Vector3(-0.4, 2.2, 0));
@@ -481,14 +483,16 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     const em = moon.position.clone().sub(earth.position);
     const lunarN = new THREE.Vector3(0.12, 1, 0.5).normalize();
     lunarN.addScaledVector(em.clone().normalize(), -lunarN.dot(em.clone().normalize())).normalize();
-    lunarRing = orbitLine(ringPoints(earth.position, em.length(), lunarN, 384, em).pts, {
+    const lr = ringPoints(earth.position, em.length(), lunarN, 384, em);
+    L.lunar = { c: earth.position.clone(), r: em.length(), u: lr.u, v: lr.v };
+    lunarRing = orbitLine(lr.pts, {
       todo: '#b9d4ff',
       dashes: 140,
       alphaTodo: 0.2,
     });
     scene.add(lunarRing);
 
-    marsRing = orbitLine(park.pts, { todo: '#ffd3a0', dashes: 80, alphaTodo: 0.3 });
+    marsRing = orbitLine(park.pts, { todo: '#f0b48f', dashes: 80, alphaTodo: 0.3 });
     scene.add(marsRing);
   }
 
@@ -556,6 +560,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
   /* ---- Fly-to (pin / card commit) ---- */
   let flight = null;
+  let landDone = null;
 
   /* ---- Sizing ---- */
   let W = 1;
@@ -563,7 +568,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   let dpr = 1;
   let pxBase = 1000;
   // Render resolution steps down when frames run slow (see frameWatch below).
-  const DPR_STEPS = [1.75, 1.25, 1, 0.75];
+  const DPR_STEPS = [1.5, 1.25, 1, 0.75]; // same starting sharpness on every device
   let dprStep = low ? 2 : 0;
   function resize(w, h) {
     W = Math.max(1, w);
@@ -590,6 +595,10 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   const w3 = new THREE.Vector3();
   const qA = new THREE.Quaternion();
   const qB = new THREE.Quaternion();
+  const landN = new THREE.Vector3();
+  const landP = new THREE.Vector3();
+  const hover = new THREE.Vector3();
+  const landEnd = new THREE.Vector3();
   const basis = new THREE.Matrix4();
   const bx = new THREE.Vector3();
   const bz = new THREE.Vector3();
@@ -666,10 +675,12 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     /* intro fades */
     const fSky = smoothstep(0.0, 0.22, intro);
-    const fEarth = smoothstep(0.06, 0.4, intro);
-    const fFar = smoothstep(0.22, 0.5, intro);
-    const fRocket = smoothstep(0.28, 0.55, intro);
-    const ignite = smoothstep(0.42, 0.66, intro);
+    const fEarth = smoothstep(0.0, 0.25, intro);
+    const fFar = smoothstep(0.1, 0.4, intro);
+    const fRocket = smoothstep(0.02, 0.12, intro);
+    const ignite = smoothstep(0.0, 0.1, intro);
+    // launch: Earth's surface → the hero pose while the intro plays
+    const launch = 1 - Math.pow(1 - smoothstep(0.0, 1.0, intro), 3);
     skyMat.uniforms.uFade.value = fSky;
     starMat.uniforms.uFade.value = fSky;
     starMat.uniforms.uTime.value = time;
@@ -695,7 +706,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     /* ---- Rocket along the transfer path, then into a steady parking orbit ---- */
     const fp = easeInOut(clamp01(p / 0.9));
-    const u = L.u0 + (1 - L.u0) * fp;
+    const u = L.u0 * launch + (1 - L.u0) * fp;
     L.curve.getPoint(u, rocketPos);
     L.curve.getTangent(u, tangent);
     const park = smoothstep(0.8, 0.9, p);
@@ -721,26 +732,46 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     toMars.copy(rocketPos).sub(L.marsPos);
     const minR = L.marsR * 1.15;
     if (toMars.lengthSq() < minR * minR) rocketPos.copy(L.marsPos).addScaledVector(toMars.normalize(), minR);
-    const rScale = L.rocketLen * lerp(1, 0.17, smoothstep(0.25, 0.82, p)) * lerp(1, 0.6, park);
-    rig.group.scale.setScalar(rScale);
+    let rScale = L.rocketLen * lerp(1, 0.17, smoothstep(0.25, 0.82, p)) * lerp(1, 0.6, park);
+    rig.group.quaternion.copy(qFlight);
 
-    // launch rumble, gone once the engines cut off in orbit
-    if (!reduced && park < 1) {
-      const j = 0.0025 * rScale * (1 - park);
-      rocketPos.x += Math.sin(time * 31.0) * Math.sin(time * 17.3) * j;
-      rocketPos.y += Math.sin(time * 27.1 + 1.3) * j;
+    /* ---- Landing on the chosen site: de-orbit, flip tail-first, braking burn, touchdown ---- */
+    let landThrust = null;
+    if (flight) {
+      flight.t += reduced ? LAND_T : dt;
+      const T = flight.t;
+      if (!flight.from) {
+        flight.from = rocketPos.clone();
+        flight.s0 = rScale;
+        flight.q0 = rig.group.quaternion.clone();
+      }
+      // the site's surface normal, with Mars as it is turning to face the camera
+      landN.copy(siteVec.get(flight.id)).applyQuaternion(qCur).normalize();
+      landP.copy(landN).multiplyScalar(L.marsR).add(L.marsPos);
+      flight.site = landP;
+      const s1 = L.marsR * 0.14;
+      const desc = clamp01((T - 0.35) / 1.75);
+      const e = 1 - Math.pow(1 - desc, 3); // fast from orbit, slow over the ground
+      hover.copy(landP).addScaledVector(landN, L.marsR * 0.45);
+      landEnd.copy(landP).addScaledVector(landN, s1 * 0.5);
+      rocketPos.copy(flight.from).multiplyScalar((1 - e) * (1 - e))
+        .addScaledVector(hover, 2 * (1 - e) * e)
+        .addScaledVector(landEnd, e * e);
+      rScale = lerp(flight.s0, s1, smooth(clamp01(desc * 1.4)));
+      // flip: nose away from the ground, engines down
+      rig.group.quaternion.copy(flight.q0).slerp(alignTo(landN, Z_AXIS, qB), smooth(clamp01(T / 0.7)));
+      // braking burn, throttling down as it touches down
+      landThrust = smoothstep(0.15, 0.45, T) * lerp(0.9, 0.35, desc) * (1 - smoothstep(2.0, 2.15, T));
     }
+    rig.group.scale.setScalar(rScale);
     rig.group.position.copy(rocketPos);
-    const drift = reduced ? 0 : Math.sin(time * 0.37) * 0.045 * (1 - park);
-    qDrift.setFromAxisAngle(w3.set(0, 0, 1), drift);
-    rig.group.quaternion.copy(qDrift).multiply(qFlight);
-    qRoll.setFromAxisAngle(Y, reduced ? 0.6 : time * 0.32 * (1 - 0.7 * park));
+    qRoll.setFromAxisAngle(Y, reduced ? 0.6 : time * 0.15);
     rig.body.quaternion.copy(qRoll);
 
     // engines cut off as it settles into orbit
     const vel = Math.min(1, Math.abs(state.velocity) * 4);
-    const flicker = reduced ? 0 : (Math.sin(time * 41) * Math.sin(time * 13.7)) * 0.05;
-    const thrust = ignite * (1 + vel * 0.35 + flicker) * (1 - park);
+    const flicker = reduced ? 0 : Math.sin(time * 23) * 0.015;
+    const thrust = landThrust ?? ignite * (1 + vel * 0.35 + flicker) * (1 - park);
 
     /* ---- Camera ---- */
     const chase = smoothstep(0.03, 0.42, p);
@@ -753,20 +784,26 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     // fly-in to a site
     let exit = 0;
-    let flyFade = 1; // the camera dives inside the orbit: the rocket steps out of the way
+    const flyFade = 1; // the rocket stays in view all the way down
     if (flight) {
-      flight.t += reduced ? 1 : dt;
-      flyFade = 1 - smooth(clamp01(flight.t / 0.45));
-      const rot = clamp01(flight.t / 0.85);
-      const zoom = smooth(clamp01((flight.t - 0.55) / 1.0));
-      exit = smooth(clamp01((flight.t - 1.05) / 0.5));
+      const T = flight.t;
+      const rot = clamp01(T / 0.85);
+      const zoom = smooth(clamp01((T - 0.1) / 1.4));
+      exit = smooth(clamp01((T - 2.3) / 0.4));
       if (rot < 1) qTarget.copy(qSite.get(flight.id));
-      tgt.lerp(w3.copy(L.marsPos).add(v.set(0, 0, 0)), zoom * 0.9);
-      dist = lerp(dist, L.marsR * 1.22, zoom);
-      if (flight.t > 1.6 || reduced) {
+      // follow the rocket down to a low, side-on view with the horizon in frame
+      tgt.lerp(flight.site, zoom);
+      // camera low over the ground, 'south' of the site, so the rocket stands upright on screen
+      // with the curved horizon behind it
+      camDir.lerp(v.copy(landN).multiplyScalar(0.62).addScaledVector(Y, -0.75).add(w3.set(0.22, 0, 0)).normalize(), zoom).normalize();
+      dist = lerp(dist, L.marsR * 0.62, zoom);
+      if (T > LAND_T || reduced) {
         const id = flight.id;
         flight = null;
         onArrive?.(id);
+        const cb = landDone;
+        landDone = null;
+        cb?.(id);
       }
     }
 
@@ -784,11 +821,15 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     stars.position.copy(camera.position);
 
     /* ---- Bodies ---- */
-    qSpin.setFromAxisAngle(Y, reduced ? 0 : time * 0.006);
+    qSpin.setFromAxisAngle(Y, reduced ? 0 : time * 0.05);
     earth.quaternion.copy(qEarthBase).multiply(qSpin);
-    earthMat.uniforms.uCloudShift.value = reduced ? 0 : time * 0.0009;
+    earthMat.uniforms.uCloudShift.value = reduced ? 0 : time * 0.004;
     bodyUniforms(earth, earthMat, SUN_EARTH);
     earthAtmo.material.uniforms.uSunWorld.value.copy(SUN_EARTH);
+    if (L.lunar) {
+      const a = reduced ? 0 : time * 0.16; // one lap every ~40 s
+      moon.position.copy(L.lunar.c).addScaledVector(L.lunar.u, Math.cos(a) * L.lunar.r).addScaledVector(L.lunar.v, Math.sin(a) * L.lunar.r);
+    }
     bodyUniforms(moon, moonMat, SUN_MOON);
 
     // Mars: reference pose → site-facing pose; interactive drag in the last chapter
@@ -801,7 +842,8 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     }
     if (interactive || flight) qGoal.copy(qTarget);
     else {
-      qGoal.copy(qMarsRef).slerp(qSite.get(selected), smoothstep(0.55, 0.88, p));
+      qB.copy(qMarsRef).multiply(qTmp.setFromAxisAngle(Y, reduced ? 0 : time * 0.12));
+      qGoal.copy(qB).slerp(qSite.get(selected), smoothstep(0.55, 0.88, p));
       qTarget.copy(qGoal);
     }
     if (reduced) qCur.copy(qGoal);
@@ -824,6 +866,9 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       fade: fRocket * flyFade,
       sunWorld: SUN_EARTH,
       camera,
+      // smoke only in air: thick at launch from Earth, gone in space; a thin dust cloud in
+      // Mars's air in the last metres of the landing
+      smoke: flight ? 0.45 * smoothstep(1.3, 1.9, flight.t) : 1 - smoothstep(0.08, 0.3, p),
     });
 
     /* ---- Hairlines ---- */
@@ -873,6 +918,19 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       selected = id;
       qTarget.copy(qSite.get(id));
       flight = { id, t: 0 };
+    },
+    /** Play the landing on a site; `done` runs at touchdown. */
+    land(id, done) {
+      if (!qSite.has(id)) return done?.();
+      if (flight) return;
+      landDone = done;
+      selected = id;
+      qTarget.copy(qSite.get(id));
+      flight = { id, t: 0 };
+    },
+    cancelLanding() {
+      flight = null;
+      landDone = null;
     },
     setLighting(mode) {
       lighting = mode === 'now' ? 'now' : 'day';

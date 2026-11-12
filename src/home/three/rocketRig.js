@@ -166,7 +166,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
   });
 
   /* ---- Smoke: soft puffs that billow out where the flames thin ---- */
-  const COUNT = low ? 700 : 1500;
+  const COUNT = low ? 1200 : 3200;
   const aNozzle = new Float32Array(COUNT);
   const aSeed = new Float32Array(COUNT * 4);
   const pos = new Float32Array(COUNT * 3);
@@ -190,7 +190,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
     uniforms: {
       uTime: { value: 0 },
       uThrust: { value: 1 },
-      uLen: { value: 1.05 },
+      uLen: { value: 1.5 },
       uPx: { value: 1000 },
       uNozzle: { value: nozzles },
       uNozzleR: { value: exitR },
@@ -232,9 +232,10 @@ export function createRocketRig({ quality = 'high' } = {}) {
     body,
     stats: { triangles: vehicleGeo.attributes.position.count / 3, particles: COUNT, flames: flames.length },
     /** Per-frame uniform writes only. */
-    update({ time, thrust, px, fade, sunWorld, camera }) {
+    update({ time, thrust, px, fade, sunWorld, camera, smoke = 1 }) {
       plumeMat.uniforms.uTime.value = time;
-      plumeMat.uniforms.uThrust.value = Math.min(1, thrust) * fade;
+      plumeMat.uniforms.uThrust.value = Math.min(1, thrust) * fade * smoke;
+      plume.visible = smoke > 0.01;
       plumeMat.uniforms.uPx.value = px;
       for (const m of flameMats) {
         m.uniforms.uTime.value = time;

@@ -75,7 +75,12 @@ export default function HomePage() {
       if (choose !== lastChoose) {
         root.dataset.choose = choose ? 'true' : 'false';
         lastChoose = choose;
-        setAtMars(choose);
+        // arriving: land on the default site first, then hand over to the map
+        if (choose) heroRef.current?.land(DEFAULT_SITE_ID, () => setAtMars(true));
+        else {
+          heroRef.current?.cancelLanding();
+          setAtMars(false);
+        }
       }
       const introDone = s.intro >= 1;
       if (introDone !== lastIntroDone) {

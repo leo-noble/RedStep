@@ -40,10 +40,10 @@
   --rust-800: #5e2b15;
   --rust-700: #8f3f1d;
   --rust-600: #c25a2c;
-  --rust: #ec7d45;             
+  --rust: #d0602f;             
   --rust-400: #f3965c;
-  --ember: #ffb25b;            
-  --ember-200: #ffd3a0;
+  --ember: #e3895a;            
+  --ember-200: #f0b48f;
   --ember-100: #ffecd6;
 
   --ice: #7fb0ff;              
@@ -79,7 +79,7 @@
 
   
   --go: #4fd18b;
-  --caution: #ffb25b;
+  --caution: #e3895a;
   --nogo: #ff5a4e;
 
   
@@ -1694,7 +1694,7 @@
 
 /* outline button in the accent colour, so both calls to action read as buttons */
 .mw-home .btn--ghost {
-  border-color: rgba(255, 178, 91, 0.45);
+  border-color: rgba(227, 137, 90, 0.45);
   color: var(--ember-100);
 }
 
@@ -2574,3 +2574,15 @@ html.intro-lock body {
 .mw-home .reveal-line {
   --r: clamp(0, (var(--intro) - var(--at, 0)) * 14, 1);
 }
+
+/* ---- 2026-11 polish: no clipped or squeezed text, lighter effects ---- */
+.mw-home .telemetry__grid > div { min-width: 0; }
+.mw-home .telemetry__grid dt,
+.mw-home .telemetry__grid dd { white-space: nowrap; overflow: visible; }
+.mw-home .telemetry { width: max-content; max-width: calc(100vw - 2 * var(--margin)); }
+@media (max-width: 767px) { .mw-home .telemetry { width: auto; } }
+/* rounded pills and chips keep their text inside the curve */
+.mw-home :is(.btn, .badge__chip, .chip) { white-space: nowrap; padding-inline: max(1em, 14px); }
+/* one soft shadow level instead of stacked glows */
+.mw-home :is(.glass, .telemetry, .chapter--left, .chapter--choose, .feature) { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28); }
+.mw-home .btn { box-shadow: none; }
