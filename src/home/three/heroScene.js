@@ -65,7 +65,9 @@ const ANCHORS = {
 // key-lit from the right (Earth: day upper-right / night lower-left; Moon and Mars
 // half-lit on their right limbs). Per-body vectors fine-tune that single key light;
 // Mars can switch to the true Mars24 terminator.
-const SUN_EARTH = new THREE.Vector3(0.3, 0.85, -0.42).normalize();
+// Reference: the sun is up and behind Earth, so only the top limb is in daylight and most of
+// the disc facing us is night, with city lights and a bright blue rim.
+const SUN_EARTH = new THREE.Vector3(0.45, 0.45, -0.77).normalize();
 const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
 // Parking orbit radius (Mars radii) and angular speed (rad/s): about one lap every 30 s.
 const PARK_R = 1.24;
@@ -452,7 +454,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     // Earth faces the camera with the Atlantic just inside the lit limb.
     const toCamE = CAM0.clone().sub(earth.position).normalize();
-    orient(llVec(-8, -38), toCamE.clone().lerp(SUN_EARTH, 0.55).normalize(), new THREE.Vector3(0.28, 1, 0.05), qEarthBase);
+    orient(llVec(30, -88), toCamE.clone().lerp(SUN_EARTH, 0.55).normalize(), new THREE.Vector3(0.28, 1, 0.05), qEarthBase);
     const toCamM = CAM0.clone().sub(moon.position).normalize();
     orient(llVec(5, -10), toCamM, new THREE.Vector3(0.15, 1, 0), qMoon);
     moon.quaternion.copy(qMoon);
@@ -846,7 +848,8 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     stars.position.copy(camera.position);
 
     /* ---- Bodies ---- */
-    qSpin.setFromAxisAngle(Y, reduced ? 0 : time * 0.09); // a visible turn
+    // a visible turn; starts with Europe, Africa and Asia lit up on the night side
+    qSpin.setFromAxisAngle(Y, 1.6 + (reduced ? 0 : time * 0.09));
     earth.quaternion.copy(qEarthBase).multiply(qSpin);
     earthMat.uniforms.uCloudShift.value = reduced ? 0 : time * 0.004;
     bodyUniforms(earth, earthMat, SUN_EARTH);

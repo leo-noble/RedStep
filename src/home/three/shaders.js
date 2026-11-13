@@ -431,12 +431,13 @@ void main(){
   vec3 col = albedo * mix(lit, wrapLit, 0.5) * uExposure;
   vec3 H = normalize(uSunObj + V);
   col += vec3(1.0, 0.92, 0.8) * pow(max(dot(N, H), 0.0), 70.0) * ocean * 0.55 * step(0.0, ndlG) * (1.0 - clouds);
-  col = mix(col, vec3(0.97, 0.98, 1.0) * (lit * 1.08 + 0.004), clouds * 0.92);
+  // thinner drawn clouds so the real NASA day map shows through; night-side clouds stay dark
+  col = mix(col, vec3(0.97, 0.98, 1.0) * (lit * 1.08 + 0.004), clouds * 0.6);
   float night = 1.0 - smoothstep(-0.14, 0.06, ndlG);
   vec3 nightTex = tex(uNight, uv).rgb;
-  float city = mix(aux.r, smoothstep(0.08, 0.7, dot(nightTex, vec3(0.3, 0.5, 0.2))), uUseNight);
-  col += uCityColor * city * night * (1.0 - clouds * 0.85) * 1.6;
-  float sunRim = mix(0.35, 1.0, smoothstep(-0.3, 0.55, ndlG));
+  float city = mix(aux.r, smoothstep(0.03, 0.45, dot(nightTex, vec3(0.3, 0.5, 0.2))), uUseNight);
+  col += uCityColor * city * night * (1.0 - clouds * 0.5) * 3.2;
+  float sunRim = mix(0.1, 1.0, smoothstep(-0.3, 0.55, ndlG)); // no grey film over the night side
   col = mix(col, uRimColor * (0.35 + lit * 0.65), clamp(fres * sunRim * 0.85, 0.0, 1.0));
   col += uRimColor * pow(1.0 - NdV, 6.0) * sunRim * uRimStrength;
   col += albedo * uAmbient;
