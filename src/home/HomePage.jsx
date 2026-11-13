@@ -203,11 +203,11 @@ export default function HomePage() {
             </h1>
             <p className="hero2__lead reveal" style={{ '--at': 0.2 }}>{HOME.lead}</p>
             <div className="cta-row reveal" style={{ '--at': 0.24 }}>
-              <button type="button" className="btn btn--primary" onClick={goChoose}>
+              <button type="button" className="btn btn-primary" onClick={goChoose}>
                 {HOME.ctaPrimary}
                 <span aria-hidden="true">↓</span>
               </button>
-              <Link to="/site/jezero" className="btn btn--ghost" aria-label={HOME.ctaWalk}>
+              <Link to="/site/jezero" className="btn" aria-label={HOME.ctaWalk}>
                 <span className="cta-long">{HOME.ctaWalk}</span>
                 <span className="cta-short">{HOME.ctaWalkShort}</span>
                 <span aria-hidden="true">→</span>
