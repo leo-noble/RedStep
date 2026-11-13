@@ -87,7 +87,8 @@ const PAINT = {
   white: [0.86, 0.87, 0.89, 0.12],
   panel: [0.2, 0.22, 0.25, 0.5],
   glass: [0.02, 0.03, 0.05, 0.4],
-  blue: [0.06, 0.2, 0.62, 0.1],
+  blue: [0.05, 0.16, 0.5, 0.1],
+  mars: [0.78, 0.33, 0.17, 0.05],
   bell: [0.32, 0.33, 0.35, 0.85],
   bellIn: [0.05, 0.05, 0.06, 0.5],
 };
@@ -99,7 +100,9 @@ const BELL_R = 0.022;
 
 function painted(geo, color) {
   let g = geo.index ? geo.toNonIndexed() : geo;
-  for (const k of Object.keys(g.attributes)) if (k !== 'position') g.deleteAttribute(k);
+  // keep each part's own normals: lathes carry exact, perfectly smooth ones
+  if (!g.attributes.normal) g.computeVertexNormals();
+  for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
   const c = new Float32Array(g.attributes.position.count * 4);
   for (let i = 0; i < g.attributes.position.count; i++) c.set(color, i * 4);
   g.setAttribute('aPaint', new THREE.BufferAttribute(c, 4));
@@ -115,35 +118,69 @@ function fin(outline, t, y0, a, color) {
   const g = new THREE.ExtrudeGeometry(sh, { depth: t - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b * 0.9, bevelOffset: -b * 0.9, bevelSegments: 5, curveSegments: 1 });
   g.translate(R_CORE - 0.004, y0, -(t - 2 * b) / 2);
   g.rotateY(a);
-  return painted(g, color);
+  // fins are flat with bevelled edges: smooth the bevels, keep the true corners crisp
+  return painted(toCreasedNormals(g, (50 * Math.PI) / 180), color);
 }
 
-async function buildModel() {
+/** Lay a flat decal (built facing +z) onto the round hull: each vertex is pushed out to the
+ *  cylinder's surface and given the hull's own normal, so the emblem curves with the body. */
+function onHull(geo, lift) {
+  const g = geo.index ? geo.toNonIndexed() : geo;
+  const pos = g.attributes.position;
+  const nrm = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const z = Math.sqrt(Math.max(0, (R_CORE + lift) ** 2 - x * x));
+    pos.setZ(i, z);
+    nrm.set([x / (R_CORE + lift), 0, z / (R_CORE + lift)], i * 3);
+  }
+  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  return g;
+}
+
+async function buildModel(q = 1) {
+  // q = 1 on capable devices; 0.5 on weak ones (half the segments: still round on a phone)
+  const S = (n) => Math.max(24, Math.round(n * q));
+  const lathe = (pts, n) => latheOf(pts, S(n));
   const parts = [];
   const add = (g, c) => parts.push(painted(g, c));
-  // lower core, silver-white: flared skirt at the base, slim above
-  add(latheOf([[0, 0.06], [0.088, 0.06], [0.086, 0.09], [0.074, 0.15], [0.067, 0.3], [R_CORE, 0.45], [R_CORE, 0.63]]), PAINT.white);
+  // Every round section is its own lathe, split at hard edges, so its normals stay exact
+  // and smooth all the way round (no facets, no smearing at the corners).
+  // lower core, silver-white: flat base, flared skirt, slim above
+  add(lathe([[0, 0.06], [0.088, 0.06]], 128), PAINT.white);
+  add(lathe([[0.088, 0.06], [0.0875, 0.075], [0.086, 0.09], [0.08, 0.12], [0.074, 0.15], [0.07, 0.22], [0.067, 0.3], [0.065, 0.38], [R_CORE, 0.45], [R_CORE, 0.63]], 128), PAINT.white);
   // a thin steel ring at the stage joint
-  add(latheOf([[R_CORE + 0.0015, 0.625], [R_CORE + 0.0015, 0.64]]), PAINT.steel);
+  add(lathe([[R_CORE + 0.0015, 0.625], [R_CORE + 0.0015, 0.64]], 128), PAINT.steel);
   // upper stage, dark: straight body, then an ogive nose
   const up = [[R_CORE, 0.63], [R_CORE - 0.002, 0.86]];
   for (let k = 1; k <= 40; k++) {
     const t = k / 40;
     up.push([(R_CORE - 0.002) * Math.pow(1 - Math.pow(t, 2.2), 0.62), 0.86 + t * 0.14]);
   }
-  add(latheOf(up), PAINT.dark);
-  // crew windows: a row of small dark panes on the nose
+  add(lathe(up, 128), PAINT.dark);
+  // crew windows: a row of small rounded panes on the nose
   for (const ang of [-0.5, -0.17, 0.17, 0.5]) {
-    const w = new THREE.CapsuleGeometry(0.0045, 0.007, 6, 16);
+    const w = new THREE.CapsuleGeometry(0.0045, 0.007, 4, S(16));
     w.scale(1, 1, 0.45);
     w.translate(0, 0.905, R_CORE * 0.93);
     w.rotateY(ang);
     parts.push(painted(w, PAINT.glass));
   }
-  // blue roundel on the white core (an emblem, not an agency logo)
-  const disc = new THREE.CircleGeometry(0.021, 96);
-  disc.translate(0, 0.53, R_CORE + 0.0012);
-  parts.push(painted(disc, PAINT.blue));
+  // mission roundel on the white core: deep blue disc, white rim, a red Mars, a white orbit
+  // (the team's own emblem; the NASA insignia needs NASA's permission to use)
+  const decal = (g, lift, c) => { g.translate(0, 0.53, 0); parts.push(painted(onHull(g, lift), c)); };
+  decal(new THREE.RingGeometry(0.0205, 0.0225, S(96)), 0.0009, PAINT.white);
+  decal(new THREE.CircleGeometry(0.0205, S(96)), 0.0009, PAINT.blue);
+  const mars = new THREE.CircleGeometry(0.0082, S(64));
+  mars.translate(0.004, -0.002, 0);
+  decal(mars, 0.0012, PAINT.mars);
+  const orbit = new THREE.RingGeometry(0.0135, 0.0148, S(96));
+  orbit.scale(1, 0.42, 1);
+  orbit.rotateZ(0.32);
+  decal(orbit, 0.0014, PAINT.white);
+  const star = new THREE.CircleGeometry(0.0018, 16);
+  star.translate(-0.011, 0.009, 0);
+  decal(star, 0.0014, PAINT.white);
   // fins on the upper stage: small forward pair, larger pair lower down (left and right)
   for (const a of [0, Math.PI]) {
     parts.push(fin([[0, 0], [0.055, 0.02], [0.055, 0.075], [0.012, 0.11], [0, 0.11]], 0.006, 0.78, a, PAINT.steel));
@@ -154,27 +191,28 @@ async function buildModel() {
     parts.push(fin([[0, 0.38], [0.17, 0.07], [0.17, -0.01], [0, 0.0]], 0.009, 0.06, a, PAINT.white));
     parts.push(fin([[0.12, 0.09], [0.172, 0.06], [0.172, 0.0], [0.12, 0.0]], 0.0105, 0.06, a, PAINT.panel));
   }
-  // four slim strap-on boosters with pointed noses
+  // four slim strap-on boosters with pointed noses (base cap separate from the round body)
   for (const a of [0.85, Math.PI - 0.85, Math.PI + 0.85, -0.85]) {
-    const prof = [[0, 0.07], [0.02, 0.07], [0.02, 0.38]];
+    const prof = [[0.02, 0.07], [0.02, 0.38]];
     for (let k = 1; k <= 24; k++) { const t = k / 24; prof.push([0.02 * Math.pow(1 - t * t, 0.6), 0.38 + t * 0.07]); }
-    const g = latheOf(prof, 72);
-    g.translate(R_CORE + 0.016, 0, 0);
-    g.rotateY(a);
-    parts.push(painted(g, a > 0 && a < Math.PI ? PAINT.white : PAINT.dark));
+    const col = a > 0 && a < Math.PI ? PAINT.white : PAINT.dark;
+    for (const g of [lathe([[0, 0.07], [0.02, 0.07]], 72), lathe(prof, 72)]) {
+      g.translate(R_CORE + 0.016, 0, 0);
+      g.rotateY(a);
+      parts.push(painted(g, col));
+    }
   }
   // engine bells: a ring of six round a centre one, plus one under each delta fin
   for (const [x, z] of BELLS) {
-    const outer = latheOf([[0.024, 0], [0.0215, 0.012], [0.019, 0.025], [0.0155, 0.04], [0.012, 0.055], [0.01, 0.065]], 64);
+    const outer = lathe([[0.024, 0], [0.0215, 0.012], [0.019, 0.025], [0.0155, 0.04], [0.012, 0.055], [0.01, 0.065]], 64);
     outer.translate(x, 0, z);
     parts.push(painted(outer, PAINT.bell));
-    const inner = latheOf([[0.0225, 0.002], [0.017, 0.025], [0.011, 0.05]], 64);
+    const inner = lathe([[0.0225, 0.002], [0.017, 0.025], [0.011, 0.05]], 64);
     inner.translate(x, 0, z);
     parts.push(painted(inner, PAINT.bellIn));
   }
   let geo = mergeGeometries(parts);
   for (const p of parts) p.dispose();
-  geo = toCreasedNormals(geo, (50 * Math.PI) / 180); // smooth hulls and fin bevels, crisp true corners
   return geo;
 }
 
@@ -455,7 +493,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
   });
   let model = null;
   let disposed = false;
-  buildModel().then((geo) => {
+  buildModel(low ? 0.5 : 1).then((geo) => {
     if (disposed) { geo.dispose(); return; }
     model = new THREE.Mesh(geo, modelMat);
     model.frustumCulled = false;
