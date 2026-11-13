@@ -92,7 +92,10 @@ const PAINT = {
   bellIn: [0.05, 0.05, 0.06, 0.5],
 };
 const R_CORE = 0.064;
-const MODEL_NOZZLES = [[0, 0.085], null, null]; // one plume for the whole engine cluster
+// nine engine bells: a ring of six round a centre one, plus one under each delta fin;
+// each gets its own flame (exit radius BELL_R)
+const BELLS = [[0, 0], ...Array.from({ length: 6 }, (_, k) => [0.052 * Math.cos((k * Math.PI) / 3 + Math.PI / 6), 0.052 * Math.sin((k * Math.PI) / 3 + Math.PI / 6)]), [0.2, 0], [-0.2, 0]];
+const BELL_R = 0.022;
 
 function painted(geo, color) {
   let g = geo.index ? geo.toNonIndexed() : geo;
@@ -161,8 +164,7 @@ async function buildModel() {
     parts.push(painted(g, a > 0 && a < Math.PI ? PAINT.white : PAINT.dark));
   }
   // engine bells: a ring of six round a centre one, plus one under each delta fin
-  const bells = [[0, 0], ...Array.from({ length: 6 }, (_, k) => [0.052 * Math.cos((k * Math.PI) / 3 + Math.PI / 6), 0.052 * Math.sin((k * Math.PI) / 3 + Math.PI / 6)]), [0.2, 0], [-0.2, 0]];
-  for (const [x, z] of bells) {
+  for (const [x, z] of BELLS) {
     const outer = latheOf([[0.024, 0], [0.0215, 0.012], [0.019, 0.025], [0.0155, 0.04], [0.012, 0.055], [0.01, 0.065]], 64);
     outer.translate(x, 0, z);
     parts.push(painted(outer, PAINT.bell));
@@ -204,12 +206,13 @@ varying float vY;
 
 // A soft studio around the rocket, in view space: dark space below, a cool sky above, and two
 // tall softboxes, so glossy paint shows long, clean highlights down the round hull.
-vec3 studio(vec3 R){
+// w widens the softboxes: 1 for the glassy coat, larger for a blurred satin reflection
+vec3 studio(vec3 R, float w){
   vec3 c = mix(vec3(0.01, 0.012, 0.018), vec3(0.11, 0.14, 0.2), smoothstep(-0.35, 0.9, R.y));
   float tall = smoothstep(-0.55, 0.15, R.y) * (1.0 - smoothstep(0.75, 1.0, R.y));
-  c += vec3(1.0, 0.97, 0.93) * 1.35 * exp(-pow((R.x - 0.52) / 0.13, 2.0)) * tall;
-  c += vec3(0.55, 0.66, 0.85) * 0.55 * exp(-pow((R.x + 0.66) / 0.1, 2.0)) * tall;
-  c += vec3(1.0, 0.97, 0.9) * pow(max(dot(R, uSunView), 0.0), 400.0) * 8.0;
+  c += vec3(1.0, 0.97, 0.93) * (1.35 / w) * exp(-pow((R.x - 0.52) / (0.13 * w), 2.0)) * tall;
+  c += vec3(0.55, 0.66, 0.85) * (0.55 / w) * exp(-pow((R.x + 0.66) / (0.1 * w), 2.0)) * tall;
+  c += vec3(1.0, 0.97, 0.9) * pow(max(dot(R, uSunView), 0.0), 400.0 / (w * w)) * (8.0 / (w * w));
   return c;
 }
 
@@ -235,18 +238,20 @@ void main(){
   vec3 F = F0 + (1.0 - F0) * pow(1.0 - vdh, 5.0);
   vec3 baseSpec = ggx(ndh, rough * rough) * F * 0.25 * step(0.0, ndl) * sun * 2.0;
   vec3 bounce = uBounce * max(-n.y * 0.5 + 0.5, 0.0);
-  vec3 diffuse = albedo * (1.0 - metal) * (lit * sun * 1.15 + bounce * 1.5 + 0.035);
-  vec3 metalEnv = studio(R) * albedo * metal * 1.1;
+  // form shading: a round hull falls off smoothly toward its edges, so it reads as a cylinder
+  float form = mix(0.5, 1.0, pow(NdV, 0.6));
+  vec3 diffuse = albedo * (1.0 - metal) * (lit * sun * 1.15 + bounce * 1.5 + 0.035) * form;
+  vec3 metalEnv = studio(R, 2.5) * albedo * metal * 1.1;
 
   // Glassy clear coat on the dark panels only (the gunmetal upper stage, dark boosters and
   // fin panels); the white metal keeps a soft satin sheen, not a mirror.
   float lum = dot(albedo, vec3(0.299, 0.587, 0.114));
   float coatAmt = 1.0 - smoothstep(0.3, 0.6, lum);
   float Fc = (0.04 + 0.96 * pow(1.0 - NdV, 5.0)) * coatAmt;
-  vec3 coat = (studio(R) * mix(0.09, 1.0, Fc) * 0.85
+  vec3 coat = (studio(R, 1.0) * mix(0.09, 1.0, Fc) * 0.85
             + ggx(ndh, 0.035 * 0.035) * (0.04 + 0.96 * pow(1.0 - vdh, 5.0)) * 0.25 * step(0.0, ndl) * sun * 1.5) * coatAmt;
   // satin sheen for the white metal: a broad, faint reflection of the same studio
-  vec3 satin = studio(R) * (0.04 + 0.2 * pow(1.0 - NdV, 3.0)) * (1.0 - coatAmt) * 0.6;
+  vec3 satin = studio(R, 3.5) * (0.05 + 0.2 * pow(1.0 - NdV, 3.0)) * (1.0 - coatAmt) * 0.7;
   vec3 col = (diffuse + baseSpec + metalEnv) * (1.0 - Fc * 0.85) + coat + satin;
 
   // the engines light the bottom of the stack
@@ -345,11 +350,12 @@ export function createRocketRig({ quality = 'high' } = {}) {
   const flameMats = [];
   const RAD = low ? 18 : 36;
   const HSEG = low ? 12 : 28;
-  nozzles.forEach((n, k) => {
+  /** One engine's flame: a white-hot inner cone inside a flaring outer one. */
+  function addFlame(pos, r, lenScale, seed) {
     for (const hot of [0, 1]) {
       // a cone from the nozzle (y = 0) down to y = -1; length is scaled in the shader
-      const r0 = exitR[k] * (hot ? 0.62 : 0.95);
-      const r1 = exitR[k] * (hot ? 0.4 : 3.8); // the outer flame flares out behind the nozzle
+      const r0 = r * (hot ? 0.62 : 0.95);
+      const r1 = r * (hot ? 0.4 : 3.8); // the outer flame flares out behind the nozzle
       const g = new THREE.CylinderGeometry(r0, r1, 1, RAD, HSEG, true);
       g.translate(0, -0.5, 0);
       const m = new THREE.ShaderMaterial({
@@ -358,9 +364,9 @@ export function createRocketRig({ quality = 'high' } = {}) {
         uniforms: {
           uTime: { value: 0 },
           uThrust: { value: 1 },
-          uLen: { value: (k === 0 ? 0.68 : 0.58) * (hot ? 0.42 : 1) },
+          uLen: { value: lenScale * (hot ? 0.42 : 1) },
           uHot: { value: hot },
-          uSeed: { value: k * 3.1 + hot * 1.7 },
+          uSeed: { value: seed + hot * 1.7 },
         },
         transparent: true,
         depthWrite: false,
@@ -368,14 +374,15 @@ export function createRocketRig({ quality = 'high' } = {}) {
         blending: THREE.AdditiveBlending,
       });
       const mesh = new THREE.Mesh(g, m);
-      mesh.position.copy(n);
+      mesh.position.copy(pos);
       mesh.frustumCulled = false;
       mesh.renderOrder = 3;
       body.add(mesh);
       flames.push(mesh);
       flameMats.push(m);
     }
-  });
+  }
+  nozzles.forEach((n, k) => addFlame(n, exitR[k], k === 0 ? 0.68 : 0.58, k * 3.1));
 
   /* ---- Smoke: soft puffs that billow out where the flames thin ---- */
   const COUNT = low ? 1200 : 3200;
@@ -455,18 +462,14 @@ export function createRocketRig({ quality = 'high' } = {}) {
     body.add(model);
     vehicle.visible = false;
     for (const h of legs) h.visible = false;
-    // flames and glows move to the model's own engines, sized to its nozzles
-    flames.forEach((f, i) => {
-      const k = i >> 1;
-      if (!MODEL_NOZZLES[k]) { f.userData.off = true; return; }
-      const [x, r] = MODEL_NOZZLES[k];
-      f.position.set(x, 0, 0);
-      // the outer flame flares wider than the nozzle, like a plume in thin air
-      const s = (r / exitR[k]) * (i % 2 === 0 ? 1.35 : 1);
-      f.scale.set(s, 1, s);
-    });
+    // the drawn rocket's three flames go out; each of the model's nine bells gets its own
+    for (const f of flames) f.userData.off = true;
+    BELLS.forEach(([x, z], k) => addFlame(new THREE.Vector3(x, 0, z), BELL_R, k === 0 ? 0.6 : 0.52, 10 + k * 2.3));
+    // nozzle glows: one at the cluster centre, one at each outer bell
     const gp = glowGeo.attributes.position;
-    MODEL_NOZZLES.forEach((n, k) => (n ? gp.setX(k, n[0]) : gp.setY(k, 1e4))); // unused glows parked far away
+    gp.setXYZ(0, 0, -0.01, 0);
+    gp.setXYZ(1, BELLS[7][0], -0.008, 0);
+    gp.setXYZ(2, BELLS[8][0], -0.008, 0);
     gp.needsUpdate = true;
   }).catch(() => { /* keep the drawn rocket */ });
 
