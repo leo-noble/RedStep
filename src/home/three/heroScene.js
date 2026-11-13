@@ -597,8 +597,11 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   // Render resolution steps down when frames run slow (see frameWatch below).
   // Never below the screen's own pixels at 1x (that looked blurry and blocky). With motion
   // turned off the scene is a still frame, so it is always drawn at full sharpness.
-  const DPR_STEPS = [2, 1.5, 1.25, 1];
-  let dprStep = low ? 1 : 0;
+  // Never below 1.5x: dropping resolution made the rocket look low-res. When frames run slow
+  // the scene sheds smoke particles and stars first (rig.lighten) and keeps its sharpness.
+  const DPR_STEPS = [2, 1.75, 1.5];
+  let dprStep = low ? 2 : 0;
+  let lightened = 0;
   function resize(w, h) {
     W = Math.max(1, w);
     H = Math.max(1, h);
@@ -680,9 +683,14 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
   const watch = frameWatch({
     onSlow() {
-      if (dprStep >= DPR_STEPS.length - 1) return;
-      dprStep++;
-      resize(W, H);
+      if (dprStep < DPR_STEPS.length - 1) {
+        dprStep++;
+        resize(W, H);
+      } else if (lightened < 2) {
+        lightened++;
+        rig.lighten(lightened);
+        starGeo.setDrawRange(0, Math.round(STARS / (lightened + 1)));
+      }
       onQuality?.(dprStep >= 2 ? 'low' : 'high');
     },
   });

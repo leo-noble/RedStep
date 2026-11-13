@@ -57,7 +57,7 @@ function letteringTexture() {
   c.width = 1024;
   c.height = 128;
   const tex = new THREE.CanvasTexture(c);
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   const draw = () => {
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, c.width, c.height);
@@ -83,7 +83,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
   group.add(body);
 
   /* ---- Vehicle ---- */
-  const SEG = low ? 48 : 64; // round hull on every device
+  const SEG = low ? 64 : 96; // round, smooth hull on every device
   const parts = [
     lathe(coreProfile, 0.045, 1.0, 0.004, SEG, 0, 0),
     lathe(boosterProfile, 0.05, 0.6, 0.004, Math.round(SEG * 0.75), BOOST_X, 1),
@@ -260,6 +260,10 @@ export function createRocketRig({ quality = 'high' } = {}) {
     group,
     body,
     stats: { triangles: vehicleGeo.attributes.position.count / 3, particles: COUNT, flames: flames.length },
+    /** Slow device: draw fewer smoke puffs (level 1: half, 2: a quarter) instead of a blurrier frame. */
+    lighten(level) {
+      plumeGeo.setDrawRange(0, Math.round(COUNT / 2 ** level))
+    },
     /** Per-frame uniform writes only. */
     update({ time, thrust, px, fade, sunWorld, camera, smoke = 1, legs: legDeploy = 0, bounce }) {
       setLegs(legDeploy);
