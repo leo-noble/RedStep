@@ -81,8 +81,9 @@ const MODEL_URL = '/models/artemis_ii_sls.obj';
 const MODEL_H = 17.35;
 // colours from the model's .mtl (diffuse), plus how metallic each region is
 const MODEL_MTL = {
-  orange: [0.72, 0.2, 0.055, 0.05],
-  orange_light: [0.92, 0.34, 0.08, 0.05],
+  // the core stage's foam insulation: a muted, burnt orange-red, not a saturated red
+  orange: [0.6, 0.29, 0.15, 0.05],
+  orange_light: [0.68, 0.36, 0.2, 0.05],
   white: [0.82, 0.84, 0.84, 0.0],
   white2: [0.96, 0.96, 0.92, 0.0],
   gray: [0.22, 0.25, 0.28, 0.35],
@@ -93,7 +94,11 @@ const MODEL_MTL = {
   red: [0.55, 0.045, 0.035, 0.05],
 };
 // engine layout measured from the model (rig units: rocket length 1, engines at y = 0)
-const MODEL_NOZZLES = [[0, 0.0317], [0.94 / MODEL_H, 0.29 / MODEL_H], [-0.94 / MODEL_H, 0.29 / MODEL_H]];
+// The stack is widened to the drawn rocket's girth (WIDEN) and tapers back to the model's own
+// slim nose and tower above TAPER, so it reads as a sturdy rocket with a narrow tip.
+const WIDEN = 1.45;
+const TAPER = [0.78, 0.93];
+const MODEL_NOZZLES = [[0, 0.0317 * WIDEN], [(0.94 / MODEL_H) * WIDEN, (0.29 / MODEL_H) * WIDEN], [(-0.94 / MODEL_H) * WIDEN, (0.29 / MODEL_H) * WIDEN]];
 
 const MODEL_VERTEX = /* glsl */ `
 attribute vec4 aPaint;
@@ -172,6 +177,14 @@ async function loadModel() {
   let geo = mergeGeometries(parts);
   geo.rotateX(-Math.PI / 2); // Blender's Z-up to Y-up
   geo.scale(1 / MODEL_H, 1 / MODEL_H, 1 / MODEL_H);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    const t = Math.min(1, Math.max(0, (y - TAPER[0]) / (TAPER[1] - TAPER[0])));
+    const f = WIDEN + (1 - WIDEN) * t * t * (3 - 2 * t);
+    pos.setX(i, pos.getX(i) * f);
+    pos.setZ(i, pos.getZ(i) * f);
+  }
   geo = toCreasedNormals(geo, Math.PI / 5); // smooth curves, crisp edges
   return geo;
 }
@@ -378,7 +391,8 @@ export function createRocketRig({ quality = 'high' } = {}) {
       const k = i >> 1;
       const [x, r] = MODEL_NOZZLES[k];
       f.position.set(x, 0, 0);
-      const s = r / exitR[k];
+      // the outer flame flares wider than the nozzle, like a plume in thin air
+      const s = (r / exitR[k]) * (i % 2 === 0 ? 1.35 : 1);
       f.scale.set(s, 1, s);
     });
     const gp = glowGeo.attributes.position;
