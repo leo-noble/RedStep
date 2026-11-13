@@ -481,15 +481,17 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     const parkN = new THREE.Vector3(-0.1, -0.3, -1).normalize();
     const park = ringPoints(L.marsPos, parkR, parkN, 256, new THREE.Vector3(-1, 0.8, 0));
     L.parking = park;
-    const entry = park.pts[0];
+    // Arrival point: in front of Mars on the camera's side, up and to the left, so the rocket
+    // never passes behind the planet or through it (it used to join a parking orbit that took
+    // it round the back first)
+    const entry = L.marsPos.clone().addScaledVector(new THREE.Vector3(-0.8, 0.25, 0.55).normalize(), L.marsR * 1.9);
     // the rocket lifts off from Earth: the path starts on Earth's surface facing the rocket
     const p0 = earth.position.clone().add(L.rocketPos0.clone().sub(earth.position).normalize().multiplyScalar(L.earthR * 1.01));
     const p1 = L.rocketPos0.clone();
     const p2 = L.rocketPos0.clone().addScaledVector(dir, L.rocketLen * 1.6).add(new THREE.Vector3(0.6, 0.2, -1.2));
-    const p3 = p1.clone().lerp(entry, 0.55).add(new THREE.Vector3(-0.4, 2.2, 0));
-    // the last stretch runs along the orbit, so the rocket arrives already heading the way it
-    // will circle
-    const p4 = entry.clone().addScaledVector(park.v, -parkR * 1.1);
+    // cruise in a gentle arc toward the camera side of Mars, then a short final approach
+    const p3 = p1.clone().lerp(entry, 0.55).add(new THREE.Vector3(0, 1.4, 0.8));
+    const p4 = entry.clone().add(new THREE.Vector3(-1.0, 0.25, 0.6).multiplyScalar(L.marsR));
     const pts = [p0, p1, p2, p3, p4, entry];
     L.curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
     L.u0 = 1 / (pts.length - 1); // the reference pose, p1
@@ -766,7 +768,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       qFlight = qA.slerp(alignTo(orbitTan, L.parking.n, qB), park);
     }
     toMars.copy(rocketPos).sub(L.marsPos);
-    const minR = L.marsR * 1.15;
+    const minR = L.marsR * 1.35;
     if (toMars.lengthSq() < minR * minR) rocketPos.copy(L.marsPos).addScaledVector(toMars.normalize(), minR);
     let rScale = L.rocketLen * lerp(1, 0.17, smoothstep(0.25, 0.82, p)) * lerp(0.18, 1, launch);
     // steady heading: ease toward the path direction instead of snapping each frame
@@ -791,7 +793,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       const s1 = L.marsR * 0.14;
       const desc = clamp01((T - 0.35) / 1.75);
       const e = 1 - Math.pow(1 - desc, 3); // fast from orbit, slow over the ground
-      hover.copy(landP).addScaledVector(landN, L.marsR * 0.45);
+      hover.copy(landP).addScaledVector(landN, L.marsR * 0.26); // low enough to stay in frame
       landEnd.copy(landP).addScaledVector(landN, s1 * 0.5);
       rocketPos.copy(flight.from).multiplyScalar((1 - e) * (1 - e))
         .addScaledVector(hover, 2 * (1 - e) * e)

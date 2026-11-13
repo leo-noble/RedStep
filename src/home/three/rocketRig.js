@@ -219,7 +219,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
     uniforms: {
       uTime: { value: 0 },
       uThrust: { value: 1 },
-      uLen: { value: 1.5 },
+      uLen: { value: 2.2 }, // trail length in rocket lengths
       uPx: { value: 1000 },
       uNozzle: { value: nozzles },
       uNozzleR: { value: exitR },
