@@ -67,7 +67,7 @@ const ANCHORS = {
 // Mars can switch to the true Mars24 terminator.
 // Reference: the sun is up and behind Earth, so only the top limb is in daylight and most of
 // the disc facing us is night, with city lights and a bright blue rim.
-const SUN_EARTH = new THREE.Vector3(0.55, 0.4, 0.73).normalize(); // in front: the side we see is day
+const SUN_EARTH = new THREE.Vector3(0.45, 0.45, -0.77).normalize();
 const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
 // Parking orbit radius (Mars radii) and angular speed (rad/s): about one lap every 30 s.
 const PARK_R = 1.24;
@@ -327,7 +327,6 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   });
   const earth = new THREE.Mesh(sphere, earthMat);
   const earthAtmo = atmosphere('#a8d9fc', 1.03, 1.25, 2.2);
-  earthAtmo.visible = false; // no glowing ring round Earth
   earth.add(earthAtmo);
   scene.add(earth);
 
