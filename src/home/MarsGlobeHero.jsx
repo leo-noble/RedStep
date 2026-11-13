@@ -45,7 +45,8 @@ export default function MarsGlobeHero({ engine, sites, ref }) {
         quality,
         onQuality: setQuality,
         // Real NASA planet maps from the app's data folder; the procedural ones stay as fallback.
-        textures: { mars: globeTexture('mars-viking-2k.jpg'), earth: globeTexture('earth-day-2k.jpg'), earthNight: globeTexture('earth-night-2k.jpg'), moon: globeTexture('moon-lro-2k.jpg') },
+        // WebP (about 40% smaller); the Moon is small on screen, so 1K is plenty
+        textures: { mars: globeTexture('mars-viking-2k.webp'), earth: globeTexture('earth-day-2k.webp'), earthNight: globeTexture('earth-night-2k.webp'), moon: globeTexture('moon-lro-1k.webp') },
       });
     } catch (err) {
       console.warn('[MarsGlobeHero] WebGL unavailable, using static poster.', err);
