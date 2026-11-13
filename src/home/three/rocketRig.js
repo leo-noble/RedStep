@@ -258,6 +258,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
 
   return {
     group,
+    vehicleMat,
     body,
     stats: { triangles: vehicleGeo.attributes.position.count / 3, particles: COUNT, flames: flames.length },
     /** Slow device: draw fewer smoke puffs (level 1: half, 2: a quarter) instead of a blurrier frame. */

@@ -403,6 +403,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
   /* ---- Rocket ---- */
   const rig = createRocketRig({ quality });
+  if (import.meta.env.DEV) window.__rig = rig;
   scene.add(rig.group);
 
   /* ---- Layout-dependent pieces (rebuilt on resize) ---- */
@@ -823,7 +824,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     // engines cut off as it settles into orbit
     const vel = Math.min(1, Math.abs(state.velocity) * 4);
     const flicker = reduced ? 0 : Math.sin(time * 23) * 0.015;
-    const thrust = landThrust ?? ignite * (1 + vel * 0.35 + flicker) * (1 - park);
+    let thrust = landThrust ?? ignite * (1 + vel * 0.35 + flicker) * (1 - park);
 
     /* ---- Camera ---- */
     const chase = smoothstep(0.03, 0.42, p);
@@ -915,6 +916,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
 
     /* ---- Rocket uniforms ---- */
     const nearMars = flight ? 1 : smoothstep(0.45, 0.8, p);
+    if (!Number.isFinite(thrust)) thrust = 0; // never let a bad value blacken the rocket
     rig.update({
       time,
       thrust,
