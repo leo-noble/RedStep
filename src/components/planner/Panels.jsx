@@ -264,7 +264,7 @@ export function SciencePanel({ stops, visited, onAdd, onFocus, score, focus }) {
           <p className="micro">Science value of this walk</p>
           <p className="sp-score-num"><b>{score.got}</b><span>/ {score.total}</span></p>
         </div>
-        <p className="sp-score-note">Each stop has a science priority from 1 to 5 (our judgement, explained on each card). Safer walks reach fewer stops. That trade-off is the point.</p>
+        <details className="sp-score-more"><summary>How is this scored?</summary><p className="sp-score-note">Each stop has a science priority from 1 to 5 (our judgement, explained on each card). Safer walks reach fewer stops. That trade-off is the point.</p></details>
       </div>
       <ol className="sp-list">
         {stops.map((s) => {

@@ -1988,3 +1988,23 @@
   font-size: 12px;
   color: var(--ink-3);
 }
+
+/* how the suggested walk was chosen: a quiet line, not a warning */
+.draw-hint.suggest-why {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--ink-2);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.draw-hint.suggest-why b {
+  color: var(--ink);
+}
+@media (min-width: 1051px) {
+  /* centred over the map, clear of the answer panel on the right */
+  .draw-hint.suggest-why {
+    left: calc((100% - 380px) / 2);
+    max-width: min(420px, 40vw);
+    top: auto;
+    bottom: 110px;
+  }
+}

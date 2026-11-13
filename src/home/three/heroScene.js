@@ -41,14 +41,14 @@ const ANCHORS = {
     // positions measured from the reference frame (1706 × 922)
     moon: { x: -0.3, y: 0.52, r: 0.05, d: 20 },
     mars: { x: 0.84, y: 0.48, r: 0.056, d: 30 },
-    rocket: { x: 0.3, y: 0.0, len: 0.5, tilt: 24, d: 8 },
+    rocket: { x: 0.1, y: -0.02, len: 0.52, tilt: 22, d: 8 }, // centre stage, between Earth and the copy
     end: { x: 0.3, y: -0.02, r: 0.36 },
   },
   mid: {
     earth: { x: -1.14, y: -0.64, r: 0.6, d: 16 },
     moon: { x: -0.42, y: 0.66, r: 0.055, d: 20 },
     mars: { x: 0.86, y: 0.5, r: 0.05, d: 30 },
-    rocket: { x: 0.08, y: -0.04, len: 0.44, tilt: 22, d: 8 }, // clear of Earth and the copy, as in the reference
+    rocket: { x: 0.0, y: -0.04, len: 0.46, tilt: 20, d: 8 }, // clear of Earth and the copy, as in the reference
     end: { x: 0.28, y: -0.02, r: 0.33 },
   },
   // Portrait: copy owns the top ~45 %, telemetry the bottom ~15 %; the scene lives between.
@@ -82,6 +82,8 @@ const SUN_MARS_DAY = new THREE.Vector3(-0.42, 0.42, 0.8).normalize();
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+const prefersStill = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function anchorsFor(aspect) {
   const mix = (a, b, t) => {
@@ -495,6 +497,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       line.material.dispose();
     }
     transfer = orbitLine(L.curve.getPoints(400), { dashes: 90 });
+    transfer.visible = false; // no drawn flight path: the rocket and its trail show the way
     scene.add(transfer);
 
     const em = moon.position.clone().sub(earth.position);
@@ -585,12 +588,14 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   let dpr = 1;
   let pxBase = 1000;
   // Render resolution steps down when frames run slow (see frameWatch below).
-  const DPR_STEPS = [1.5, 1.25, 1, 0.75]; // same starting sharpness on every device
-  let dprStep = low ? 2 : 0;
+  // Never below the screen's own pixels at 1x (that looked blurry and blocky). With motion
+  // turned off the scene is a still frame, so it is always drawn at full sharpness.
+  const DPR_STEPS = [2, 1.5, 1.25, 1];
+  let dprStep = low ? 1 : 0;
   function resize(w, h) {
     W = Math.max(1, w);
     H = Math.max(1, h);
-    dpr = Math.min(window.devicePixelRatio || 1, DPR_STEPS[dprStep]);
+    dpr = Math.min(window.devicePixelRatio || 1, prefersStill() ? 2 : DPR_STEPS[dprStep]);
     renderer.setPixelRatio(dpr);
     renderer.setSize(W, H, false);
     camera.aspect = W / H;

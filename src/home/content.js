@@ -51,7 +51,7 @@ export const DEFAULT_SITE_ID = 'jezero'
 export const getSite = (id) => LANDING_SITES.find((s) => s.id === id)
 
 export const HOME = {
-  kicker: 'NASA Space Apps Challenge 2026',
+  kicker: 'Student entry · NASA Space Apps Challenge 2026',
   titleLines: ['Plan the first', 'walk on '],
   titleAccent: 'Mars.',
   lead: 'Plan it with real NASA mission data, and get a straight answer: GO or NO-GO, and why.',

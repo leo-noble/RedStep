@@ -83,7 +83,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
   group.add(body);
 
   /* ---- Vehicle ---- */
-  const SEG = low ? 28 : 56;
+  const SEG = low ? 48 : 64; // round hull on every device
   const parts = [
     lathe(coreProfile, 0.045, 1.0, 0.004, SEG, 0, 0),
     lathe(boosterProfile, 0.05, 0.6, 0.004, Math.round(SEG * 0.75), BOOST_X, 1),
