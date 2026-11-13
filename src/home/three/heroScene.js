@@ -73,6 +73,7 @@ const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
 const PARK_R = 1.24;
 const LAND_T = 2.75; // seconds from 'land here' to the site page
 const ORBIT_W = 0.5; // about one lap every 12 s: clearly moving
+const MOON_ORBIT_PERIOD = 32; // one smooth lunar revolution every 32 seconds
 
 // key light on the rocket near Earth: front-left and above, as in the reference picture
 const ROCKET_KEY = new THREE.Vector3(-0.55, 0.45, 0.7).normalize();
@@ -695,15 +696,9 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       onQuality?.(dprStep >= 2 ? 'low' : 'high');
     },
   });
-  let skip = 0;
-
   function update(state) {
     if (!L.curve) return;
     watch.tick();
-    // Weaker devices, on the site globe with nothing moving: draw every other frame (the slow
-    // spin, orbit and twinkle still read as smooth, at half the work).
-    const idle = interactive && !drag.on && !flight && Math.abs(drag.vx) + Math.abs(drag.vy) < 1e-5 && Math.abs(state.velocity) < 1e-3;
-    if (idle && (low || dprStep >= 2) && skip++ % 2) return;
     const reduced = state.reduced;
     const time = reduced ? 1.234 : state.time;
     const p = state.progress;
@@ -882,10 +877,14 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     bodyUniforms(earth, earthMat, SUN_EARTH);
     earthAtmo.material.uniforms.uSunWorld.value.copy(SUN_EARTH);
     if (L.lunar) {
-      // drift along a short arc of its orbit around the reference spot: a full lap took it
-      // behind Earth and off the frame
-      const a = reduced ? 0 : 0.42 * Math.sin(time * 0.3);
-      moon.position.copy(L.lunar.c).addScaledVector(L.lunar.u, Math.cos(a) * L.lunar.r).addScaledVector(L.lunar.v, Math.sin(a) * L.lunar.r);
+      // A deterministic orbit driven by the engine's absolute clock. Phase zero is the
+      // original composition, so the Moon starts exactly at its authored anchor on every load.
+      // The mesh is never toggled or faded at the viewport edge: normal camera clipping and
+      // depth testing handle it, without changing the canvas or interrupting the render loop.
+      const phase = reduced ? 0 : ((time % MOON_ORBIT_PERIOD) / MOON_ORBIT_PERIOD) * Math.PI * 2;
+      moon.position.copy(L.lunar.c)
+        .addScaledVector(L.lunar.u, Math.cos(phase) * L.lunar.r)
+        .addScaledVector(L.lunar.v, Math.sin(phase) * L.lunar.r);
     }
     bodyUniforms(moon, moonMat, SUN_MOON);
 
