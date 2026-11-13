@@ -229,7 +229,7 @@ void main(){
   vec3 sun = vec3(1.0, 0.97, 0.92);
 
   // base layer: painted (dielectric) or bare metal
-  float rough = mix(0.38, 0.22, metal);
+  float rough = mix(0.5, 0.22, metal);
   float lit = max((ndl + 0.08) / 1.08, 0.0);
   vec3 F0 = mix(vec3(0.04), albedo, metal);
   vec3 F = F0 + (1.0 - F0) * pow(1.0 - vdh, 5.0);
@@ -238,11 +238,16 @@ void main(){
   vec3 diffuse = albedo * (1.0 - metal) * (lit * sun * 1.15 + bounce * 1.5 + 0.035);
   vec3 metalEnv = studio(R) * albedo * metal * 1.1;
 
-  // clear coat over everything: a thin glassy layer with mirror-like reflections
-  float Fc = 0.04 + 0.96 * pow(1.0 - NdV, 5.0);
-  vec3 coat = studio(R) * mix(0.09, 1.0, Fc) * 0.85
-            + ggx(ndh, 0.035 * 0.035) * (0.04 + 0.96 * pow(1.0 - vdh, 5.0)) * 0.25 * step(0.0, ndl) * sun * 1.5;
-  vec3 col = (diffuse + baseSpec + metalEnv) * (1.0 - Fc * 0.85) + coat;
+  // Glassy clear coat on the dark panels only (the gunmetal upper stage, dark boosters and
+  // fin panels); the white metal keeps a soft satin sheen, not a mirror.
+  float lum = dot(albedo, vec3(0.299, 0.587, 0.114));
+  float coatAmt = 1.0 - smoothstep(0.3, 0.6, lum);
+  float Fc = (0.04 + 0.96 * pow(1.0 - NdV, 5.0)) * coatAmt;
+  vec3 coat = (studio(R) * mix(0.09, 1.0, Fc) * 0.85
+            + ggx(ndh, 0.035 * 0.035) * (0.04 + 0.96 * pow(1.0 - vdh, 5.0)) * 0.25 * step(0.0, ndl) * sun * 1.5) * coatAmt;
+  // satin sheen for the white metal: a broad, faint reflection of the same studio
+  vec3 satin = studio(R) * (0.04 + 0.2 * pow(1.0 - NdV, 3.0)) * (1.0 - coatAmt) * 0.6;
+  vec3 col = (diffuse + baseSpec + metalEnv) * (1.0 - Fc * 0.85) + coat + satin;
 
   // the engines light the bottom of the stack
   col += albedo * vec3(1.0, 0.55, 0.22) * uThrust * 0.6 * smoothstep(0.12, 0.0, vY);
