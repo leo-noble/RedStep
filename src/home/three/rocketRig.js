@@ -9,7 +9,6 @@
 
 import * as THREE from 'three';
 import { mergeGeometries, toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { ROCKET_VERTEX, ROCKET_FRAGMENT, FLAME_VERTEX, FLAME_FRAGMENT, SMOKE_VERTEX, SMOKE_FRAGMENT, GLOW_VERTEX, GLOW_FRAGMENT } from './shaders.js';
 
 const CORE_R = 0.05;
@@ -76,27 +75,103 @@ function letteringTexture() {
 }
 
 
-/* ---- Artemis / Starship hybrid model (public/models/artemis_starship_hybrid.obj) ----
-   Blender Z-up, 10.7 units tall, 2.16 wide at the main stage: nine engines in a 3x3 grid at
-   the base, two white side boosters (no engines of their own), four fins, crew windows. */
-const MODEL_URL = '/models/artemis_starship_hybrid.obj';
-const MODEL_H = 10.7;
-// colours from the model's .mtl (diffuse) plus how metallic each surface is
-const MODEL_MTL = {
-  TitaniumSilver: [0.62, 0.67, 0.73, 0.8],
-  HeatshieldDark: [0.035, 0.045, 0.065, 0.1],
-  CeramicWhite: [0.88, 0.9, 0.92, 0.0],
-  EngineMetal: [0.16, 0.19, 0.23, 0.7],
-  AccentBlue: [0.025, 0.12, 0.48, 0.1],
-  Glass: [0.008, 0.025, 0.055, 0.3],
-  NozzleInterior: [0.045, 0.05, 0.06, 0.5],
+/* ---- The concept rocket, built in code (matches the reference image) ----
+   Units: length 1, engines at y = 0, nose at y = 1, axis along y.
+     · upper stage: dark gunmetal, ogive nose with crew windows, two pairs of fins
+     · lower core: silver-white with a blue roundel, a flared engine skirt
+     · four slim strap-on boosters, two big swept delta fins at the base
+     · nine engine bells: a ring of six round a centre one, and one under each fin */
+const PAINT = {
+  dark: [0.15, 0.17, 0.2, 0.75], // gunmetal stainless
+  steel: [0.5, 0.53, 0.57, 0.7],
+  white: [0.86, 0.87, 0.89, 0.12],
+  panel: [0.2, 0.22, 0.25, 0.5],
+  glass: [0.02, 0.03, 0.05, 0.4],
+  blue: [0.06, 0.2, 0.62, 0.1],
+  bell: [0.32, 0.33, 0.35, 0.85],
+  bellIn: [0.05, 0.05, 0.06, 0.5],
 };
-const MODEL_FALLBACK_COLOR = MODEL_MTL.CeramicWhite;
-// flames, in rig units (length 1, engines at y = 0): one plume for the whole nine-engine
-// cluster; the side boosters have no engines, so their flames stay off (null)
-const MODEL_NOZZLES = [[0, 0.87 / MODEL_H], null, null];
-const WIDEN = 1;
-const TAPER = [0.9, 1];
+const R_CORE = 0.064;
+const MODEL_NOZZLES = [[0, 0.085], null, null]; // one plume for the whole engine cluster
+
+function painted(geo, color) {
+  let g = geo.index ? geo.toNonIndexed() : geo;
+  for (const k of Object.keys(g.attributes)) if (k !== 'position') g.deleteAttribute(k);
+  const c = new Float32Array(g.attributes.position.count * 4);
+  for (let i = 0; i < g.attributes.position.count; i++) c.set(color, i * 4);
+  g.setAttribute('aPaint', new THREE.BufferAttribute(c, 4));
+  return g;
+}
+const latheOf = (pts, seg = 64) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+
+/** A flat fin from a 2D outline (x outward from the hull, y up), thickness t, set at angle a. */
+function fin(outline, t, y0, a, color) {
+  const sh = new THREE.Shape(outline.map(([x, y]) => new THREE.Vector2(x, y)));
+  const g = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false });
+  g.translate(R_CORE - 0.004, y0, -t / 2);
+  g.rotateY(a);
+  return painted(g, color);
+}
+
+async function buildModel() {
+  const parts = [];
+  const add = (g, c) => parts.push(painted(g, c));
+  // lower core, silver-white: flared skirt at the base, slim above
+  add(latheOf([[0, 0.06], [0.088, 0.06], [0.086, 0.09], [0.074, 0.15], [0.067, 0.3], [R_CORE, 0.45], [R_CORE, 0.63]]), PAINT.white);
+  // a thin steel ring at the stage joint
+  add(latheOf([[R_CORE + 0.0015, 0.625], [R_CORE + 0.0015, 0.64]]), PAINT.steel);
+  // upper stage, dark: straight body, then an ogive nose
+  const up = [[R_CORE, 0.63], [R_CORE - 0.002, 0.86]];
+  for (let k = 1; k <= 14; k++) {
+    const t = k / 14;
+    up.push([(R_CORE - 0.002) * Math.pow(1 - Math.pow(t, 2.2), 0.62), 0.86 + t * 0.14]);
+  }
+  add(latheOf(up), PAINT.dark);
+  // crew windows: a row of small dark panes on the nose
+  for (const ang of [-0.5, -0.17, 0.17, 0.5]) {
+    const w = new THREE.BoxGeometry(0.012, 0.016, 0.004);
+    w.translate(0, 0.905, R_CORE - 0.006);
+    w.rotateY(ang);
+    parts.push(painted(w, PAINT.glass));
+  }
+  // blue roundel on the white core (an emblem, not an agency logo)
+  const disc = new THREE.CircleGeometry(0.021, 40);
+  disc.translate(0, 0.53, R_CORE + 0.0012);
+  parts.push(painted(disc, PAINT.blue));
+  // fins on the upper stage: small forward pair, larger pair lower down (left and right)
+  for (const a of [0, Math.PI]) {
+    parts.push(fin([[0, 0], [0.055, 0.02], [0.055, 0.075], [0.012, 0.11], [0, 0.11]], 0.006, 0.78, a, PAINT.steel));
+    parts.push(fin([[0, 0], [0.062, 0.018], [0.062, 0.1], [0.014, 0.142], [0, 0.142]], 0.007, 0.595, a, PAINT.steel));
+  }
+  // big swept delta fins at the base, white with a dark trailing panel
+  for (const a of [0, Math.PI]) {
+    parts.push(fin([[0, 0.38], [0.17, 0.07], [0.17, -0.01], [0, 0.0]], 0.009, 0.06, a, PAINT.white));
+    parts.push(fin([[0.12, 0.09], [0.172, 0.06], [0.172, 0.0], [0.12, 0.0]], 0.0105, 0.06, a, PAINT.panel));
+  }
+  // four slim strap-on boosters with pointed noses
+  for (const a of [0.85, Math.PI - 0.85, Math.PI + 0.85, -0.85]) {
+    const prof = [[0, 0.07], [0.02, 0.07], [0.02, 0.38]];
+    for (let k = 1; k <= 8; k++) { const t = k / 8; prof.push([0.02 * Math.pow(1 - t * t, 0.6), 0.38 + t * 0.07]); }
+    const g = latheOf(prof, 28);
+    g.translate(R_CORE + 0.016, 0, 0);
+    g.rotateY(a);
+    parts.push(painted(g, a > 0 && a < Math.PI ? PAINT.white : PAINT.dark));
+  }
+  // engine bells: a ring of six round a centre one, plus one under each delta fin
+  const bells = [[0, 0], ...Array.from({ length: 6 }, (_, k) => [0.052 * Math.cos((k * Math.PI) / 3 + Math.PI / 6), 0.052 * Math.sin((k * Math.PI) / 3 + Math.PI / 6)]), [0.2, 0], [-0.2, 0]];
+  for (const [x, z] of bells) {
+    const outer = latheOf([[0.024, 0], [0.019, 0.025], [0.012, 0.055], [0.01, 0.065]], 28);
+    outer.translate(x, 0, z);
+    parts.push(painted(outer, PAINT.bell));
+    const inner = latheOf([[0.0225, 0.002], [0.011, 0.05]], 28);
+    inner.translate(x, 0, z);
+    parts.push(painted(inner, PAINT.bellIn));
+  }
+  let geo = mergeGeometries(parts);
+  for (const p of parts) p.dispose();
+  geo = toCreasedNormals(geo, Math.PI / 5); // smooth hulls, crisp fin edges
+  return geo;
+}
 
 const MODEL_VERTEX = /* glsl */ `
 attribute vec4 aPaint;
@@ -151,41 +226,6 @@ void main(){
   gl_FragColor = vec4(col * uFade, uFade);
 }
 `;
-
-/** Fetch and prepare the model: one merged mesh, Y-up, 1 unit long, engines at y = 0. */
-async function loadModel() {
-  const text = await (await fetch(MODEL_URL)).text();
-  const root = new OBJLoader().parse(text);
-  const parts = [];
-  root.traverse((o) => {
-    if (!o.isMesh) return;
-    let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
-    const mats = Array.isArray(o.material) ? o.material : [o.material];
-    const paint = new Float32Array(g.attributes.position.count * 4);
-    const groups = g.groups.length ? g.groups : [{ start: 0, count: g.attributes.position.count, materialIndex: 0 }];
-    for (const gr of groups) {
-      const c = MODEL_MTL[mats[gr.materialIndex]?.name] || MODEL_FALLBACK_COLOR;
-      for (let v = gr.start; v < gr.start + gr.count; v++) paint.set(c, v * 4);
-    }
-    g.setAttribute('aPaint', new THREE.BufferAttribute(paint, 4));
-    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'aPaint') g.deleteAttribute(k);
-    g.clearGroups();
-    parts.push(g);
-  });
-  let geo = mergeGeometries(parts);
-  geo.rotateX(-Math.PI / 2); // Blender's Z-up to Y-up
-  geo.scale(1 / MODEL_H, 1 / MODEL_H, 1 / MODEL_H);
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i);
-    const t = Math.min(1, Math.max(0, (y - TAPER[0]) / (TAPER[1] - TAPER[0])));
-    const f = WIDEN + (1 - WIDEN) * t * t * (3 - 2 * t);
-    pos.setX(i, pos.getX(i) * f);
-    pos.setZ(i, pos.getZ(i) * f);
-  }
-  geo = toCreasedNormals(geo, Math.PI / 5); // smooth curves, crisp edges
-  return geo;
-}
 
 export function createRocketRig({ quality = 'high' } = {}) {
   const low = quality === 'low';
@@ -373,11 +413,12 @@ export function createRocketRig({ quality = 'high' } = {}) {
   const modelMat = new THREE.ShaderMaterial({
     vertexShader: MODEL_VERTEX,
     fragmentShader: MODEL_FRAGMENT,
+    side: THREE.DoubleSide, // open engine bells show their insides
     uniforms: { uSunView: { value: new THREE.Vector3(0.6, 0.4, 0.7) }, uBounce: { value: new THREE.Color(0.07, 0.1, 0.16) }, uFade: { value: 1 }, uThrust: { value: 1 } },
   });
   let model = null;
   let disposed = false;
-  loadModel().then((geo) => {
+  buildModel().then((geo) => {
     if (disposed) { geo.dispose(); return; }
     model = new THREE.Mesh(geo, modelMat);
     model.frustumCulled = false;

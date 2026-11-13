@@ -61,7 +61,7 @@ function homePreload() {
         const css = [...(home.viteMetadata?.importedCss || [])].map((f) => '/' + f)
         const fonts = Object.keys(b).filter((f) => /(switzer-(400|500)|syne-latin-700-normal)[^/]*\.woff2$/.test(f)).map((f) => '/' + f)
         const imgs = ['/data/globe/earth-day-2k.webp', '/data/globe/earth-night-2k.webp']
-        const list = JSON.stringify({ js, css, fonts, imgs, data: ['/models/artemis_starship_hybrid.obj'] })
+        const list = JSON.stringify({ js, css, fonts, imgs, data: [] })
         const tag = `<script>(function(){if(location.pathname!=='/')return;var d=${list},h=document.head;function l(r,u,a){var e=document.createElement('link');e.rel=r;e.href=u;if(a)e.as=a;if(r==='modulepreload'||a==='font'||a==='image'||a==='fetch')e.crossOrigin='';h.appendChild(e)}d.js.forEach(function(u){l('modulepreload',u)});d.css.forEach(function(u){l('preload',u,'style')});d.fonts.forEach(function(u){l('preload',u,'font')});d.imgs.forEach(function(u){l('preload',u,'image')});d.data.forEach(function(u){l('preload',u,'fetch')})})()</script>`
         return html.replace('</head>', tag + '\n  </head>')
       },
