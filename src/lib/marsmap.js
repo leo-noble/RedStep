@@ -227,3 +227,65 @@ function poleCaps(z0url) {
   }
   return capCache.get(z0url)
 }
+
+/**
+ * Live USGS / NASA maps on the globe. The USGS "OnMars" map services (Esri, NASA/JPL/USGS data)
+ * are tiled on a plain latitude/longitude grid; the map needs Web Mercator tiles. This protocol
+ * builds each Mercator tile in the browser: it fetches the grid tiles that cover it and copies
+ * them across one pixel row at a time, stretching rows by latitude the way Mercator does.
+ *   tiles: ['usgsmars://CTX/{z}/{x}/{y}']   (CTX, MDIM or MColorDEM)
+ */
+export const USGS_MAPS = {
+  MDIM: { name: 'USGS colour', by: 'NASA/JPL/USGS MDIM 2.1, 231 m/px', maxzoom: 9 },
+  MColorDEM: { name: 'USGS relief', by: 'NASA/JPL/ESA/DLR/USGS HRSC-MOLA, 200 m/px', maxzoom: 9 },
+  CTX: { name: 'CTX 5 m', by: 'NASA/JPL/MSSS/Caltech Murray Lab CTX mosaic, 5 m/px', maxzoom: 15 },
+}
+const USGS_BASE = 'https://astro.arcgis.com/arcgis/rest/services/OnMars'
+const RES0 = 0.3515625 // degrees per pixel at level 0 (512 px tiles, 2 × 1 at level 0)
+const srcTile = new Map()
+function usgsTile(service, L, row, col, signal) {
+  const key = `${service}/${L}/${row}/${col}`
+  if (!srcTile.has(key)) {
+    srcTile.set(key, fetch(`${USGS_BASE}/${service}/MapServer/tile/${L}/${row}/${col}`, { signal })
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => (b ? createImageBitmap(b) : null))
+      .catch(() => { srcTile.delete(key); return null }))
+    if (srcTile.size > 400) srcTile.delete(srcTile.keys().next().value)
+  }
+  return srcTile.get(key)
+}
+
+export function registerUsgsMaps(name = 'usgsmars') {
+  if (registerUsgsMaps.done) return
+  registerUsgsMaps.done = true
+  maplibregl.addProtocol(name, async (params, abort) => {
+    const [service, z, x, y] = params.url.slice(name.length + 3).split('/').map((v, i) => (i ? Number(v) : v))
+    const size = 256, n = 2 ** z
+    const lon0 = (x / n) * 360 - 180, lon1 = ((x + 1) / n) * 360 - 180
+    const latAt = (j) => Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + j / size)) / n))) / D
+    const latTop = latAt(0), latBot = latAt(size)
+    // a little sharper than needed: Mercator stretches the grid toward the poles
+    const L = Math.min(17, Math.max(0, z - 1))
+    const res = RES0 / 2 ** L, T = 512
+    const px0 = (lon0 + 180) / res, px1 = (lon1 + 180) / res
+    const py0 = (90 - latTop) / res, py1 = (90 - latBot) / res
+    const c0 = Math.floor(px0 / T), c1 = Math.floor((px1 - 1e-6) / T)
+    const r0 = Math.floor(py0 / T), r1 = Math.min(Math.floor((py1 - 1e-6) / T), 2 ** L - 1)
+    const mosaic = new OffscreenCanvas((c1 - c0 + 1) * T, (r1 - r0 + 1) * T)
+    const mctx = mosaic.getContext('2d')
+    const jobs = []
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) jobs.push(usgsTile(service, L, r, c, abort?.signal).then((bmp) => bmp && mctx.drawImage(bmp, (c - c0) * T, (r - r0) * T)))
+    await Promise.all(jobs)
+    const out = new OffscreenCanvas(size, size)
+    const ctx = out.getContext('2d')
+    ctx.imageSmoothingQuality = 'high'
+    const sx = px0 - c0 * T, sw = px1 - px0
+    for (let j = 0; j < size; j++) {
+      const lat = latAt(j + 0.5)
+      const sy = (90 - lat) / res - r0 * T
+      ctx.drawImage(mosaic, sx, Math.max(0, Math.min(mosaic.height - 1, sy - 0.5)), sw, 1, 0, j, size, 1)
+    }
+    const blob = await out.convertToBlob({ type: 'image/jpeg', quality: 0.9 })
+    return { data: await blob.arrayBuffer() }
+  })
+}
