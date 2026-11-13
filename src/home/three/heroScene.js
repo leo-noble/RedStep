@@ -928,7 +928,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       camera,
       // smoke only in air: thick at launch from Earth, gone in space; a thin dust cloud in
       // Mars's air in the last metres of the landing
-      smoke: flight ? 0.45 * smoothstep(1.3, 1.9, flight.t) : 1 - smoothstep(0.08, 0.3, p),
+      smoke: 0, // no smoke trail: the engines' flames carry the look on their own
     });
 
     /* ---- Hairlines ---- */
