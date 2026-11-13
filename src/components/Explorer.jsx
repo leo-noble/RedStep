@@ -5,18 +5,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { corners, marsMetresPerPixel, R_MARS } from '../lib/marsmap.js'
+import { corners, marsMetresPerPixel, R_MARS, registerPoleSmoothing } from '../lib/marsmap.js'
 import { marsTime, sunAt, fmtHours } from '../lib/mars24.js'
 import { earthMars } from '../lib/ephem.js'
 import { SITES, siteMeta, siteTraverse, placeNames, basemapTiles } from '../data/index.js'
 import { FAMOUS, famousByName } from '../content/places.js'
 import { SITE } from '../content/site.js'
+import { toolsFor } from '../content/nasaTools.js'
 import { Sidebar, SbSection, SbRow, SbDisclosure } from './Sidebar.jsx'
 import { Badge, Source } from './Atoms.jsx'
 import { prefersReducedMotion, useNarrow } from '../lib/hooks.js'
 import { deviceTier } from '../lib/quality.js'
 import './explorer.css'
 
+// base-map tiles through the pole-smoothing protocol (needs an absolute URL)
+const poleTiles = (t) => (/^https?:\/\//.test(t) ? `marspole://${t}` : t.startsWith('/') ? `marspole://${location.origin}${t}` : t)
 const thumb = (id) => basemapTiles(id).replace('{z}/{x}/{y}', '0/0/0')
 const D = Math.PI / 180
 const BASEMAPS = [
@@ -99,6 +102,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
   // ---------- map ----------
   useEffect(() => {
     registerNight('marsnight')
+    registerPoleSmoothing()
     const start = SITES.find((s) => s.id === initial) || SITES[0]
     const m = new maplibregl.Map({
       container: el.current,
@@ -127,7 +131,7 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
 
     m.on('load', async () => {
       for (const b of BASEMAPS) {
-        m.addSource(`base-${b.id}`, { type: 'raster', tiles: [basemapTiles(b.id)], tileSize: 256, maxzoom: b.maxzoom })
+        m.addSource(`base-${b.id}`, { type: 'raster', tiles: [poleTiles(basemapTiles(b.id))], tileSize: 256, maxzoom: b.maxzoom })
         m.addLayer({ id: `base-${b.id}`, type: 'raster', source: `base-${b.id}`, paint: { 'raster-fade-duration': 0, 'raster-resampling': 'linear' }, layout: { visibility: b.id === 'viking' ? 'visible' : 'none' } })
       }
       // Sharper regional maps at the mission sites load only when you zoom in near one
@@ -395,6 +399,15 @@ export default function Explorer({ onReady, initial = 'jezero', visible = true, 
         {sel.kind === 'site' && <div><dt>Mission</dt><dd>{sel.site.mission}</dd></div>}
       </dl>
       <button type="button" className="xp-copy" onClick={() => navigator.clipboard?.writeText(`${sel.lat.toFixed(4)}, ${sel.lon.toFixed(4)}`)}>Copy coordinates</button>
+
+      <div className="xp-tools">
+        <p className="xp-tools-title">Look closer with NASA</p>
+        <ul>
+          {toolsFor(sel.kind === 'site' ? sel.site.id : null).map((t) => (
+            <li key={t.url}><a href={t.url} target="_blank" rel="noreferrer"><b>{t.name}</b><span>{t.what}</span><i aria-hidden="true">↗</i></a></li>
+          ))}
+        </ul>
+      </div>
 
       <SbDisclosure title="References">
         <ul>

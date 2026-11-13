@@ -146,3 +146,84 @@ export function registerDem(name, grid, bbox) {
     return { data: await blob.arrayBuffer() }
   })
 }
+
+/**
+ * Pole caps on the 3D globe. Map tiles stop at 85° latitude and the globe fills the rest of
+ * each pole by stretching the tiles' edge row into a fan of streaks. This protocol serves the
+ * base-map tiles with the rows nearest the pole blended into one colour (the average of that
+ * edge), so the cap closes as a smooth disc. Other tiles pass through untouched.
+ *   tiles: ['marspole://' + realTemplate]  →  marspole://https://…/{z}/{x}/{y}.png
+ */
+export function registerPoleSmoothing(name = 'marspole') {
+  if (registerPoleSmoothing.done) return
+  registerPoleSmoothing.done = true
+  maplibregl.addProtocol(name, async (params, abort) => {
+    const url = params.url.slice(name.length + 3)
+    const res = await fetch(url, { signal: abort?.signal })
+    if (!res.ok) throw new Error(`tile ${res.status}`)
+    const m = url.match(/\/(\d+)\/(\d+)\/(\d+)(?:\.\w+)?(?:\?.*)?$/)
+    const [z, , y] = m ? m.slice(1).map(Number) : [0, 0, 0]
+    const north = y === 0, south = y === 2 ** z - 1
+    if (!m || (!north && !south)) return { data: await res.arrayBuffer() }
+    const bmp = await createImageBitmap(await res.blob())
+    const c = new OffscreenCanvas(bmp.width, bmp.height)
+    const ctx = c.getContext('2d')
+    ctx.drawImage(bmp, 0, 0)
+    const w = bmp.width, h = bmp.height
+    const img = ctx.getImageData(0, 0, w, h)
+    const d = img.data
+    const band = Math.max(4, Math.round(h * (z === 0 ? 0.08 : 0.16)))
+    const edgeAvg = (row0, rows) => {
+      let r = 0, g = 0, b = 0, n = 0
+      for (let j = row0; j < row0 + rows; j++) for (let i = 0; i < w; i++) { const k = (j * w + i) * 4; r += d[k]; g += d[k + 1]; b += d[k + 2]; n++ }
+      return [r / n, g / n, b / n]
+    }
+    // one colour per pole for every tile and zoom (from the whole-planet tile), so the cap is
+    // a single even disc; it uses the brighter half of the edge pixels: the ice, not the troughs
+    const caps = await poleCaps(url.replace(/\/\d+\/\d+\/\d+(\.\w+)?(\?.*)?$/, '/0/0/0$1'))
+    const blend = (fromTop) => {
+      const avg = (fromTop ? caps.north : caps.south) || edgeAvg(fromTop ? 0 : h - band, band)
+      for (let t = 0; t < band; t++) {
+        const j = fromTop ? t : h - 1 - t
+        const a = 1 - t / band // 1 at the edge, 0 inside
+        const f = a * a * (3 - 2 * a)
+        for (let i = 0; i < w; i++) {
+          const k = (j * w + i) * 4
+          d[k] += (avg[0] - d[k]) * f; d[k + 1] += (avg[1] - d[k + 1]) * f; d[k + 2] += (avg[2] - d[k + 2]) * f
+        }
+      }
+    }
+    if (north) blend(true)
+    if (south) blend(false)
+    ctx.putImageData(img, 0, 0)
+    const out = await c.convertToBlob({ type: 'image/png' })
+    return { data: await out.arrayBuffer() }
+  })
+}
+
+const capCache = new Map()
+function poleCaps(z0url) {
+  if (!capCache.has(z0url)) {
+    capCache.set(z0url, (async () => {
+      try {
+        const bmp = await createImageBitmap(await (await fetch(z0url)).blob())
+        const c = new OffscreenCanvas(bmp.width, bmp.height)
+        const ctx = c.getContext('2d')
+        ctx.drawImage(bmp, 0, 0)
+        const { data: d, width: w, height: h } = ctx.getImageData(0, 0, bmp.width, bmp.height)
+        const rows = Math.max(2, Math.round(h * 0.03))
+        const bright = (j0) => {
+          const px = []
+          for (let j = j0; j < j0 + rows; j++) for (let i = 0; i < w; i++) { const k = (j * w + i) * 4; px.push([d[k], d[k + 1], d[k + 2]]) }
+          px.sort((a, b) => a[0] + a[1] + a[2] - (b[0] + b[1] + b[2]))
+          const top = px.slice(px.length >> 1)
+          return [0, 1, 2].map((ch) => top.reduce((v, p) => v + p[ch], 0) / top.length)
+        }
+        return { north: bright(0), south: bright(h - rows) }
+      } catch {
+        return {}
+      }
+    })())
+  }
+  return capCache.get(z0url)
+}
