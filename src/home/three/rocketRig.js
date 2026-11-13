@@ -8,7 +8,8 @@
    ========================================================================== */
 
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { ROCKET_VERTEX, ROCKET_FRAGMENT, FLAME_VERTEX, FLAME_FRAGMENT, SMOKE_VERTEX, SMOKE_FRAGMENT, GLOW_VERTEX, GLOW_FRAGMENT } from './shaders.js';
 
 const CORE_R = 0.05;
@@ -72,6 +73,107 @@ function letteringTexture() {
   draw();
   document.fonts?.load('700 84px "Syne"').then(draw, () => {});
   return tex;
+}
+
+
+/* ---- Artemis II / SLS model (public/models/artemis_ii_sls.obj, Z-up, 17.35 units tall) ---- */
+const MODEL_URL = '/models/artemis_ii_sls.obj';
+const MODEL_H = 17.35;
+// colours from the model's .mtl (diffuse), plus how metallic each region is
+const MODEL_MTL = {
+  orange: [0.72, 0.2, 0.055, 0.05],
+  orange_light: [0.92, 0.34, 0.08, 0.05],
+  white: [0.82, 0.84, 0.84, 0.0],
+  white2: [0.96, 0.96, 0.92, 0.0],
+  gray: [0.22, 0.25, 0.28, 0.35],
+  dark: [0.055, 0.065, 0.08, 0.7],
+  gold: [0.72, 0.48, 0.16, 0.85],
+  blue: [0.025, 0.08, 0.55, 0.1],
+  black: [0.012, 0.015, 0.02, 0.2],
+  red: [0.55, 0.045, 0.035, 0.05],
+};
+// engine layout measured from the model (rig units: rocket length 1, engines at y = 0)
+const MODEL_NOZZLES = [[0, 0.0317], [0.94 / MODEL_H, 0.29 / MODEL_H], [-0.94 / MODEL_H, 0.29 / MODEL_H]];
+
+const MODEL_VERTEX = /* glsl */ `
+attribute vec4 aPaint;
+varying vec3 vN;
+varying vec3 vV;
+varying vec4 vPaint;
+varying float vY;
+void main(){
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vN = normalize(normalMatrix * normal);
+  vV = normalize(-mv.xyz);
+  vPaint = aPaint;
+  vY = position.y;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+const MODEL_FRAGMENT = /* glsl */ `
+precision highp float;
+uniform vec3 uSunView;
+uniform vec3 uBounce;
+uniform float uFade;
+uniform float uThrust;
+varying vec3 vN;
+varying vec3 vV;
+varying vec4 vPaint;
+varying float vY;
+void main(){
+  vec3 n = normalize(gl_FrontFacing ? vN : -vN);
+  vec3 V = normalize(vV);
+  vec3 albedo = vPaint.rgb;
+  float metal = vPaint.a;
+  float rough = mix(0.45, 0.3, metal);
+  float ndl = dot(n, uSunView);
+  float lit = max((ndl + 0.1) / 1.1, 0.0);
+  vec3 H = normalize(uSunView + V);
+  float a2 = rough * rough;
+  float ndh = max(dot(n, H), 0.0);
+  float dd = ndh * ndh * (a2 * a2 - 1.0) + 1.0;
+  float D = (a2 * a2) / (3.14159 * dd * dd);
+  vec3 F0 = mix(vec3(0.04), albedo, metal);
+  vec3 F = F0 + (1.0 - F0) * pow(1.0 - max(dot(V, H), 0.0), 5.0);
+  vec3 spec = D * F * 0.25 * step(0.0, ndl);
+  vec3 R = reflect(-V, n);
+  vec3 sky = mix(vec3(0.012, 0.016, 0.026), vec3(0.10, 0.17, 0.30), smoothstep(0.2, -0.8, R.y));
+  float fres = pow(1.0 - max(dot(n, V), 0.0), 5.0);
+  vec3 env = sky * mix(0.04 + 0.96 * fres, 1.0, metal) * (1.0 - rough * 0.6);
+  vec3 bounce = uBounce * max(-n.y * 0.5 + 0.5, 0.0);
+  vec3 sun = vec3(1.0, 0.97, 0.92);
+  vec3 col = albedo * (1.0 - metal * 0.6) * (lit * sun * 1.3 + bounce * 1.6 + 0.04) + spec * sun * 2.2 + env;
+  // the engines light the bottom of the stack
+  col += albedo * vec3(1.0, 0.55, 0.22) * uThrust * 0.7 * smoothstep(0.12, 0.0, vY);
+  gl_FragColor = vec4(col * uFade, uFade);
+}
+`;
+
+/** Fetch and prepare the model: one merged mesh, Y-up, 1 unit long, engines at y = 0. */
+async function loadModel() {
+  const text = await (await fetch(MODEL_URL)).text();
+  const root = new OBJLoader().parse(text);
+  const parts = [];
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    const paint = new Float32Array(g.attributes.position.count * 4);
+    const groups = g.groups.length ? g.groups : [{ start: 0, count: g.attributes.position.count, materialIndex: 0 }];
+    for (const gr of groups) {
+      const c = MODEL_MTL[mats[gr.materialIndex]?.name] || MODEL_MTL.white;
+      for (let v = gr.start; v < gr.start + gr.count; v++) paint.set(c, v * 4);
+    }
+    g.setAttribute('aPaint', new THREE.BufferAttribute(paint, 4));
+    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'aPaint') g.deleteAttribute(k);
+    g.clearGroups();
+    parts.push(g);
+  });
+  let geo = mergeGeometries(parts);
+  geo.rotateX(-Math.PI / 2); // Blender's Z-up to Y-up
+  geo.scale(1 / MODEL_H, 1 / MODEL_H, 1 / MODEL_H);
+  geo = toCreasedNormals(geo, Math.PI / 5); // smooth curves, crisp edges
+  return geo;
 }
 
 export function createRocketRig({ quality = 'high' } = {}) {
@@ -256,6 +358,34 @@ export function createRocketRig({ quality = 'high' } = {}) {
   const tmpM = new THREE.Matrix3();
   const tmpInv = new THREE.Matrix4();
 
+  /* ---- swap in the Artemis II model once it has loaded (the drawn rocket is the fallback) ---- */
+  const modelMat = new THREE.ShaderMaterial({
+    vertexShader: MODEL_VERTEX,
+    fragmentShader: MODEL_FRAGMENT,
+    uniforms: { uSunView: { value: new THREE.Vector3(0.6, 0.4, 0.7) }, uBounce: { value: new THREE.Color(0.07, 0.1, 0.16) }, uFade: { value: 1 }, uThrust: { value: 1 } },
+  });
+  let model = null;
+  let disposed = false;
+  loadModel().then((geo) => {
+    if (disposed) { geo.dispose(); return; }
+    model = new THREE.Mesh(geo, modelMat);
+    model.frustumCulled = false;
+    body.add(model);
+    vehicle.visible = false;
+    for (const h of legs) h.visible = false;
+    // flames and glows move to the model's own engines, sized to its nozzles
+    flames.forEach((f, i) => {
+      const k = i >> 1;
+      const [x, r] = MODEL_NOZZLES[k];
+      f.position.set(x, 0, 0);
+      const s = r / exitR[k];
+      f.scale.set(s, 1, s);
+    });
+    const gp = glowGeo.attributes.position;
+    MODEL_NOZZLES.forEach(([x], k) => gp.setX(k, x));
+    gp.needsUpdate = true;
+  }).catch(() => { /* keep the drawn rocket */ });
+
   return {
     group,
     vehicleMat,
@@ -282,17 +412,25 @@ export function createRocketRig({ quality = 'high' } = {}) {
       glowMat.uniforms.uThrust.value = thrust;
       glowMat.uniforms.uPx.value = px;
       vehicleMat.uniforms.uFade.value = fade;
+      modelMat.uniforms.uFade.value = fade;
+      modelMat.uniforms.uThrust.value = thrust;
+      modelMat.transparent = fade < 0.999;
+      if (bounce) modelMat.uniforms.uBounce.value.copy(bounce);
       vehicleMat.uniforms.uThrust.value = thrust;
       // opaque once fully in; blended only while fading in or out
       vehicleMat.transparent = fade < 0.999;
       // sun in view space for the paint shading
       tmpM.setFromMatrix4(camera.matrixWorldInverse);
       vehicleMat.uniforms.uSunView.value.copy(tmpV.copy(sunWorld).applyMatrix3(tmpM).normalize());
+      modelMat.uniforms.uSunView.value.copy(tmpV);
       // and in the vehicle's own frame, for the shadows it casts on itself
       tmpInv.copy(vehicle.matrixWorld).invert();
       vehicleMat.uniforms.uSunObj.value.copy(sunWorld).transformDirection(tmpInv);
     },
     dispose() {
+      disposed = true;
+      model?.geometry.dispose();
+      modelMat.dispose();
       vehicleGeo.dispose();
       legGeo.dispose();
       footGeo.dispose();
