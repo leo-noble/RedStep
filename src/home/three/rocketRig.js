@@ -76,29 +76,27 @@ function letteringTexture() {
 }
 
 
-/* ---- Artemis II / SLS model (public/models/artemis_ii_sls.obj, Z-up, 17.35 units tall) ---- */
-const MODEL_URL = '/models/artemis_ii_sls.obj';
-const MODEL_H = 17.35;
-// colours from the model's .mtl (diffuse), plus how metallic each region is
+/* ---- Artemis / Starship hybrid model (public/models/artemis_starship_hybrid.obj) ----
+   Blender Z-up, 10.7 units tall, 2.16 wide at the main stage: nine engines in a 3x3 grid at
+   the base, two white side boosters (no engines of their own), four fins, crew windows. */
+const MODEL_URL = '/models/artemis_starship_hybrid.obj';
+const MODEL_H = 10.7;
+// colours from the model's .mtl (diffuse) plus how metallic each surface is
 const MODEL_MTL = {
-  // the core stage's foam insulation: a muted, burnt orange-red, not a saturated red
-  orange: [0.6, 0.29, 0.15, 0.05],
-  orange_light: [0.68, 0.36, 0.2, 0.05],
-  white: [0.82, 0.84, 0.84, 0.0],
-  white2: [0.96, 0.96, 0.92, 0.0],
-  gray: [0.22, 0.25, 0.28, 0.35],
-  dark: [0.055, 0.065, 0.08, 0.7],
-  gold: [0.72, 0.48, 0.16, 0.85],
-  blue: [0.025, 0.08, 0.55, 0.1],
-  black: [0.012, 0.015, 0.02, 0.2],
-  red: [0.55, 0.045, 0.035, 0.05],
+  TitaniumSilver: [0.62, 0.67, 0.73, 0.8],
+  HeatshieldDark: [0.035, 0.045, 0.065, 0.1],
+  CeramicWhite: [0.88, 0.9, 0.92, 0.0],
+  EngineMetal: [0.16, 0.19, 0.23, 0.7],
+  AccentBlue: [0.025, 0.12, 0.48, 0.1],
+  Glass: [0.008, 0.025, 0.055, 0.3],
+  NozzleInterior: [0.045, 0.05, 0.06, 0.5],
 };
-// engine layout measured from the model (rig units: rocket length 1, engines at y = 0)
-// The stack is widened to the drawn rocket's girth (WIDEN) and tapers back to the model's own
-// slim nose and tower above TAPER, so it reads as a sturdy rocket with a narrow tip.
-const WIDEN = 1.45;
-const TAPER = [0.78, 0.93];
-const MODEL_NOZZLES = [[0, 0.0317 * WIDEN], [(0.94 / MODEL_H) * WIDEN, (0.29 / MODEL_H) * WIDEN], [(-0.94 / MODEL_H) * WIDEN, (0.29 / MODEL_H) * WIDEN]];
+const MODEL_FALLBACK_COLOR = MODEL_MTL.CeramicWhite;
+// flames, in rig units (length 1, engines at y = 0): one plume for the whole nine-engine
+// cluster; the side boosters have no engines, so their flames stay off (null)
+const MODEL_NOZZLES = [[0, 0.87 / MODEL_H], null, null];
+const WIDEN = 1;
+const TAPER = [0.9, 1];
 
 const MODEL_VERTEX = /* glsl */ `
 attribute vec4 aPaint;
@@ -166,7 +164,7 @@ async function loadModel() {
     const paint = new Float32Array(g.attributes.position.count * 4);
     const groups = g.groups.length ? g.groups : [{ start: 0, count: g.attributes.position.count, materialIndex: 0 }];
     for (const gr of groups) {
-      const c = MODEL_MTL[mats[gr.materialIndex]?.name] || MODEL_MTL.white;
+      const c = MODEL_MTL[mats[gr.materialIndex]?.name] || MODEL_FALLBACK_COLOR;
       for (let v = gr.start; v < gr.start + gr.count; v++) paint.set(c, v * 4);
     }
     g.setAttribute('aPaint', new THREE.BufferAttribute(paint, 4));
@@ -389,6 +387,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
     // flames and glows move to the model's own engines, sized to its nozzles
     flames.forEach((f, i) => {
       const k = i >> 1;
+      if (!MODEL_NOZZLES[k]) { f.userData.off = true; return; }
       const [x, r] = MODEL_NOZZLES[k];
       f.position.set(x, 0, 0);
       // the outer flame flares wider than the nozzle, like a plume in thin air
@@ -396,7 +395,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
       f.scale.set(s, 1, s);
     });
     const gp = glowGeo.attributes.position;
-    MODEL_NOZZLES.forEach(([x], k) => gp.setX(k, x));
+    MODEL_NOZZLES.forEach((n, k) => (n ? gp.setX(k, n[0]) : gp.setY(k, 1e4))); // unused glows parked far away
     gp.needsUpdate = true;
   }).catch(() => { /* keep the drawn rocket */ });
 
@@ -421,7 +420,7 @@ export function createRocketRig({ quality = 'high' } = {}) {
         m.uniforms.uTime.value = time;
         m.uniforms.uThrust.value = thrust * fade;
       }
-      for (const f of flames) f.visible = thrust * fade > 0.01;
+      for (const f of flames) f.visible = !f.userData.off && thrust * fade > 0.01;
       glowMat.uniforms.uTime.value = time;
       glowMat.uniforms.uThrust.value = thrust;
       glowMat.uniforms.uPx.value = px;
