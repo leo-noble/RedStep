@@ -102,13 +102,15 @@ function painted(geo, color) {
   g.setAttribute('aPaint', new THREE.BufferAttribute(c, 4));
   return g;
 }
-const latheOf = (pts, seg = 64) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+const latheOf = (pts, seg = 128) => new THREE.LatheGeometry(pts.map(([r, y]) => new THREE.Vector2(r, y)), seg);
 
 /** A flat fin from a 2D outline (x outward from the hull, y up), thickness t, set at angle a. */
 function fin(outline, t, y0, a, color) {
   const sh = new THREE.Shape(outline.map(([x, y]) => new THREE.Vector2(x, y)));
-  const g = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false });
-  g.translate(R_CORE - 0.004, y0, -t / 2);
+  // rounded edges all round (a bevel half the thickness), so fins read as moulded, not cut
+  const b = t * 0.45;
+  const g = new THREE.ExtrudeGeometry(sh, { depth: t - 2 * b, bevelEnabled: true, bevelThickness: b, bevelSize: b * 0.9, bevelOffset: -b * 0.9, bevelSegments: 5, curveSegments: 1 });
+  g.translate(R_CORE - 0.004, y0, -(t - 2 * b) / 2);
   g.rotateY(a);
   return painted(g, color);
 }
@@ -122,20 +124,21 @@ async function buildModel() {
   add(latheOf([[R_CORE + 0.0015, 0.625], [R_CORE + 0.0015, 0.64]]), PAINT.steel);
   // upper stage, dark: straight body, then an ogive nose
   const up = [[R_CORE, 0.63], [R_CORE - 0.002, 0.86]];
-  for (let k = 1; k <= 14; k++) {
-    const t = k / 14;
+  for (let k = 1; k <= 40; k++) {
+    const t = k / 40;
     up.push([(R_CORE - 0.002) * Math.pow(1 - Math.pow(t, 2.2), 0.62), 0.86 + t * 0.14]);
   }
   add(latheOf(up), PAINT.dark);
   // crew windows: a row of small dark panes on the nose
   for (const ang of [-0.5, -0.17, 0.17, 0.5]) {
-    const w = new THREE.BoxGeometry(0.012, 0.016, 0.004);
-    w.translate(0, 0.905, R_CORE - 0.006);
+    const w = new THREE.CapsuleGeometry(0.0045, 0.007, 6, 16);
+    w.scale(1, 1, 0.45);
+    w.translate(0, 0.905, R_CORE * 0.93);
     w.rotateY(ang);
     parts.push(painted(w, PAINT.glass));
   }
   // blue roundel on the white core (an emblem, not an agency logo)
-  const disc = new THREE.CircleGeometry(0.021, 40);
+  const disc = new THREE.CircleGeometry(0.021, 96);
   disc.translate(0, 0.53, R_CORE + 0.0012);
   parts.push(painted(disc, PAINT.blue));
   // fins on the upper stage: small forward pair, larger pair lower down (left and right)
@@ -151,8 +154,8 @@ async function buildModel() {
   // four slim strap-on boosters with pointed noses
   for (const a of [0.85, Math.PI - 0.85, Math.PI + 0.85, -0.85]) {
     const prof = [[0, 0.07], [0.02, 0.07], [0.02, 0.38]];
-    for (let k = 1; k <= 8; k++) { const t = k / 8; prof.push([0.02 * Math.pow(1 - t * t, 0.6), 0.38 + t * 0.07]); }
-    const g = latheOf(prof, 28);
+    for (let k = 1; k <= 24; k++) { const t = k / 24; prof.push([0.02 * Math.pow(1 - t * t, 0.6), 0.38 + t * 0.07]); }
+    const g = latheOf(prof, 72);
     g.translate(R_CORE + 0.016, 0, 0);
     g.rotateY(a);
     parts.push(painted(g, a > 0 && a < Math.PI ? PAINT.white : PAINT.dark));
@@ -160,16 +163,16 @@ async function buildModel() {
   // engine bells: a ring of six round a centre one, plus one under each delta fin
   const bells = [[0, 0], ...Array.from({ length: 6 }, (_, k) => [0.052 * Math.cos((k * Math.PI) / 3 + Math.PI / 6), 0.052 * Math.sin((k * Math.PI) / 3 + Math.PI / 6)]), [0.2, 0], [-0.2, 0]];
   for (const [x, z] of bells) {
-    const outer = latheOf([[0.024, 0], [0.019, 0.025], [0.012, 0.055], [0.01, 0.065]], 28);
+    const outer = latheOf([[0.024, 0], [0.0215, 0.012], [0.019, 0.025], [0.0155, 0.04], [0.012, 0.055], [0.01, 0.065]], 64);
     outer.translate(x, 0, z);
     parts.push(painted(outer, PAINT.bell));
-    const inner = latheOf([[0.0225, 0.002], [0.011, 0.05]], 28);
+    const inner = latheOf([[0.0225, 0.002], [0.017, 0.025], [0.011, 0.05]], 64);
     inner.translate(x, 0, z);
     parts.push(painted(inner, PAINT.bellIn));
   }
   let geo = mergeGeometries(parts);
   for (const p of parts) p.dispose();
-  geo = toCreasedNormals(geo, Math.PI / 5); // smooth hulls, crisp fin edges
+  geo = toCreasedNormals(geo, (50 * Math.PI) / 180); // smooth hulls and fin bevels, crisp true corners
   return geo;
 }
 
@@ -198,31 +201,53 @@ varying vec3 vN;
 varying vec3 vV;
 varying vec4 vPaint;
 varying float vY;
+
+// A soft studio around the rocket, in view space: dark space below, a cool sky above, and two
+// tall softboxes, so glossy paint shows long, clean highlights down the round hull.
+vec3 studio(vec3 R){
+  vec3 c = mix(vec3(0.01, 0.012, 0.018), vec3(0.11, 0.14, 0.2), smoothstep(-0.35, 0.9, R.y));
+  float tall = smoothstep(-0.55, 0.15, R.y) * (1.0 - smoothstep(0.75, 1.0, R.y));
+  c += vec3(1.0, 0.97, 0.93) * 1.35 * exp(-pow((R.x - 0.52) / 0.13, 2.0)) * tall;
+  c += vec3(0.55, 0.66, 0.85) * 0.55 * exp(-pow((R.x + 0.66) / 0.1, 2.0)) * tall;
+  c += vec3(1.0, 0.97, 0.9) * pow(max(dot(R, uSunView), 0.0), 400.0) * 8.0;
+  return c;
+}
+
+float ggx(float ndh, float a){ float a2 = a * a; float d = ndh * ndh * (a2 - 1.0) + 1.0; return a2 / (3.14159 * d * d); }
+
 void main(){
   vec3 n = normalize(gl_FrontFacing ? vN : -vN);
   vec3 V = normalize(vV);
   vec3 albedo = vPaint.rgb;
   float metal = vPaint.a;
-  float rough = mix(0.45, 0.3, metal);
-  float ndl = dot(n, uSunView);
-  float lit = max((ndl + 0.1) / 1.1, 0.0);
-  vec3 H = normalize(uSunView + V);
-  float a2 = rough * rough;
-  float ndh = max(dot(n, H), 0.0);
-  float dd = ndh * ndh * (a2 * a2 - 1.0) + 1.0;
-  float D = (a2 * a2) / (3.14159 * dd * dd);
-  vec3 F0 = mix(vec3(0.04), albedo, metal);
-  vec3 F = F0 + (1.0 - F0) * pow(1.0 - max(dot(V, H), 0.0), 5.0);
-  vec3 spec = D * F * 0.25 * step(0.0, ndl);
+  float NdV = max(dot(n, V), 1e-3);
   vec3 R = reflect(-V, n);
-  vec3 sky = mix(vec3(0.012, 0.016, 0.026), vec3(0.10, 0.17, 0.30), smoothstep(0.2, -0.8, R.y));
-  float fres = pow(1.0 - max(dot(n, V), 0.0), 5.0);
-  vec3 env = sky * mix(0.04 + 0.96 * fres, 1.0, metal) * (1.0 - rough * 0.6);
-  vec3 bounce = uBounce * max(-n.y * 0.5 + 0.5, 0.0);
+  vec3 H = normalize(uSunView + V);
+  float ndl = dot(n, uSunView);
+  float ndh = max(dot(n, H), 0.0);
+  float vdh = max(dot(V, H), 0.0);
   vec3 sun = vec3(1.0, 0.97, 0.92);
-  vec3 col = albedo * (1.0 - metal * 0.6) * (lit * sun * 1.3 + bounce * 1.6 + 0.04) + spec * sun * 2.2 + env;
+
+  // base layer: painted (dielectric) or bare metal
+  float rough = mix(0.38, 0.22, metal);
+  float lit = max((ndl + 0.08) / 1.08, 0.0);
+  vec3 F0 = mix(vec3(0.04), albedo, metal);
+  vec3 F = F0 + (1.0 - F0) * pow(1.0 - vdh, 5.0);
+  vec3 baseSpec = ggx(ndh, rough * rough) * F * 0.25 * step(0.0, ndl) * sun * 2.0;
+  vec3 bounce = uBounce * max(-n.y * 0.5 + 0.5, 0.0);
+  vec3 diffuse = albedo * (1.0 - metal) * (lit * sun * 1.15 + bounce * 1.5 + 0.035);
+  vec3 metalEnv = studio(R) * albedo * metal * 1.1;
+
+  // clear coat over everything: a thin glassy layer with mirror-like reflections
+  float Fc = 0.04 + 0.96 * pow(1.0 - NdV, 5.0);
+  vec3 coat = studio(R) * mix(0.09, 1.0, Fc) * 0.85
+            + ggx(ndh, 0.035 * 0.035) * (0.04 + 0.96 * pow(1.0 - vdh, 5.0)) * 0.25 * step(0.0, ndl) * sun * 1.5;
+  vec3 col = (diffuse + baseSpec + metalEnv) * (1.0 - Fc * 0.85) + coat;
+
   // the engines light the bottom of the stack
-  col += albedo * vec3(1.0, 0.55, 0.22) * uThrust * 0.7 * smoothstep(0.12, 0.0, vY);
+  col += albedo * vec3(1.0, 0.55, 0.22) * uThrust * 0.6 * smoothstep(0.12, 0.0, vY);
+  // gentle shoulder so the brightest highlights roll off instead of clipping flat
+  col = col / (1.0 + max(col - 0.85, 0.0) * 0.6);
   gl_FragColor = vec4(col * uFade, uFade);
 }
 `;

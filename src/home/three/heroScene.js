@@ -816,6 +816,7 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
       // braking burn, throttling down as it touches down
       landThrust = smoothstep(0.15, 0.45, T) * lerp(0.9, 0.35, desc) * (1 - smoothstep(2.0, 2.15, T));
     }
+    if (import.meta.env.DEV && window.__rocketZoom) rScale *= window.__rocketZoom; // dev: inspect the model up close
     rig.group.scale.setScalar(rScale);
     rig.group.position.copy(rocketPos);
     qRoll.setFromAxisAngle(Y, reduced ? 0.6 : time * 0.15);
