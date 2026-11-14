@@ -889,13 +889,17 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
         moonPhase = 0;
         moonHiddenAt = null;
         moonOcclusionCooldown = 0;
+        moon.visible = true;
       } else if (moonHiddenAt !== null) {
+        moon.visible = false;
         if (time - moonHiddenAt >= 2) {
           moonPhase = (moonPhase + Math.PI) % (Math.PI * 2);
           moonHiddenAt = null;
+          moon.visible = true;
           moonOcclusionCooldown = time + 0.5;
         }
       } else {
+        moon.visible = true;
         moonPhase = (moonPhase + (dt / MOON_ORBIT_PERIOD) * Math.PI * 2) % (Math.PI * 2);
       }
 
@@ -915,8 +919,8 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
           const dy = moonView.y / moonDepth - earthView.y / earthDepth;
           const moonRadius = L.moonR / moonDepth;
           const earthRadius = L.earthR / earthDepth;
-          const fullyBehindEarth = Math.hypot(dx, dy) + moonRadius < earthRadius;
-          if (fullyBehindEarth) moonHiddenAt = time;
+          const reachesEarthLimb = Math.hypot(dx, dy) < earthRadius + moonRadius;
+          if (reachesEarthLimb) moonHiddenAt = time;
         }
       }
     }
