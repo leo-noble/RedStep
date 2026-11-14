@@ -73,7 +73,7 @@ const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
 const PARK_R = 1.24;
 const LAND_T = 2.75; // seconds from 'land here' to the site page
 const ORBIT_W = 0.5; // about one lap every 12 s: clearly moving
-const MOON_ORBIT_PERIOD = 32; // one smooth lunar revolution every 32 seconds
+const MOON_ORBIT_PERIOD = 4; // opposite side of the orbit is reached in about 2 seconds
 
 // key light on the rocket near Earth: front-left and above, as in the reference picture
 const ROCKET_KEY = new THREE.Vector3(-0.55, 0.45, 0.7).normalize();
