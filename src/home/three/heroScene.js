@@ -73,7 +73,7 @@ const SUN_MOON = new THREE.Vector3(0.9, 0.32, 0.12).normalize();
 const PARK_R = 1.24;
 const LAND_T = 2.75; // seconds from 'land here' to the site page
 const ORBIT_W = 0.5; // about one lap every 12 s: clearly moving
-const MOON_ORBIT_PERIOD = 4; // opposite side of the orbit is reached in about 2 seconds
+const MOON_ORBIT_PERIOD = 32; // preserve the original orbital speed
 
 // key light on the rocket near Earth: front-left and above, as in the reference picture
 const ROCKET_KEY = new THREE.Vector3(-0.55, 0.45, 0.7).normalize();
@@ -629,6 +629,11 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
   let qSmoothSet = false;
   const orbitPos = new THREE.Vector3();
   const orbitTan = new THREE.Vector3();
+  const moonView = new THREE.Vector3();
+  const earthView = new THREE.Vector3();
+  let moonPhase = 0;
+  let moonHiddenAt = null;
+  let moonOcclusionCooldown = 0;
   const v = new THREE.Vector3();
   const w3 = new THREE.Vector3();
   const qA = new THREE.Quaternion();
@@ -877,14 +882,47 @@ export function createHeroScene(canvas, { sites, dom, onArrive, textures = {}, q
     bodyUniforms(earth, earthMat, SUN_EARTH);
     earthAtmo.material.uniforms.uSunWorld.value.copy(SUN_EARTH);
     if (L.lunar) {
-      // A deterministic orbit driven by the engine's absolute clock. Phase zero is the
-      // original composition, so the Moon starts exactly at its authored anchor on every load.
-      // The mesh is never toggled or faded at the viewport edge: normal camera clipping and
-      // depth testing handle it, without changing the canvas or interrupting the render loop.
-      const phase = reduced ? 0 : ((time % MOON_ORBIT_PERIOD) / MOON_ORBIT_PERIOD) * Math.PI * 2;
+      // Keep the original slow orbital speed while skipping the far-side passage:
+      // once the Moon is fully hidden behind Earth's disc, hold it there for 2 seconds,
+      // then advance half an orbit so it emerges at the opposite limb.
+      if (reduced) {
+        moonPhase = 0;
+        moonHiddenAt = null;
+        moonOcclusionCooldown = 0;
+        moon.visible = true;
+      } else if (moonHiddenAt !== null) {
+        moon.visible = false;
+        if (time - moonHiddenAt >= 2) {
+          moonPhase = (moonPhase + Math.PI) % (Math.PI * 2);
+          moonHiddenAt = null;
+          moon.visible = true;
+          moonOcclusionCooldown = time + 0.5;
+        }
+      } else {
+        moon.visible = true;
+        moonPhase = (moonPhase + (dt / MOON_ORBIT_PERIOD) * Math.PI * 2) % (Math.PI * 2);
+      }
+
       moon.position.copy(L.lunar.c)
-        .addScaledVector(L.lunar.u, Math.cos(phase) * L.lunar.r)
-        .addScaledVector(L.lunar.v, Math.sin(phase) * L.lunar.r);
+        .addScaledVector(L.lunar.u, Math.cos(moonPhase) * L.lunar.r)
+        .addScaledVector(L.lunar.v, Math.sin(moonPhase) * L.lunar.r);
+
+      // Detect complete occlusion in camera space. Leave the Moon mesh and renderer
+      // running normally; Earth's depth buffer hides it during the 2-second pause.
+      if (!reduced && moonHiddenAt === null && time >= moonOcclusionCooldown) {
+        earthView.copy(earth.position).applyMatrix4(camera.matrixWorldInverse);
+        moonView.copy(moon.position).applyMatrix4(camera.matrixWorldInverse);
+        const earthDepth = -earthView.z;
+        const moonDepth = -moonView.z;
+        if (moonDepth > earthDepth && earthDepth > 0 && moonDepth > 0) {
+          const dx = moonView.x / moonDepth - earthView.x / earthDepth;
+          const dy = moonView.y / moonDepth - earthView.y / earthDepth;
+          const moonRadius = L.moonR / moonDepth;
+          const earthRadius = L.earthR / earthDepth;
+          const reachesEarthLimb = Math.hypot(dx, dy) < earthRadius + moonRadius;
+          if (reachesEarthLimb) moonHiddenAt = time;
+        }
+      }
     }
     bodyUniforms(moon, moonMat, SUN_MOON);
 
